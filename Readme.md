@@ -2,7 +2,7 @@
 This is a basic TDF162 demodulator using an I/Q FM discriminator. The TDF 162 signal is a French long wave radio clock signal transmitted using an unusual phase modulation scheme.
 The signal contains (among other things) a stable time code, and the average frequency of the transmitter is presumably kept accurate.
 
-![Screenshot of program](screenshot.png?raw=true "Screenshot")
+![Screenshot of program](screenshot.PNG?raw=true "Screenshot")
 
 This is the tech-demo for a potential embedded TDF162 radio clock.
 
