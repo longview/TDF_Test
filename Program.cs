@@ -439,12 +439,24 @@ namespace TDF_Test
             else
                 decode_error_count++;
 
-            Console.WriteLine(payload_data[13] ? "Following day is a public holiday." : "No holiday tomorrow");
-            Console.WriteLine(payload_data[14] ? "Current day is a public holiday!" : "No holiday today :(");
+            Console.WriteLine(payload_data[13] ? "Tomorrow is a public holiday!" : "No holiday tomorrow");
+            Console.WriteLine(payload_data[14] ? "Today is a public holiday!" : "No holiday today :(");
             Console.WriteLine(payload_data[15] ? "Bit 15 is high, ignored" : "Bit 15 is low, ignored");
             Console.WriteLine(payload_data[16] ? "Summer time starts at the next hour" : "No summer time warning");
             Console.WriteLine(payload_data[17] ? "Currently using CEST" : "Not using CEST");
             Console.WriteLine(payload_data[18] ? "Currently using CET" : "Not using CET");
+
+            // No spec, but these seem like they should never happen?
+            if (payload_data[17] && payload_data[18])
+            {
+                decode_error_count++;
+                Console.WriteLine("Error: Using both CET and CEST, how?");
+            }
+            else if (!payload_data[17] && !payload_data[18])
+            {
+                decode_error_count++;
+                Console.WriteLine("Error: Not using CET, nor CEST, how?");
+            }
 
             // for the C# version we known about the timezone in use, so we just set it
             TimeZoneInfo decoded_tz;

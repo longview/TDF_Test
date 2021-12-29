@@ -6,6 +6,8 @@ The signal contains (among other things) a stable time code, and the average fre
 
 This is the tech-demo for a potential embedded TDF162 radio clock.
 
+If you're just looking for a demodulator, there aren't too many SDR decoders, but the [SDRangel Radio clock plugin](https://github.com/f4exb/sdrangel/blob/master/plugins/channelrx/radioclock/readme.md) is one that looks like it should work.
+
 The input is a 16 bit mono wave file at 20 kHz sample rate containing a recording of TDF162 containing one full minute (i.e. from :00 to :59 or longer) detected using a wide-USB detector tuned to 157 kHz
 
 A few wave files are included that I used for verification, a webSDR recording is the reference signal since it has ridiculously high SNR. The other recordings are made using my receiver system in Norway.
