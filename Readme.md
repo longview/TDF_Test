@@ -35,4 +35,7 @@ The program crashes if it finds the "wrong" start of minute (in case there are m
 
 The intent is to implement this functionality in a real-time processor (i.e. STM32F3), obviously some changes are needed.
 However, it does prove that a receiver is viable, and that my local reception is adequate for detection.
+
+# Use
+The program outputs to a console, as you'd expect. I use a VS 2019 extension called ArrayPlotter to view the internal data structures, the array *decimated_sampleperiod* can be used as a X-scale.
  
