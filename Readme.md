@@ -44,6 +44,8 @@ The program outputs to a console, as you'd expect. I use a VS 2019 extension cal
  
 Note that the time provided is the time that _will_ occur when the next minute starts, not the time of the currently decoded minute.
 
-Note also that a timing system using this system will likely need to operate with a coherent receiver (i.e. actually implement the phase feedback loop), and because of how much non-time (non-documented) data is transmitted it's definitely not easy to accurately time the receipt of second pulses.
+Note also that a timing system using this system will likely need to operate with a coherent receiver (i.e. actually implement the phase feedback loop), and because of how much non-time (non-documented, at least in English) data is transmitted it's definitely not easy to open loop track time pulses.
 
-Basically I suspect the receiver will need to keep very good time and have frequency locking to be able to track the signal reliably since the false-alarm rate of using only the time-data per second is not good.
+Basically I suspect the receiver will need to keep very good time between each minute pulse to be able to track the signal reliably since the false-alarm rate of using only the time-data per second is not good. This is because there is so much non-time data transmitted in between the timeslots for time data.
+
+If I were prone to wild guesses, I'd note that a transmitter of this type _could_ serve as a decent backup submarine communications transmitter. France operates transmitters in the more common 15-40 kHz VLF band, so this would obviously not be a primary use case.
