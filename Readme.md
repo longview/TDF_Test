@@ -1,8 +1,10 @@
 ﻿# About
 This is a basic [TDF162](https://en.wikipedia.org/wiki/TDF_time_signal) demodulator using an I/Q FM discriminator. The TDF 162 signal is a French long wave radio clock signal transmitted using an unusual phase modulation scheme.
-The signal contains (among other things) a stable time code, and the average frequency of the transmitter is presumably kept accurate.
+The signal contains (among other things) a stable time code, and the average frequency of the transmitter is apparently accurate to within around 10<sup>-12</sup>. 
 
-Note that in French, thie signal is referred to as ALS162, and while there still isn't an enormous amount of public documentation at least there is _some_ in French.
+It seems a good receiver can keep the second phase error below 200 µs. The seemingly official status/logging page is here: [SERVICE DES REFERENCES NATIONALES DE TEMPS](https://syrte.obspm.fr/tfc/temps/outgoing_data/ALS162/).
+
+Note that in French, the signal is referred to as ALS162, and while there still isn't an enormous amount of public documentation at least there is _some_ in French.
 
 ![Screenshot of program](screenshot.PNG?raw=true "Screenshot")
 
