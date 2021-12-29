@@ -1,6 +1,8 @@
 ﻿# About
-This is a basic TDF162 demodulator using an I/Q FM discriminator. The TDF 162 signal is a French long wave radio clock signal transmitted using an unusual phase modulation scheme.
+This is a basic [TDF162](https://en.wikipedia.org/wiki/TDF_time_signal) demodulator using an I/Q FM discriminator. The TDF 162 signal is a French long wave radio clock signal transmitted using an unusual phase modulation scheme.
 The signal contains (among other things) a stable time code, and the average frequency of the transmitter is presumably kept accurate.
+
+Note that in French, thie signal is referred to as ALS162, and while there still isn't an enormous amount of public documentation at least there is _some_ in French.
 
 ![Screenshot of program](screenshot.PNG?raw=true "Screenshot")
 
@@ -8,31 +10,36 @@ This is the tech-demo for a potential embedded TDF162 radio clock.
 
 If you're just looking for a demodulator, there aren't too many SDR decoders, but the [SDRangel Radio clock plugin](https://github.com/f4exb/sdrangel/blob/master/plugins/channelrx/radioclock/readme.md) is one that looks like it should work.
 
+# Principle of Operation
+
 The input is a 16 bit mono wave file at 20 kHz sample rate containing a recording of TDF162 containing one full minute (i.e. from :00 to :59 or longer) detected using a wide-USB detector tuned to 157 kHz
 
 A few wave files are included that I used for verification, a webSDR recording is the reference signal since it has ridiculously high SNR. The other recordings are made using my receiver system in Norway.
 
-The demodulator performs a complex downconversion to baseband, then low pass filters and decimates to 200 Hz
-A basic non-atan() based detector is used for performance reasons.
+The demodulator performs a complex downconversion to baseband, then low pass filters (100 element moving average) and decimates to 200 Hz.
+A basic non-atan() differentiator based detector is used for performance reasons.
 
-The result is integrated to make a PM demodulator, though this is not used. 
-The output of this detector can be used to drive a local oscillator (not implemented here).
+The resulting demodulated FM is integrated to make a PM demodulator, though this is not used. 
+The output of this detector is intended to drive a local oscillator (not implemented here since it's a batch processor). An attempt was made to calculate the FM error based on the PM data, doesn't work right yet.
 
-An attempt was made to calculate the FM error based on the PM data, doesn't work right yet.
-The FM signal is low pass filtered for further noise reduction. We also rectify and low pass filter the FM detector signal for use later.
+
+The FM signal is low pass filtered for further noise reduction using another simple moving average filter. We also rectify and low pass filter the FM detector signal even more for use in the synchronization function.
 
 In order to decode data, the FM and FM rectified signals are used. 
 Three (least square error) correlators are used, these look for the start of a minute using the rectified data (this one is just zeros),
     the waveform of a binary 0, and the waveform of a binary 1.
 
-The correlator waveforms are extracted from the included webSDR recording, and output to .txt files in the working dir.
+The minute start correlator may be slightly too noise sensitive, and could perhaps be replaced with a "smart" algorithm of some sort (i.e. just threshold the rectified data and count the zeros to sync).
 
-After computation, a search is made for the minute start.
+The correlator waveforms are extracted from the included webSDR recording, and output to .txt files in the working dir (this happens every time you run it). The values can be pasted into the appropriate cs file.
+
+After computation, a search is made for the minute start by simply finding the peak of the correlator 3 array.
 When this is found, the search window for correlation is narrowed, and the first binary 0 is located initially.
 (This is guaranteed to be 0)
 
 Once the first 0 is found, a fairly narrow time-window is searched to find the remaining 58 bits.
-Note that since the binary '1' waveform has better autocorrelation properties so it tends to give better SNR even for binary '0'. Because of this the '0' correlator is preferred based on the ratio of template length and what the '1' correlator outputs for the known-0 first bit in a minute.
+
+Note that since the binary '1' waveform has better autocorrelation properties and a longer template, so it tends to give better SNR even for binary '0'. Because of this the '0' correlator (correlator1) is weighted based on the ratio of template length and what the '1' correlator (correlator2) outputs for the known-0 first bit in a minute.
 
 After this, some decoding is done to display the results, including detectable bit errors.
 
