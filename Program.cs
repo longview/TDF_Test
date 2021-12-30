@@ -120,6 +120,7 @@ namespace TDF_Test
             double qval_last = 0, ival_last = 0;
             double pm_integrator = 0;
             double pm_integrator_filtered = 0;
+
             // do FM demodulation
             for (int i = 0; i < i_filtered.Length; i++)
             {
@@ -156,13 +157,39 @@ namespace TDF_Test
                 //pm_filtered[i] = pm_integrator_filtered;
             }
 
+
+
             Console.WriteLine("Finished demodulation");
 
+            // do average value subtraction to remove DC offset
+
+            double fm_unfiltered_square = 0;
+            double fm_filtered_square = 0;
             for (int i = 0; i < fm_unfiltered.Length; i++)
             {
                 fm_unfiltered[i] -= pm_integrator / fm_unfiltered.Length;
+                fm_unfiltered_square = Math.Pow(fm_unfiltered[i], 2);
                 fm_filtered[i] -= pm_integrator_filtered / fm_unfiltered.Length;
+                fm_filtered_square = Math.Pow(fm_filtered[i], 2);
             }
+
+            // attempt an SNR calculation based on full band (signal and noise)
+            // and filtered square values (mostly just signal we assume)
+
+            // this is S^2+N^2
+            fm_unfiltered_square /= fm_unfiltered.Length;
+            // this is taken to be S^2
+            fm_filtered_square /= fm_filtered.Length;
+
+            // therefore we can subtract it
+            double SNR_FM_N = Math.Abs(fm_unfiltered_square - fm_filtered_square);
+
+            double SNR_FM = Math.Sqrt(fm_filtered_square / (SNR_FM_N));
+            double SNR_FM_Log = 10 * Math.Log10(SNR_FM);
+
+            // this calculation is not super good
+            Console.WriteLine("FM SNR = {0}, or {1} dB", SNR_FM, SNR_FM_Log);
+
 
             // perform phase correction for PM; in the real system this will be done as a frequency reference regulator
             // but we simply compute the first order correction since we assume our oscillator is stable
@@ -189,10 +216,27 @@ namespace TDF_Test
             // rectify fm_filtered, might be good?
             fm_lpf.Reset();
             double[] fm_filtered_rectified = new double[data.Length / IQ_decimation_factor];
+            double fm_filtered_rectified_rms_sum = 0;
             for (int i = 0; i < fm_filtered_rectified.Length; i++)
             {
                 fm_filtered_rectified[i] = 1000*fm_rectified_lpf.Process((float)Math.Pow(fm_filtered[i],2));
+                // store sum for noise calculation
+                fm_filtered_rectified_rms_sum += fm_filtered_rectified[i];
             }
+            fm_filtered_rectified_rms_sum /= fm_filtered_rectified.Length;
+
+            // also store the standard deviation value of the data for later
+            double fm_filtered_rectified_rms = 0;
+            for (int i = 0; i < fm_filtered_rectified.Length; i++)
+            {
+                fm_filtered_rectified[i] = 1000 * fm_rectified_lpf.Process((float)Math.Pow(fm_filtered[i], 2));
+                fm_filtered_rectified_rms += Math.Pow(fm_filtered_rectified[i], 2);// - fm_filtered_rectified_rms_sum, 2);
+            }
+
+            fm_filtered_rectified_rms /= fm_filtered_rectified.Length;
+            fm_filtered_rectified_rms = Math.Sqrt(fm_filtered_rectified_rms);
+
+
 
             StringBuilder correlation_output = new StringBuilder();
 
@@ -228,86 +272,82 @@ namespace TDF_Test
              * i.e. we are sensitive to the exact amplitude, not just the shape
              * We first find the start of a minute using template 3 on the *rectified* FM data
              * this then determines where we look in the bit 0 or 1 sets
-             * 
-             * 
              */
 
 
-            Console.WriteLine("Doing Correlation for start of minute");
-            double[] correlation3 = new double[fm_filtered.Length];
-            double correlation3_sum = 0;
+            Console.WriteLine("Doing correlation for start of minute");
+            double[] minute_start_correlation = new double[fm_filtered.Length];
+            double minute_start_correlation_sum = 0;
 
-            // correlation 1, look for second start with data 0
-            for (int i = 0; i < fm_filtered_rectified.Length - correlator_3.Length; i++)
+            // correlation for minute start
+            // this should perhaps not be a correlator?
+            for (int i = 0; i < fm_filtered_rectified.Length - minute_correlator_template.Length; i++)
             {
-                for (int j = 0; j < correlator_3.Length; j++)
+                for (int j = 0; j < minute_correlator_template.Length; j++)
                 {
-                    //correlation[i] += correlator_3[j] * fm_filtered[i + j];
-                    correlation3[i] += -Math.Pow(correlator_3[j] - fm_filtered_rectified[i + j], 2);
-                    //correlation1[i] += (correlator_1[j] > 0 ? 1 : 0) * fm_filtered[i + j];
-                    //correlation1[i] += (correlator_1[j] > 0 ? 0:1) ^ (fm_filtered[i + j] > 0 ? 1 : 0);
+                    minute_start_correlation[i] += -Math.Pow(minute_correlator_template[j] - fm_filtered_rectified[i + j], 2);
                 }
 
-                correlation3_sum += correlation3[i];
+                minute_start_correlation_sum += minute_start_correlation[i];
 
             }
 
-            correlation3_sum /= correlation3.Length;
+            minute_start_correlation_sum /= minute_start_correlation.Length;
 
 
             Console.WriteLine("Doing first correlation for bits 0");
 
-            double[] correlation1 = new double[fm_filtered.Length];
-            double correlation1_sum = 0;
+            double[] zero_correlation = new double[fm_filtered.Length];
+            double zero_correlation_sum = 0;
 
             // correlation 1, look for second start with data 0
-            for (int i = 0; i < fm_filtered.Length - correlator_1.Length; i++)
+            for (int i = 0; i < fm_filtered.Length - zero_correlator_template.Length; i++)
             {
-                for (int j = 0; j < correlator_1.Length; j++)
+                for (int j = 0; j < zero_correlator_template.Length; j++)
                 {
                     //correlation1[i] += correlator_1[j] * fm_filtered[i + j];
-                    correlation1[i] += -Math.Pow(correlator_1[j] - fm_filtered[i + j], 2);
+                    zero_correlation[i] += -Math.Pow(zero_correlator_template[j] - fm_filtered[i + j], 2);
                     //correlation1[i] += (correlator_1[j] > 0 ? 1 : 0) * fm_filtered[i + j];
                     //correlation1[i] += (correlator_1[j] > 0 ? 0:1) ^ (fm_filtered[i + j] > 0 ? 1 : 0);
                 }
-                correlation1_sum += correlation1[i];
+                zero_correlation_sum += zero_correlation[i];
 
             }
-            correlation1_sum /= correlation1.Length;
+            zero_correlation_sum /= zero_correlation.Length;
 
             Console.WriteLine("Doing correlation for bits 1");
-            double[] correlation2 = new double[fm_filtered.Length];
-            double correlation2_sum = 0;
+            double[] one_correlation = new double[fm_filtered.Length];
+            double one_correlation_sum = 0;
 
             // correlation 1, look for second start with data 0
-            for (int i = 0; i < fm_filtered.Length - correlator_2.Length; i++)
+            for (int i = 0; i < fm_filtered.Length - one_correlator_template.Length; i++)
             {
-                for (int j = 0; j < correlator_2.Length; j++)
+                for (int j = 0; j < one_correlator_template.Length; j++)
                 {
                     //correlation1[i] += correlator_1[j] * fm_filtered[i + j];
-                    correlation2[i] += -Math.Pow(correlator_2[j] - fm_filtered[i + j], 2);
+                    one_correlation[i] += -Math.Pow(one_correlator_template[j] - fm_filtered[i + j], 2);
                     //correlation1[i] += (correlator_1[j] > 0 ? 1 : 0) * fm_filtered[i + j];
                     //correlation1[i] += (correlator_1[j] > 0 ? 0:1) ^ (fm_filtered[i + j] > 0 ? 1 : 0);
                 }
 
-                correlation2_sum += correlation2[i];
+                one_correlation_sum += one_correlation[i];
 
             }
 
-            correlation2_sum /= correlation2.Length;
+            one_correlation_sum /= one_correlation.Length;
 
             // offset correct the correlators
-            for (int i = 0; i < correlation1.Length; i++)
+            for (int i = 0; i < zero_correlation.Length; i++)
             {
-                correlation1[i] -= correlation1_sum;
-                correlation2[i] -= correlation2_sum;
-                correlation3[i] -= correlation3_sum;
+                zero_correlation[i] -= zero_correlation_sum;
+                one_correlation[i] -= one_correlation_sum;
+                minute_start_correlation[i] -= minute_start_correlation_sum;
             }
 
             /* Find maximum value
              */
             //bool minutestarted = false;
-            double max_minute = double.NegativeInfinity;
+            double max_minute_correlation = double.NegativeInfinity;
             int minutestart_sample = 0;
             // search for up to 59 seconds
             // TODO: should also limit it to only searching up to 60 second before the end of the file
@@ -315,9 +355,9 @@ namespace TDF_Test
             int max_minute_search = (int)Math.Min(((double)59 / decimated_sampleperiod), fm_unfiltered.Length);
             for (int i = 0; i < max_minute_search; i++)
             {
-                if (correlation3[i] > max_minute)
+                if (minute_start_correlation[i] > max_minute_correlation)
                 {
-                    max_minute = correlation3[i];
+                    max_minute_correlation = minute_start_correlation[i];
                     minutestart_sample = i;
                 }
                 /*if (correlation3[i] > -1 && !minutestarted)
@@ -335,7 +375,36 @@ namespace TDF_Test
 
             Console.WriteLine("Found start of minute at time {0}", decimated_sampleperiod * minutestart_sample);
 
+            double FM_Noise_rms = 0;
+            double FM_Noise_sum = 0;
+            // we can now attempt another SNR calculation, by using the known property of the signal: there is no modulation during the last second of a minute
+            // iterate over the filtered data, centered on the minute correlation template
+            for (int i = minutestart_sample-minute_correlator_template.Length/2; i < minutestart_sample + minute_correlator_template.Length / 2; i++)
+            {
+                FM_Noise_sum += fm_filtered[i];
+            }
 
+            FM_Noise_sum /= minute_correlator_template.Length;
+
+            for (int i = minutestart_sample - minute_correlator_template.Length / 2; i < minutestart_sample + minute_correlator_template.Length / 2; i++)
+            {
+                FM_Noise_rms += Math.Pow(fm_filtered[i] - FM_Noise_sum, 2);
+            }
+            FM_Noise_rms /= minute_correlator_template.Length;
+            FM_Noise_rms = Math.Sqrt(FM_Noise_rms);
+
+
+            // ratio of average modulation in the signal
+            // to noise (modulation detected during the minute end silence)
+            // this calculation is also not great but it is more sensitive
+            // I think this is actually a NSR, not a SNR, but it appears to go higher with better SNR now at least :)
+            double FM_Rectified_SNR = Math.Abs(FM_Noise_rms / Math.Sqrt(fm_filtered_square));
+            double FM_Rectified_SNR_Log = Math.Log10(FM_Rectified_SNR) * 10;
+
+            Console.WriteLine("Modulation based SNR = {0}, or {1} dB", FM_Rectified_SNR, FM_Rectified_SNR_Log);
+
+            // this should be relatively wide unless the minute-start detector is very accurate
+            // the SNR for the first second is usually good, so a wider window doesn't seem to hurt performance
             int datasampler_start = minutestart_sample + (int)(0.75 / decimated_sampleperiod);
             int datasampler_stop = minutestart_sample + (int)(1.0 / decimated_sampleperiod);
             int secondcount = 0;
@@ -356,15 +425,15 @@ namespace TDF_Test
                 // iterate over the range we expect some data to be
                 for (int i = datasampler_start; i < datasampler_stop; i++)
                 {
-                    if (correlation1[i] > max_zero)
+                    if (zero_correlation[i] > max_zero)
                     {
-                        max_zero = correlation1[i];
+                        max_zero = zero_correlation[i];
                         max_zero_time = i;
                     }
 
-                    if (correlation2[i] > max_one)
+                    if (one_correlation[i] > max_one)
                     {
-                        max_one = correlation2[i];
+                        max_one = one_correlation[i];
                         max_one_time = i;
                     }
                 }
@@ -374,9 +443,12 @@ namespace TDF_Test
                 // we can't make the zero detector any longer while staying in spec
                 if (secondcount == 0)
                 {
+                    // correct based on first measurement
                     datasampler_bias = max_zero / max_one;
+                    // correct manually to make it work better in poor SNR
                     datasampler_bias *= 0.90;
-                    datasampler_bias *= (double)correlator_1.Length / (double)correlator_2.Length;
+                    // correct for template length
+                    datasampler_bias *= (double)zero_correlator_template.Length / (double)one_correlator_template.Length;
                 }
 
                 max_one *= datasampler_bias;
@@ -386,6 +458,7 @@ namespace TDF_Test
                 payload_data.Add(bit);
 
                 // we now look for the bits within a small time window to improve detection probability
+                // we are effectively phase locked now and should get the correct sample point very precisely for all future seconds
                 if (bit)
                 {
                     datasampler_start = max_one_time + (int)(0.95 / decimated_sampleperiod);
@@ -397,6 +470,8 @@ namespace TDF_Test
                     datasampler_stop = max_zero_time + (int)(1.05 / decimated_sampleperiod);
                 }
 
+                // print out the decoded bit, time, and bit number
+                // this is very useful for debugging since we can quickly look up the relevant bit in the arrayview
                 Console.Write(":{2} ({1}){0}", (datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod, secondcount+1, bit ? "1" : "0");
 
                 secondcount++;
@@ -463,8 +538,7 @@ namespace TDF_Test
             }
 
             // for the C# version we known about the timezone in use, so we just set it
-            TimeZoneInfo decoded_tz;
-            decoded_tz = TimeZoneInfo.FindSystemTimeZoneById("Central Europe Standard Time");
+            TimeZoneInfo decoded_tz = TimeZoneInfo.FindSystemTimeZoneById("Central Europe Standard Time");
 
 
             Console.WriteLine(payload_data[19] ? "Unused bit 19 is high, error" : "Unused bit 19 ok");
@@ -542,6 +616,7 @@ namespace TDF_Test
             catch (Exception e)
             {
                 Console.WriteLine("Decoded date and time is not valid.");
+                decode_error_count++;
             }
             Console.WriteLine("Decoded with {0} (detectable) errors", decode_error_count);
             Console.WriteLine("Finished");
