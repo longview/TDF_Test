@@ -284,13 +284,13 @@ namespace TDF_Test
             console_output.AppendFormat("02   A3   {0,5}   N/A     {1:F4}\r\n",
                 payload_data[count].ToString(), second_sampling_ratio[count]);
             count++;
-            console_output.AppendFormat("03   HA2   {0,5}   N/A     {1:F4}\r\n",
+            console_output.AppendFormat("03   HA2  {0,5}   N/A     {1:F4}\r\n",
                 payload_data[count].ToString(), second_sampling_ratio[count]);
             count++;
-            console_output.AppendFormat("04   HA4   {0,5}   N/A     {1:F4}\r\n",
+            console_output.AppendFormat("04   HA4  {0,5}   N/A     {1:F4}\r\n",
                 payload_data[count].ToString(), second_sampling_ratio[count]);
             count++;
-            console_output.AppendFormat("05   HA8   {0,5}   N/A     {1:F4}\r\n",
+            console_output.AppendFormat("05   HA8  {0,5}   N/A     {1:F4}\r\n",
                 payload_data[count].ToString(), second_sampling_ratio[count]);
             count++;
             console_output.AppendFormat("06   0    {0,5}   False   {1:F4}\r\n",
