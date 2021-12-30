@@ -503,179 +503,127 @@ namespace TDF_Test
 
             double second_sampling_offset = 0;
 
-            // we run the decoder twice, to correct the decoder bias
-            // this would be run as a continuous regulator in a real system, not a two-pass like this
-            // run up to 4 times, or until the ratio settles to within +-3%
+            // this should be relatively wide unless the minute-start detector is very accurate
+            // the SNR for the first second is usually good, so a wider window doesn't seem to hurt performance
+            datasampler_start = minutestart_sample + (int)(0.75 / decimated_sampleperiod);
+            datasampler_stop = minutestart_sample + (int)(1.0 / decimated_sampleperiod);
+            int secondcount = 0;
 
-            // obviously this system needs some way of preventing total loss of signal (i.e. analyzing all detected peaks for high/low)
-            // and a limiter on the error correction based on real world testing
-            // leave the system off for now, needs a lot more work
-            for (int decode_count = 0; decode_count < 1; decode_count++) // && (second_sampling_offset < 0.98 || second_sampling_offset > 1.02 || double.IsNaN(second_sampling_offset)); decode_count++)
+            console_output.AppendFormat("Next bit expected at: ({1}){0}", (datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod, 0);
+
+            while (datasampler_stop < fm_unfiltered.Length - 1 && secondcount < 59)
             {
+                double max_zero = double.NegativeInfinity;
+                int max_zero_time = 0;
 
-                // this should be relatively wide unless the minute-start detector is very accurate
-                // the SNR for the first second is usually good, so a wider window doesn't seem to hurt performance
-                datasampler_start = minutestart_sample + (int)(0.75 / decimated_sampleperiod);
-                datasampler_stop = minutestart_sample + (int)(1.0 / decimated_sampleperiod);
-                int secondcount = 0;
-
-                if (decode_count == 0)
-                    console_output.AppendFormat("Next bit expected at: ({1}){0}", (datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod, 0);
-
-                while (datasampler_stop < fm_unfiltered.Length - 1 && secondcount < 59)
+                double max_one = double.NegativeInfinity;
+                int max_one_time = 0;
+                // iterate over the range we expect some data to be and record peaks
+                for (int i = datasampler_start; i < datasampler_stop; i++)
                 {
-                    double max_zero = double.NegativeInfinity;
-                    int max_zero_time = 0;
-
-                    double max_one = double.NegativeInfinity;
-                    int max_one_time = 0;
-                    // iterate over the range we expect some data to be and record peaks
-                    for (int i = datasampler_start; i < datasampler_stop; i++)
+                    if (zero_correlation[i] > max_zero)
                     {
-                        if (zero_correlation[i] > max_zero)
-                        {
-                            max_zero = zero_correlation[i];
-                            max_zero_time = i;
-                        }
-
-                        if (one_correlation[i] > max_one)
-                        {
-                            max_one = one_correlation[i];
-                            max_one_time = i;
-                        }
+                        max_zero = zero_correlation[i];
+                        max_zero_time = i;
                     }
 
-                    // the first second we run is always a 0, assuming we detected the minute correctly
-                    // the one-detector tends to be more reliable since it's longer, so we try to fudge it a bit
-                    // we can't make the zero detector any longer while staying in spec
-                    // for a real-time system we can expect to know what most of the bits are already
-                    // so we could (very carefully) bias the detector to the expected value
-                    // obviously this must be done carefully since otherwise we will never update our expectations if something changes
-                    // we could perhaps do both (i.e. record both an actual reading + the expected), time bits are expected to change linearly, and status bits are expected to
-                    // be static every hour (and in most cases static for many hours). this can be used to average out errors in most cases.
-                    if (secondcount == 0)
+                    if (one_correlation[i] > max_one)
                     {
-                        // correct based on first measurement
-                        if (decode_count == 0)
-                            datasampler_bias_scale = max_zero / max_one;
-                        // correct manually to make it work better in poor SNR
-                        datasampler_bias_scale *= 1 + datasampler_bias_scale_offset;
-                        // correct for template length
-                        datasampler_bias_scale *= (double)zero_correlator_template.Length / (double)one_correlator_template.Length;
+                        max_one = one_correlation[i];
+                        max_one_time = i;
                     }
-
-                    max_one *= datasampler_bias_scale;
-
-                    double ratio = max_one / max_zero;
-                    ratio += datasampler_ratio_offset;
-
-                    // store the ratio for debug analysis
-                    second_sampling_ratio[secondcount] = ratio;
-
-                    // at this point we could in future try to do e.g. a 2nd order polynomial curve fit
-                    // to improve our time resolution
-
-                    bool bit = ratio > 1;
-
-                    payload_data[secondcount] = bit;
-
-                    // we now look for the bits within a small time window to improve detection probability
-                    // we are effectively phase locked now and should get the correct sample point very precisely for all future seconds
-                    if (bit)
-                    {
-                        datasampler_start = max_one_time + (int)(0.97 / decimated_sampleperiod);
-                        datasampler_stop = max_one_time + (int)(1.03 / decimated_sampleperiod);
-                    }
-                    else
-                    {
-                        datasampler_start = max_zero_time + (int)(0.97 / decimated_sampleperiod);
-                        datasampler_stop = max_zero_time + (int)(1.03 / decimated_sampleperiod);
-                    }
-
-                    // print out the decoded bit, time, and bit number
-                    // this is very useful for debugging since we can quickly look up the relevant bit in the arrayview
-                    if (decode_count == 0)
-                        console_output.AppendFormat(":{2} ({1}){0}", (datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod, secondcount + 1, bit ? "1" : "0");
-                    // add all but the first second sample point (first one is usually slightly off)
-                    second_sampling_times[secondcount] = (datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod;
-
-                    secondcount++;
                 }
 
-                console_output.AppendLine();
-
-                double second_sampling_ratio_high_average = 0;
-                int second_sampling_high_count = 0;
-                double second_sampling_ratio_low_average = 0;
-                int second_sampling_low_count = 0;
-                double second_sampling_ratio_average = 0;
-                foreach (double d in second_sampling_ratio)
+                // the first second we run is always a 0, assuming we detected the minute correctly
+                // the one-detector tends to be more reliable since it's longer, so we try to fudge it a bit
+                // we can't make the zero detector any longer while staying in spec
+                // for a real-time system we can expect to know what most of the bits are already
+                // so we could (very carefully) bias the detector to the expected value
+                // obviously this must be done carefully since otherwise we will never update our expectations if something changes
+                // we could perhaps do both (i.e. record both an actual reading + the expected), time bits are expected to change linearly, and status bits are expected to
+                // be static every hour (and in most cases static for many hours). this can be used to average out errors in most cases.
+                if (secondcount == 0)
                 {
-                    second_sampling_ratio_average += d;
-                    if (d > 1)
-                    {
-                        second_sampling_ratio_high_average += d;
-                        second_sampling_high_count++;
-                    }
-                    else
-                    {
-                        second_sampling_ratio_low_average += d;
-                        second_sampling_low_count++;
-                    }
+                    // correct based on first measurement
+                    datasampler_bias_scale = max_zero / max_one;
+                    // correct manually to make it work better in poor SNR
+                    datasampler_bias_scale *= 1 + datasampler_bias_scale_offset;
+                    // correct for template length
+                    datasampler_bias_scale *= (double)zero_correlator_template.Length / (double)one_correlator_template.Length;
                 }
-                second_sampling_ratio_average /= second_sampling_ratio.Length;
-                second_sampling_ratio_high_average /= second_sampling_high_count;
-                second_sampling_ratio_low_average /= second_sampling_low_count;
 
-                second_sampling_offset = ((second_sampling_ratio_high_average - second_sampling_ratio_low_average) / 2) + second_sampling_ratio_low_average;
+                max_one *= datasampler_bias_scale;
 
-                // try to wiggle it in to alignment if it gets nothing
-                if (second_sampling_high_count == 0)
+                double ratio = max_one / max_zero;
+                ratio += datasampler_ratio_offset;
+
+                // store the ratio for debug analysis
+                second_sampling_ratio[secondcount] = ratio;
+
+                // at this point we could in future try to do e.g. a 2nd order polynomial curve fit
+                // to improve our time resolution
+
+                bool bit = ratio > 1;
+
+                payload_data[secondcount] = bit;
+
+                // we now look for the bits within a small time window to improve detection probability
+                // we are effectively phase locked now and should get the correct sample point very precisely for all future seconds
+                if (bit)
                 {
-                    datasampler_ratio_offset += 0.1;
-                }
-                else if (second_sampling_low_count == 0)
-                {
-                    datasampler_ratio_offset -= 0.1;
+                    datasampler_start = max_one_time + (int)(0.97 / decimated_sampleperiod);
+                    datasampler_stop = max_one_time + (int)(1.03 / decimated_sampleperiod);
                 }
                 else
                 {
-                    if (false)
-                    {
-                        // midpoint between high value average and low value average
-                        //datasampler_ratio_offset += (1 - second_sampling_offset);
-                        if (datasampler_ratio_offset > 1)
-                            datasampler_ratio_offset = 1;
-                        if (datasampler_ratio_offset < -1)
-                            datasampler_ratio_offset = -1;
-                        if (double.IsNaN(datasampler_ratio_offset))
-                            datasampler_ratio_offset = 0;
-                        // correct for average of all bits selected
-                        //datasampler_ratio_offset += (1 - second_sampling_ratio_average);
-                    }
-                    else
-                    {
-                        datasampler_bias_scale_offset += (1 - second_sampling_ratio_average) / 5;
-
-                        if (datasampler_bias_scale_offset > 0.2)
-                            datasampler_bias_scale_offset = 0.2;
-                        if (datasampler_bias_scale_offset < -0.2)
-                            datasampler_bias_scale_offset = -0.2;
-                        if (double.IsNaN(datasampler_bias_scale_offset))
-                            datasampler_bias_scale_offset = 0;
-                    }
-
-
+                    datasampler_start = max_zero_time + (int)(0.97 / decimated_sampleperiod);
+                    datasampler_stop = max_zero_time + (int)(1.03 / decimated_sampleperiod);
                 }
 
-                // midpoint should be 1
-                console_output.AppendFormat("[{3}]Data slicer ratio is {1}, average value is {0}. Offset: {2}, Scale: {4}\r\n",
-                    second_sampling_ratio_average,
-                    second_sampling_offset, datasampler_ratio_offset, decode_count, datasampler_bias_scale_offset);
-                if (second_sampling_offset > 0.95 && second_sampling_offset < 1.05
-    && second_sampling_ratio_average > 0.95 && second_sampling_ratio_average < 1.05 && !double.IsNaN(second_sampling_offset))
-                    break;
+                // print out the decoded bit, time, and bit number
+                // this is very useful for debugging since we can quickly look up the relevant bit in the arrayview
+                console_output.AppendFormat(":{2} ({1}){0}", (datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod, secondcount + 1, bit ? "1" : "0");
+                // add all but the first second sample point (first one is usually slightly off)
+                second_sampling_times[secondcount] = (datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod;
+
+                secondcount++;
             }
+
+            console_output.AppendLine();
+
+
+            // do some statistics on the data
+            double second_sampling_ratio_high_average = 0;
+            int second_sampling_high_count = 0;
+            double second_sampling_ratio_low_average = 0;
+            int second_sampling_low_count = 0;
+            double second_sampling_ratio_average = 0;
+            foreach (double d in second_sampling_ratio)
+            {
+                second_sampling_ratio_average += d;
+                if (d > 1)
+                {
+                    second_sampling_ratio_high_average += d;
+                    second_sampling_high_count++;
+                }
+                else
+                {
+                    second_sampling_ratio_low_average += d;
+                    second_sampling_low_count++;
+                }
+            }
+            second_sampling_ratio_average /= second_sampling_ratio.Length;
+            second_sampling_ratio_high_average /= second_sampling_high_count;
+            second_sampling_ratio_low_average /= second_sampling_low_count;
+
+            second_sampling_offset = ((second_sampling_ratio_high_average - second_sampling_ratio_low_average) / 2) + second_sampling_ratio_low_average;
+
+            // midpoint should be 1 ideally
+            console_output.AppendFormat("Data slicer ratio is {1}, average value is {0}. Offset: {2}, Scale: {3}\r\n",
+                second_sampling_ratio_average,
+                second_sampling_offset, datasampler_ratio_offset, datasampler_bias_scale_offset);
+
+
             double second_delta_rms = 0;
             for (int i = 1; i < second_sampling_times.Length; i++)
             {
