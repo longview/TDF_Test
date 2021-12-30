@@ -47,29 +47,40 @@ namespace TDF_Test
         {
 
 
-            int testindex = 3;
+            int testindex = 5;
 
             List<TestSignalInfo> testsignals = new List<TestSignalInfo>();
             // input file must be mono 16-bit, 20000 Hz (oddball rate)
 
-            //0
+            //0 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\websdr_recording_start_2021-12-28T12_57_51Z_157.0kHz.wav", 5000,
                 "webSDR recording, high quality", 70, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 28, 12, 58, 00, DateTimeKind.Utc)));
-            //1
+            //1 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-29T163350Z, 157 kHz, Wide-U.wav", 5000,
                 "Ok signal, mid day", 30, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 29, 16, 34, 00, DateTimeKind.Utc)));
-            //2
+            //2 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-29T185106Z, 157 kHz, Wide-U.wav", 5000,
                 "Good signal, evening", 40, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 29, 18, 52, 00, DateTimeKind.Utc)));
-            //3
+            //3 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T090027Z, 157 kHz, Wide-U.wav", 5000,
-                "Medium signal, morning", 22, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 09, 01, 00, DateTimeKind.Utc)));
-            //4
+                "Medium signal, morning", 24, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 09, 01, 00, DateTimeKind.Utc)));
+            //4 full of errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T102229Z, 157 kHz, Wide-U.wav", 5000,
                 "Maintenance phase, off air", 0, TestSignalInfo.Station_Status.Maintenance, new DateTime(2021, 12, 30, 10, 23, 00, DateTimeKind.Utc)));
-            //5
+            //5 no errors, bit 19/20 is tricky
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T105034Z, 157 kHz, Wide-U.wav", 5000,
-                "Medium signal, morning", 20, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 10, 51, 00, DateTimeKind.Utc)));
+                "Medium signal, morning", 24, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 10, 51, 00, DateTimeKind.Utc)));
+            //6 decodes with 5 errors
+            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T121742Z, 157 kHz, Wide-U_20.wav", 5000,
+                "Poor signal, afternoon", 20, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 12, 18, 00, DateTimeKind.Utc)));
+            //7 decodes with 3 errors, bit 48 is wrong
+            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T121914Z, 157 kHz, Wide-U_20.wav", 5000,
+                "Poor signal, afternoon", 20, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 12, 20, 00, DateTimeKind.Utc)));
+            //8 no errors
+            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T142316Z, 157 kHz, Wide-U.wav", 5000,
+                "Poor signal, afternoon", 20, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 14, 24, 00, DateTimeKind.Utc)));
+
+
 
             Console.WriteLine("Using test index {0}, signal type {7}.\r\nFile {1} (IF = {6})\r\nSNR {2}, station was {3}.\r\nTime transmitted: {4}.\r\nComment: {5}",
                 testindex, testsignals[testindex].FilePath, testsignals[testindex].SNR, 
@@ -126,7 +137,7 @@ namespace TDF_Test
                 timescale_decimated[i] = i * sampleperiod * IQ_decimation_factor;
             }
 
-            Console.WriteLine("Using sample rate {0}, output decimation {1}, beginning IQ conversion", samplerate, IQ_decimation_factor);
+            Console.WriteLine("Using sample rate {0}, output decimation {1}, IQ conversion, LO {2}", samplerate, IQ_decimation_factor, frequency);
 
             NWaves.Filters.MovingAverageFilter i_lpf = new NWaves.Filters.MovingAverageFilter(IQ_decimation_factor);
             NWaves.Filters.MovingAverageFilter q_lpf = new NWaves.Filters.MovingAverageFilter(IQ_decimation_factor);
@@ -459,100 +470,206 @@ namespace TDF_Test
 
             Console.WriteLine("Modulation based SNR = {0}, or {1} dB", FM_Rectified_SNR, FM_Rectified_SNR_Log);
 
-            // this should be relatively wide unless the minute-start detector is very accurate
-            // the SNR for the first second is usually good, so a wider window doesn't seem to hurt performance
             int datasampler_start = minutestart_sample + (int)(0.75 / decimated_sampleperiod);
             int datasampler_stop = minutestart_sample + (int)(1.0 / decimated_sampleperiod);
-            int secondcount = 0;
 
-            Console.Write("Next bit expected at: ({1}){0}", (datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod, 0);
+            bool[] payload_data = new bool[59];
+            double[] second_sampling_times = new double[59];
+            double[] second_sampling_ratio = new double[59];
 
-            List<bool> payload_data = new List<bool>();
-            List<double> second_sampling_times = new List<double>();
+            double datasampler_bias_scale = 0;
+            double datasampler_bias_scale_offset = 0;
+            // offset to the ratio of one/zero
+            double datasampler_ratio_offset = -0.1;
 
-            double datasampler_bias = 0;
+            double second_sampling_offset = 0;
 
-            while (datasampler_stop < fm_unfiltered.Length - 1 && secondcount < 59)
+            bool goodenough = false;
+            // we run the decoder twice, to correct the decoder bias
+            // this would be run as a continuous regulator in a real system, not a two-pass like this
+            // run up to 4 times, or until the ratio settles to within +-3%
+
+            // obviously this system needs some way of preventing total loss of signal (i.e. analyzing all detected peaks for high/low)
+            // and a limiter on the error correction based on real world testing
+            // leave the system off for now, needs a lot more work
+            for (int decode_count = 0; decode_count < 1; decode_count++) // && (second_sampling_offset < 0.98 || second_sampling_offset > 1.02 || double.IsNaN(second_sampling_offset)); decode_count++)
             {
-                double max_zero = double.NegativeInfinity;
-                int max_zero_time = 0;
 
-                double max_one = double.NegativeInfinity;
-                int max_one_time = 0;
-                // iterate over the range we expect some data to be and record peaks
-                for (int i = datasampler_start; i < datasampler_stop; i++)
+                // this should be relatively wide unless the minute-start detector is very accurate
+                // the SNR for the first second is usually good, so a wider window doesn't seem to hurt performance
+                datasampler_start = minutestart_sample + (int)(0.75 / decimated_sampleperiod);
+                datasampler_stop = minutestart_sample + (int)(1.0 / decimated_sampleperiod);
+                int secondcount = 0;
+
+                if (decode_count == 0)
+                    Console.Write("Next bit expected at: ({1}){0}", (datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod, 0);
+
+                while (datasampler_stop < fm_unfiltered.Length - 1 && secondcount < 59)
                 {
-                    if (zero_correlation[i] > max_zero)
+                    double max_zero = double.NegativeInfinity;
+                    int max_zero_time = 0;
+
+                    double max_one = double.NegativeInfinity;
+                    int max_one_time = 0;
+                    // iterate over the range we expect some data to be and record peaks
+                    for (int i = datasampler_start; i < datasampler_stop; i++)
                     {
-                        max_zero = zero_correlation[i];
-                        max_zero_time = i;
+                        if (zero_correlation[i] > max_zero)
+                        {
+                            max_zero = zero_correlation[i];
+                            max_zero_time = i;
+                        }
+
+                        if (one_correlation[i] > max_one)
+                        {
+                            max_one = one_correlation[i];
+                            max_one_time = i;
+                        }
                     }
 
-                    if (one_correlation[i] > max_one)
+                    // the first second we run is always a 0, assuming we detected the minute correctly
+                    // the one-detector tends to be more reliable since it's longer, so we try to fudge it a bit
+                    // we can't make the zero detector any longer while staying in spec
+                    // for a real-time system we can expect to know what most of the bits are already
+                    // so we could (very carefully) bias the detector to the expected value
+                    // obviously this must be done carefully since otherwise we will never update our expectations if something changes
+                    // we could perhaps do both (i.e. record both an actual reading + the expected), time bits are expected to change linearly, and status bits are expected to
+                    // be static every hour (and in most cases static for many hours). this can be used to average out errors in most cases.
+                    if (secondcount == 0)
                     {
-                        max_one = one_correlation[i];
-                        max_one_time = i;
+                        // correct based on first measurement
+                        if (decode_count == 0)
+                            datasampler_bias_scale = max_zero / max_one;
+                        // correct manually to make it work better in poor SNR
+                        datasampler_bias_scale *= 1 + datasampler_bias_scale_offset;
+                        // correct for template length
+                        datasampler_bias_scale *= (double)zero_correlator_template.Length / (double)one_correlator_template.Length;
+                    }
+
+                    max_one *= datasampler_bias_scale;
+
+                    double ratio = max_one / max_zero;
+                    ratio += datasampler_ratio_offset;
+
+                    // store the ratio for debug analysis
+                    second_sampling_ratio[secondcount] = ratio;
+
+                    // at this point we could in future try to do e.g. a 2nd order polynomial curve fit
+                    // to improve our time resolution
+
+                    bool bit = ratio > 1;
+
+                    payload_data[secondcount] = bit;
+
+                    // we now look for the bits within a small time window to improve detection probability
+                    // we are effectively phase locked now and should get the correct sample point very precisely for all future seconds
+                    if (bit)
+                    {
+                        datasampler_start = max_one_time + (int)(0.97 / decimated_sampleperiod);
+                        datasampler_stop = max_one_time + (int)(1.03 / decimated_sampleperiod);
+                    }
+                    else
+                    {
+                        datasampler_start = max_zero_time + (int)(0.97 / decimated_sampleperiod);
+                        datasampler_stop = max_zero_time + (int)(1.03 / decimated_sampleperiod);
+                    }
+
+                    // print out the decoded bit, time, and bit number
+                    // this is very useful for debugging since we can quickly look up the relevant bit in the arrayview
+                    if (decode_count == 0)
+                        Console.Write(":{2} ({1}){0}", (datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod, secondcount + 1, bit ? "1" : "0");
+                    // add all but the first second sample point (first one is usually slightly off)
+                    second_sampling_times[secondcount] = (datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod;
+
+                    secondcount++;
+                }
+
+                Console.WriteLine("");
+
+                double second_sampling_ratio_high_average = 0;
+                int second_sampling_high_count = 0;
+                double second_sampling_ratio_low_average = 0;
+                int second_sampling_low_count = 0;
+                double second_sampling_ratio_average = 0;
+                foreach (double d in second_sampling_ratio)
+                {
+                    second_sampling_ratio_average += d;
+                    if (d > 1)
+                    {
+                        second_sampling_ratio_high_average += d;
+                        second_sampling_high_count++;
+                    }
+                    else
+                    {
+                        second_sampling_ratio_low_average += d;
+                        second_sampling_low_count++;
                     }
                 }
+                second_sampling_ratio_average /= second_sampling_ratio.Length;
+                second_sampling_ratio_high_average /= second_sampling_high_count;
+                second_sampling_ratio_low_average /= second_sampling_low_count;
 
-                // the first second we run is always a 0, assuming we detected the minute correctly
-                // the one-detector tends to be more reliable since it's longer, so we try to fudge it a bit
-                // we can't make the zero detector any longer while staying in spec
-                if (secondcount == 0)
+                second_sampling_offset = ((second_sampling_ratio_high_average - second_sampling_ratio_low_average) / 2) + second_sampling_ratio_low_average;
+
+                // try to wiggle it in to alignment if it gets nothing
+                if (second_sampling_high_count == 0)
                 {
-                    // correct based on first measurement
-                    datasampler_bias = max_zero / max_one;
-                    // correct manually to make it work better in poor SNR
-                    datasampler_bias *= 0.90;
-                    // correct for template length
-                    datasampler_bias *= (double)zero_correlator_template.Length / (double)one_correlator_template.Length;
+                    datasampler_ratio_offset += 0.1;
                 }
-
-                max_one *= datasampler_bias;
-
-                // at this point we could in future try to do e.g. a 2nd order polynomial curve fit
-                // to improve our time resolution
-
-                bool bit = max_one > max_zero;
-
-                payload_data.Add(bit);
-
-                // we now look for the bits within a small time window to improve detection probability
-                // we are effectively phase locked now and should get the correct sample point very precisely for all future seconds
-                if (bit)
+                else if (second_sampling_low_count == 0)
                 {
-                    datasampler_start = max_one_time + (int)(0.95 / decimated_sampleperiod);
-                    datasampler_stop = max_one_time + (int)(1.05 / decimated_sampleperiod);
+                    datasampler_ratio_offset -= 0.1;
                 }
                 else
                 {
-                    datasampler_start = max_zero_time + (int)(0.95 / decimated_sampleperiod);
-                    datasampler_stop = max_zero_time + (int)(1.05 / decimated_sampleperiod);
+                    if (decode_count % 2 == 0)
+                    {
+                        // midpoint between high value average and low value average
+                        datasampler_ratio_offset += (1 - second_sampling_offset)/2;
+                        if (datasampler_ratio_offset > 1)
+                            datasampler_ratio_offset = 1;
+                        if (datasampler_ratio_offset < -1)
+                            datasampler_ratio_offset = -1;
+                        if (double.IsNaN(datasampler_ratio_offset))
+                            datasampler_ratio_offset = 0;
+                        // correct for average of all bits selected
+                        //datasampler_ratio_offset += (1 - second_sampling_ratio_average);
+                    }
+                    else
+                    {
+                        datasampler_bias_scale_offset += (1 - second_sampling_ratio_average) / 10;
+
+                        if (datasampler_bias_scale_offset > 0.4)
+                            datasampler_bias_scale_offset = 0.4;
+                        if (datasampler_bias_scale_offset < -0.4)
+                            datasampler_bias_scale_offset = -0.4;
+                        if (double.IsNaN(datasampler_bias_scale_offset))
+                            datasampler_bias_scale_offset = 0;
+                    }
+
+
                 }
 
-                // print out the decoded bit, time, and bit number
-                // this is very useful for debugging since we can quickly look up the relevant bit in the arrayview
-                Console.Write(":{2} ({1}){0}", (datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod, secondcount+1, bit ? "1" : "0");
-                // add all but the first second sample point (first one is usually slightly off)
-                second_sampling_times.Add((datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod);
-
-                secondcount++;
+                // midpoint should be 1
+                Console.WriteLine("[{3}]Data slicer ratio is {1}, average value is {0}. Offset: {2}, Scale: {4}",
+                    second_sampling_ratio_average,
+                    second_sampling_offset, datasampler_ratio_offset, decode_count, datasampler_bias_scale_offset);
+                if (second_sampling_offset > 0.95 && second_sampling_offset < 1.05
+    && second_sampling_ratio_average > 0.95 && second_sampling_ratio_average < 1.05 && !double.IsNaN(second_sampling_offset))
+                    break;
             }
-
-            Console.WriteLine("");
-
             double second_delta_rms = 0;
-            for (int i = 1; i < second_sampling_times.Count; i++)
+            for (int i = 1; i < second_sampling_times.Length; i++)
             {
                 second_delta_rms += second_sampling_times[i] - second_sampling_times[i - 1];
             }
-            second_delta_rms /= second_sampling_times.Count - 1;
+            second_delta_rms /= second_sampling_times.Length - 1;
             //second_delta_rms = Math.Abs(1-second_delta_rms);
 
 
             Console.WriteLine("Second delta average: {0} ms", second_delta_rms*1000);
 
-            Console.Write("Decoded {0} bits: ", payload_data.Count, datasampler_stop * decimated_sampleperiod);
+            Console.Write("Decoded {0} bits: ", payload_data.Length, datasampler_stop * decimated_sampleperiod);
             foreach (bool bit in payload_data)
             {
                 Console.Write("{0}", bit ? 1 : 0);
@@ -560,9 +677,6 @@ namespace TDF_Test
             Console.WriteLine("");
 
             int decode_error_count = 0;
-
-            if (payload_data.Count != 59)
-                decode_error_count++;
 
             // let's parse the data!
             Console.WriteLine(payload_data[0] ? "First bit error" : "First bit ok");
@@ -582,7 +696,14 @@ namespace TDF_Test
 
             Console.WriteLine("Hamming weight 21-58 is {0}, I count {1}, this is {2}", hammingweight, hammingcount, hammingcount == hammingweight ? "good!":"bad :(");
             if (hammingcount != hammingweight)
+            {
                 decode_error_count++;
+                if ((hammingcount - hammingweight) % 2 == 0)
+                {
+                    Console.WriteLine("Hamming weight error is even; this means parity errors may not be detected.");
+                }
+            }
+                
 
             if (!payload_data[7] && !payload_data[8] && !payload_data[9] && !payload_data[10] && !payload_data[11] && !payload_data[12])
             {
@@ -621,7 +742,7 @@ namespace TDF_Test
             if (!payload_data[20])
                 decode_error_count++;
 
-            // this format is very french, and does not use true binary, rather is switches to 10/20/40/80 weights after weight 8
+            // BCD format, watch out
             // we need to watch it with parity calculations since the number of set bits could be different before/after conversion to normal binary?
             int minutes = (payload_data[21] ? 1 : 0) + (payload_data[22] ? 2 : 0) + (payload_data[23] ? 4 : 0) + (payload_data[24] ? 8 : 0) + (payload_data[25] ? 10 : 0) +
                 (payload_data[26] ? 20 : 0) + (payload_data[27] ? 40 : 0);
@@ -662,6 +783,31 @@ namespace TDF_Test
             int year = (payload_data[50] ? 1 : 0) + (payload_data[51] ? 2 : 0) + (payload_data[52] ? 4 : 0) + (payload_data[53] ? 8 : 0) + (payload_data[54] ? 10 : 0) +
                 (payload_data[55] ? 20 : 0) + (payload_data[56] ? 40 : 0) + (payload_data[57] ? 80 : 0);
 
+
+            if (day_of_week > 7 || day_of_week < 1)
+            {
+                Console.WriteLine("Day of week {0} is outside of allowable range (1-7)", day_of_week);
+                decode_error_count++;
+            }
+
+            if (day_of_month > 31 || day_of_month < 1)
+            {
+                Console.WriteLine("Day of month {0} is outside of allowable range (1-31)", year);
+                decode_error_count++;
+            }
+
+            if (month > 12 || month < 1)
+            {
+                Console.WriteLine("Month {0} is outside of allowable range (1-13)", month);
+                decode_error_count++;
+            }
+
+            if (year > 99)
+            {
+                Console.WriteLine("Year {0} is outside of allowable range (0-99)", year);
+                decode_error_count++;
+            }
+
             paritycount = 0;
             for (int i = 36; i < 58; i++)
             {
@@ -673,7 +819,8 @@ namespace TDF_Test
             if (paritycount % 2 == 1 != payload_data[58])
                 decode_error_count++;
 
-            Console.WriteLine("At the next minute marker: {0:D2}:{1:D2}, day of month {2}, day of week {3}, month {4}, year is 20{5:D2}", hours, minutes,day_of_month, day_of_week, month, year);
+            Console.WriteLine("At the next minute marker: {0:D2}:{1:D2}, day of month {2}, day of week {3}, month {4}, year is {5:D4}", 
+                hours, minutes,day_of_month, day_of_week, month, year+2000);
 
             // this conversion "knows" that we are in the same time zone as the transmitter; this is not guaranteed
             // should use the timezone info decoded above
