@@ -91,6 +91,9 @@ namespace TDF_Test
             //9 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T172433Z, 157 kHz, Wide-U.wav", 5000,
                 "Good signal, early evening", 29, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 17, 25, 00, DateTimeKind.Utc)));
+            //10 no errors
+            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T181314Z, 157 kHz, Wide-U.wav", 5000,
+                "Good signal, early evening", 30, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 18, 14, 00, DateTimeKind.Utc)));
 
 
             if (mode == Modes.Standard)
@@ -122,10 +125,11 @@ namespace TDF_Test
                     if (errors != signal.Expected_Errors)
                         fail_count++;
 
-                    Console.WriteLine("Index {0}, expected errors {1}, found {2}", testsignals.IndexOf(signal), signal.Expected_Errors, errors);
+                    Console.WriteLine("Index {0:D2}, expected errors {1}, found {2}", testsignals.IndexOf(signal), signal.Expected_Errors, errors);
 
 
-                    File.WriteAllText(String.Format("Verify_Result_{0}.txt", testsignals.IndexOf(signal)), console_output.ToString());
+                    File.WriteAllText(String.Format("Verify_Result_{0}_f{1}_e{2}.txt", testsignals.IndexOf(signal), errors, signal.Expected_Errors), 
+                        console_output.ToString());
                 }
 
                 Console.WriteLine("Finished tests, {0} failures of {1} total", fail_count, testsignals.Count);
