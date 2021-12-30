@@ -15,13 +15,16 @@ namespace TDF_Test
         {
             // input file must be mono 16-bit, 20000 Hz (oddball rate)
             // this is the good one, used for templates etc.
-            //string inputfile = "..\\..\\websdr_recording_start_2021-12-28T12_57_51Z_157.0kHz.wav";
+            string inputfile = "..\\..\\websdr_recording_start_2021-12-28T12_57_51Z_157.0kHz.wav";
             // this one is ok; SNR was around 30 dB, fairly typical middat
             //string inputfile = "..\\..\\2021-12-29T163350Z, 157 kHz, Wide-U.wav";
             // this one starts at a bad phase, SNR around 40 dB, good evening reception
             //string inputfile = "..\\..\\2021-12-29T185106Z, 157 kHz, Wide-U.wav"; 
             // SNR below 30 dB, morning typical reception
-            string inputfile = "..\\..\\2021-12-30T090027Z, 157 kHz, Wide-U.wav"; 
+            //string inputfile = "..\\..\\2021-12-30T090027Z, 157 kHz, Wide-U.wav";
+            // SNR of nothing, this one probably can't be decoded and should be rejected in a real clock design
+            // This was recorded during the scheduled transmitter maintenance cycle of tuesdays 08:00-12:00
+            //string inputfile = "..\\..\\2021-12-30T102229Z, 157 kHz, Wide-U.wav";
 
             // frequency offset of USB receiver
             double frequency = 5000;
@@ -412,6 +415,7 @@ namespace TDF_Test
             Console.Write("Next bit expected at: ({1}){0}", (datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod, 0);
 
             List<bool> payload_data = new List<bool>();
+            List<double> second_sampling_times = new List<double>();
 
             double datasampler_bias = 0;
 
@@ -422,7 +426,7 @@ namespace TDF_Test
 
                 double max_one = double.NegativeInfinity;
                 int max_one_time = 0;
-                // iterate over the range we expect some data to be
+                // iterate over the range we expect some data to be and record peaks
                 for (int i = datasampler_start; i < datasampler_stop; i++)
                 {
                     if (zero_correlation[i] > max_zero)
@@ -453,6 +457,9 @@ namespace TDF_Test
 
                 max_one *= datasampler_bias;
 
+                // at this point we could in future try to do e.g. a 2nd order polynomial curve fit
+                // to improve our time resolution
+
                 bool bit = max_one > max_zero;
 
                 payload_data.Add(bit);
@@ -473,11 +480,24 @@ namespace TDF_Test
                 // print out the decoded bit, time, and bit number
                 // this is very useful for debugging since we can quickly look up the relevant bit in the arrayview
                 Console.Write(":{2} ({1}){0}", (datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod, secondcount+1, bit ? "1" : "0");
+                // add all but the first second sample point (first one is usually slightly off)
+                second_sampling_times.Add((datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod);
 
                 secondcount++;
             }
 
             Console.WriteLine("");
+
+            double second_delta_rms = 0;
+            for (int i = 1; i < second_sampling_times.Count; i++)
+            {
+                second_delta_rms += second_sampling_times[i] - second_sampling_times[i - 1];
+            }
+            second_delta_rms /= second_sampling_times.Count - 1;
+            second_delta_rms = Math.Sqrt(Math.Abs(1-second_delta_rms));
+
+
+            Console.WriteLine("Sampling time variance: {0} ms", second_delta_rms*1000);
 
             Console.Write("Decoded {0} bits: ", payload_data.Count, datasampler_stop * decimated_sampleperiod);
             foreach (bool bit in payload_data)
@@ -521,7 +541,7 @@ namespace TDF_Test
             Console.WriteLine(payload_data[13] ? "Tomorrow is a public holiday!" : "No holiday tomorrow");
             Console.WriteLine(payload_data[14] ? "Today is a public holiday!" : "No holiday today :(");
             Console.WriteLine(payload_data[15] ? "Bit 15 is high, ignored" : "Bit 15 is low, ignored");
-            Console.WriteLine(payload_data[16] ? "Summer time starts at the next hour" : "No summer time warning");
+            Console.WriteLine(payload_data[16] ? "Time zone will change at the next hour mark." : "Time zone will not change at the next hour mark");
             Console.WriteLine(payload_data[17] ? "Currently using CEST" : "Not using CEST");
             Console.WriteLine(payload_data[18] ? "Currently using CET" : "Not using CET");
 
