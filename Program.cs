@@ -275,7 +275,7 @@ namespace TDF_Test
             // print out informative data to aid debugging:
             int count = 0;
             console_output.AppendFormat("No.  Sym  Value   Expct   Rat\r\n");
-            console_output.AppendFormat("00   Min  {0,5}   False   {1:F4}\r\n",
+            console_output.AppendFormat("00   M    {0,5}   False   {1:F4}\r\n",
                 payload_data[count].ToString(), second_sampling_ratio[count]);
             count++;
             console_output.AppendFormat("01   A2   {0,5}   N/A     {1:F4}\r\n",
@@ -335,7 +335,7 @@ namespace TDF_Test
             console_output.AppendFormat("19   X    {0,5}   False   {1:F4}\r\n",
                 payload_data[count].ToString(), second_sampling_ratio[count]);
             count++;
-            console_output.AppendFormat("20   Min  {0,5}   True    {1:F4}\r\n",
+            console_output.AppendFormat("20   S    {0,5}   True    {1:F4}\r\n",
                 payload_data[count].ToString(), second_sampling_ratio[count]);
             count++;
             console_output.AppendFormat("21   M01  {0,5}   N/A     {1:F4}\r\n",
