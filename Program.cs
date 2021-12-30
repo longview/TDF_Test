@@ -37,7 +37,7 @@ namespace TDF_Test
                 "Medium signal, morning", 24, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 09, 01, 00, DateTimeKind.Utc)));
             //4 full of errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T102229Z, 157 kHz, Wide-U.wav", 5000,
-                "Maintenance phase, off air", 0, TestSignalInfo.Station_Status.Maintenance, new DateTime(2021, 12, 30, 10, 23, 00, DateTimeKind.Utc), 7));
+                "Maintenance phase, off air", 0, TestSignalInfo.Station_Status.Maintenance, new DateTime(2021, 12, 30, 10, 23, 00, DateTimeKind.Utc), 10));
             //5 no errors, bit 19/20 is tricky
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T105034Z, 157 kHz, Wide-U.wav", 5000,
                 "Medium signal, morning", 24, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 10, 51, 00, DateTimeKind.Utc)));
@@ -712,7 +712,7 @@ namespace TDF_Test
                 // 0 is the optimal value
                 datasampler_bias_scale_offset = 0;
                 // this is the optimal value
-                datasampler_ratio_offset = -0.12;
+                datasampler_ratio_offset = 0.3;
             }
 
 
@@ -781,7 +781,22 @@ namespace TDF_Test
 
                 max_one *= datasampler_bias_scale;
 
-                double ratio = max_one / max_zero;
+
+                double ratio = 0;
+                // try to handle some edge cases
+                if (max_zero <= 0 || max_one <= 0)
+                {
+                    if (max_zero <= 0)
+                        ratio = 1000;
+                    if (max_one <= 0)
+                        ratio = 0;
+                }
+                else
+                {
+                    ratio = max_one / max_zero;
+                }
+                    
+
                 ratio += datasampler_ratio_offset;
 
                 // store the ratio for debug analysis
@@ -980,7 +995,8 @@ namespace TDF_Test
                 for (int j = 0; j < _zero_correlator.Length; j++)
                 {
                     if (_type == CorrelatorType.PM)
-                        zero_correlation[i] = (1+_zero_correlator[j]) * data_correlation_source[i + j];
+                        zero_correlation[i] += correlation_scale * Math.Pow(_zero_correlator[j] - data_correlation_source[i + j], 2);
+                    //zero_correlation[i] = (1+_zero_correlator[j]) * data_correlation_source[i + j];
                     else
                         zero_correlation[i] += correlation_scale*Math.Pow(_zero_correlator[j] - data_correlation_source[i + j], 2);
                     //correlation1[i] += (correlator_1[j] > 0 ? 1 : 0) * fm_filtered[i + j];
@@ -1000,7 +1016,8 @@ namespace TDF_Test
                 for (int j = 0; j < _one_correlator.Length; j++)
                 {
                     if (_type == CorrelatorType.PM)
-                        one_correlation[i] += (1+_one_correlator[j]) * data_correlation_source[i + j];
+                        one_correlation[i] += correlation_scale * Math.Pow(_one_correlator[j] - data_correlation_source[i + j], 2);
+                    //one_correlation[i] += (1+_one_correlator[j]) * data_correlation_source[i + j];
                     else
                         one_correlation[i] += correlation_scale*Math.Pow(_one_correlator[j] - data_correlation_source[i + j], 2);
                     //correlation1[i] += (correlator_1[j] > 0 ? 1 : 0) * fm_filtered[i + j];
@@ -1021,6 +1038,16 @@ namespace TDF_Test
                     zero_correlation[i] -= zero_correlation_sum;
                     one_correlation[i] -= one_correlation_sum;
                     minute_start_correlation[i] -= minute_start_correlation_sum;
+                }
+            }
+            else
+            {
+                NWaves.Filters.DcRemovalFilter dc_filter_one = new DcRemovalFilter(0.9);
+                NWaves.Filters.DcRemovalFilter dc_filter_zero = new DcRemovalFilter(0.9);
+                for (int i = 0; i < zero_correlation.Length; i++)
+                {
+                    zero_correlation[i] = dc_filter_zero.Process((float)zero_correlation[i]) + 1e4;
+                    one_correlation[i] = dc_filter_one.Process((float)one_correlation[i]) + 1e4;
                 }
             }
         }
