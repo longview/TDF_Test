@@ -13,7 +13,7 @@ namespace TDF_Test
     {
         public struct TestSignalInfo
         {
-            public TestSignalInfo(string _filepath, double _frequency, string _comment, double _snr, Station_Status _status, DateTime _date)
+            public TestSignalInfo(string _filepath, double _frequency, string _comment, double _snr, Station_Status _status, DateTime _date, Signal_Type _signaltype = Signal_Type.TDF)
             {
                 FilePath = _filepath;
                 Comment = _comment;
@@ -22,6 +22,7 @@ namespace TDF_Test
                 Status = _status;
                 // add 1 minute to timestamp from start of recording timestamp
                 Recorded_Timestamp_UTC = _date.AddMinutes(1);
+                SignalType = _signaltype;
             }
             public string FilePath;
             public string Comment;
@@ -29,10 +30,16 @@ namespace TDF_Test
             public double SNR;
             public Station_Status Status;
             public DateTime Recorded_Timestamp_UTC;
+            public Signal_Type SignalType;
             public enum Station_Status
             {
                 OnAir,
                 Maintenance
+            }
+
+            public enum Signal_Type
+            {
+                TDF, DCFp
             }
         }
 
@@ -40,32 +47,35 @@ namespace TDF_Test
         {
 
 
-            int testindex = 5;
+            int testindex = 3;
 
             List<TestSignalInfo> testsignals = new List<TestSignalInfo>();
             // input file must be mono 16-bit, 20000 Hz (oddball rate)
+
+            //0
             testsignals.Add(new TestSignalInfo("..\\..\\websdr_recording_start_2021-12-28T12_57_51Z_157.0kHz.wav", 5000,
-                "webSDR recording, high quality", 70, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 28, 12, 58, 00)));
-
+                "webSDR recording, high quality", 70, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 28, 12, 58, 00, DateTimeKind.Utc)));
+            //1
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-29T163350Z, 157 kHz, Wide-U.wav", 5000,
-                "Ok signal, mid day", 30, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 29, 16, 34, 00)));
-
+                "Ok signal, mid day", 30, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 29, 16, 34, 00, DateTimeKind.Utc)));
+            //2
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-29T185106Z, 157 kHz, Wide-U.wav", 5000,
-                "Good signal, evening", 40, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 29, 18, 52, 00)));
-
+                "Good signal, evening", 40, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 29, 18, 52, 00, DateTimeKind.Utc)));
+            //3
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T090027Z, 157 kHz, Wide-U.wav", 5000,
-                "Medium signal, morning", 22, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 09, 01, 00)));
-
+                "Medium signal, morning", 22, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 09, 01, 00, DateTimeKind.Utc)));
+            //4
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T102229Z, 157 kHz, Wide-U.wav", 5000,
-                "Maintenance phase, off air", 0, TestSignalInfo.Station_Status.Maintenance, new DateTime(2021, 12, 30, 10, 23, 00)));
-
+                "Maintenance phase, off air", 0, TestSignalInfo.Station_Status.Maintenance, new DateTime(2021, 12, 30, 10, 23, 00, DateTimeKind.Utc)));
+            //5
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T105034Z, 157 kHz, Wide-U.wav", 5000,
-                "Medium signal, morning", 20, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 10, 51, 00)));
+                "Medium signal, morning", 20, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 10, 51, 00, DateTimeKind.Utc)));
 
-            Console.WriteLine("Using test index {0}.\r\nFile {1} (IF = {6}\r\nSNR {2}, station was {3}.\r\nTime transmitted: {4}.\r\nComment: {5}",
+            Console.WriteLine("Using test index {0}, signal type {7}.\r\nFile {1} (IF = {6})\r\nSNR {2}, station was {3}.\r\nTime transmitted: {4}.\r\nComment: {5}",
                 testindex, testsignals[testindex].FilePath, testsignals[testindex].SNR, 
                 testsignals[testindex].Status == TestSignalInfo.Station_Status.OnAir ? "on air" : "off air",
-                testsignals[testindex].Recorded_Timestamp_UTC.ToString("o"), testsignals[testindex].Comment, testsignals[testindex].Frequency);
+                testsignals[testindex].Recorded_Timestamp_UTC.ToString("o"), testsignals[testindex].Comment, testsignals[testindex].Frequency,
+                testsignals[testindex].SignalType == TestSignalInfo.Signal_Type.TDF ? "TDF":"DCF77 Phase");
 
             TestSignalInfo testsignal_current = testsignals[testindex];
 
@@ -631,7 +641,7 @@ namespace TDF_Test
 
 
 
-            int hours = (payload_data[29] ? 1 : 1) + (payload_data[30] ? 2 : 0) + (payload_data[31] ? 4 : 0) + (payload_data[32] ? 8 : 0) + (payload_data[33] ? 10 : 0) +
+            int hours = (payload_data[29] ? 1 : 0) + (payload_data[30] ? 2 : 0) + (payload_data[31] ? 4 : 0) + (payload_data[32] ? 8 : 0) + (payload_data[33] ? 10 : 0) +
                 (payload_data[34] ? 20 : 0);
 
             paritycount = 0;
@@ -663,7 +673,7 @@ namespace TDF_Test
             if (paritycount % 2 == 1 != payload_data[58])
                 decode_error_count++;
 
-            Console.WriteLine("At the next minute marker: {0}:{1}, day of month {2}, day of week {3}, month {4}, year is 20{5}", hours, minutes,day_of_month, day_of_week, month, year);
+            Console.WriteLine("At the next minute marker: {0:D2}:{1:D2}, day of month {2}, day of week {3}, month {4}, year is 20{5:D2}", hours, minutes,day_of_month, day_of_week, month, year);
 
             // this conversion "knows" that we are in the same time zone as the transmitter; this is not guaranteed
             // should use the timezone info decoded above
@@ -676,12 +686,24 @@ namespace TDF_Test
                 Console.Write(decoded_offset_time.UtcDateTime.ToString("o"));
                 Console.WriteLine(" and locally {0}", decoded_time.ToString("o"));
 
+                if ((int)decoded_time.DayOfWeek != day_of_week)
+                {
+                    Console.WriteLine("Decoded day of week is wrong, {0} should be {1}", day_of_week, decoded_time.DayOfWeek);
+                    decode_error_count++;
+                }
+                else
+                {
+                    Console.WriteLine("Decoded day of week seems correct ({0})", decoded_time.DayOfWeek.ToString());
+                }
+
                 // check if the time is equal to the test recording info
                 if (testsignal_current.Recorded_Timestamp_UTC.CompareTo(decoded_time.ToUniversalTime()) == 0)
                     Console.WriteLine("Decoded time matches recording timestamp.");
                 else
                 {
-                    Console.WriteLine("Decoded time does not match timestamp.");
+                    Console.WriteLine("Decoded time does not match timestamp ({0}).", testsignal_current.Recorded_Timestamp_UTC.ToUniversalTime().ToString("o"));
+                    TimeSpan decoded_time_error = testsignal_current.Recorded_Timestamp_UTC - decoded_time.ToUniversalTime();
+                    Console.WriteLine("Decoded time error is: {0} (D:HH:MM:SS,SS')", decoded_time_error.ToString("G"));
                     decode_error_count++;
                 }
             }
@@ -690,7 +712,9 @@ namespace TDF_Test
                 Console.WriteLine("Decoded date and time is not valid.");
                 decode_error_count++;
             }
-            Console.WriteLine("Decoded with {0} (detectable) errors", decode_error_count);
+            Console.WriteLine("Decoded with {0} (detectable) errors (known SNR {1})", decode_error_count, testsignal_current.SNR);
+            if (testsignal_current.Status == TestSignalInfo.Station_Status.Maintenance)
+                Console.WriteLine("Station was known to be off air, errors are expected.");
             Console.WriteLine("Finished");
 
             Console.ReadLine();
