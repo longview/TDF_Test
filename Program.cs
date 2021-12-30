@@ -284,13 +284,13 @@ namespace TDF_Test
             console_output.AppendFormat("02   A3   {0,5}   N/A     {1:F4}\r\n",
                 payload_data[count].ToString(), second_sampling_ratio[count]);
             count++;
-            console_output.AppendFormat("03   H2   {0,5}   N/A     {1:F4}\r\n",
+            console_output.AppendFormat("03   HA2   {0,5}   N/A     {1:F4}\r\n",
                 payload_data[count].ToString(), second_sampling_ratio[count]);
             count++;
-            console_output.AppendFormat("04   H4   {0,5}   N/A     {1:F4}\r\n",
+            console_output.AppendFormat("04   HA4   {0,5}   N/A     {1:F4}\r\n",
                 payload_data[count].ToString(), second_sampling_ratio[count]);
             count++;
-            console_output.AppendFormat("05   H8   {0,5}   N/A     {1:F4}\r\n",
+            console_output.AppendFormat("05   HA8   {0,5}   N/A     {1:F4}\r\n",
                 payload_data[count].ToString(), second_sampling_ratio[count]);
             count++;
             console_output.AppendFormat("06   0    {0,5}   False   {1:F4}\r\n",
@@ -451,6 +451,7 @@ namespace TDF_Test
             count++;
             console_output.AppendFormat("58   P3   {0,5}   N/A     {1:F4}\r\n",
                 payload_data[count].ToString(), second_sampling_ratio[count]);
+            console_output.AppendLine();
         }
 
         private static int Decode_Received_Data(TestSignalInfo testsignal_current, bool[] payload_data, ref StringBuilder console_output)
