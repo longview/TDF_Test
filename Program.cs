@@ -332,7 +332,7 @@ namespace TDF_Test
             console_output.AppendFormat("18   Z2   {0,5}   N/A     {1:F4}\r\n",
                 payload_data[count].ToString(), second_sampling_ratio[count]);
             count++;
-            console_output.AppendFormat("19   0    {0,5}   False   {1:F4}\r\n",
+            console_output.AppendFormat("19   X    {0,5}   False   {1:F4}\r\n",
                 payload_data[count].ToString(), second_sampling_ratio[count]);
             count++;
             console_output.AppendFormat("20   Min  {0,5}   True    {1:F4}\r\n",
