@@ -12,45 +12,7 @@ namespace TDF_Test
 {
     partial class Program
     {
-        public struct TestSignalInfo
-        {
-            public TestSignalInfo(string _filepath, double _frequency, string _comment, double _snr, Station_Status _status, DateTime _date, int _errors = 0, Signal_Type _signaltype = Signal_Type.TDF)
-            {
-                FilePath = _filepath;
-                Comment = _comment;
-                SNR = _snr;
-                Frequency = _frequency;
-                Status = _status;
-                // add 1 minute to timestamp from start of recording timestamp
-                Recorded_Timestamp_UTC = _date.AddMinutes(1);
-                SignalType = _signaltype;
-                Expected_Errors = _errors;
-            }
-            public string FilePath;
-            public string Comment;
-            public double Frequency;
-            public double SNR;
-            public Station_Status Status;
-            public DateTime Recorded_Timestamp_UTC;
-            public Signal_Type SignalType;
-            public int Expected_Errors;
-            public enum Station_Status
-            {
-                OnAir,
-                Maintenance
-            }
 
-            public enum Signal_Type
-            {
-                TDF, DCFp
-            }
-        }
-
-        public enum Modes
-        {
-            Standard,
-            Verify
-        }
 
         static void Main(string[] args)
         {
@@ -109,13 +71,18 @@ namespace TDF_Test
                 testsignal_current.SignalType == TestSignalInfo.Signal_Type.TDF ? "TDF" : "DCF77 Phase");
             }
 
+            CorrelatorType correlator_in_use = CorrelatorType.FM;
+
+            Console.WriteLine("Using {0} correlation", correlator_in_use.GetString());
+
             // generate correlators if desired
             if(false)
             {
                 StringBuilder console_output = new StringBuilder();
                 int zero = 1725;
                 int one = 2926;
-                Demodulate_Testsignal(testsignals[0], ref console_output, true, zero, one);
+                Demodulate_Testsignal(testsignals[0], CorrelatorType.PM, ref console_output, true, zero, one);
+                Demodulate_Testsignal(testsignals[0], CorrelatorType.FM, ref console_output, true, zero, one);
                 Console.WriteLine("Generated correlators, offset {0} (0) and {1} (1)", zero, one);
             }
 
@@ -150,7 +117,7 @@ namespace TDF_Test
                         Console.WriteLine("Index {0:D2}, expected errors {1}, found {2}, {3} [{4}]", testsignals.IndexOf(signal), signal.Expected_Errors, errors, datasampler_bias_scale_offset, i);
                     }*/
 
-                    errors = Demodulate_Testsignal(signal, ref console_output);
+                    errors = Demodulate_Testsignal(signal, correlator_in_use, ref console_output);
                     if (errors > signal.Expected_Errors)
                         fail_count++;
                     else if (errors < signal.Expected_Errors)
@@ -159,7 +126,7 @@ namespace TDF_Test
                     Console.WriteLine("Index {0:D2}, expected errors {1}, found {2}{4}. Comment: {3}",
                         testsignals.IndexOf(signal), signal.Expected_Errors, errors, signal.Comment, errors < signal.Expected_Errors ? " (better than expected!)" : "");
 
-                    File.WriteAllText(String.Format("Verify_Result_{0}_f{1}_e{2}.txt", testsignals.IndexOf(signal), errors, signal.Expected_Errors),
+                    File.WriteAllText(String.Format("Verify_Result_{0}_f{1}_e{2}_{3}.txt", testsignals.IndexOf(signal), errors, signal.Expected_Errors, correlator_in_use.GetString()),
                         console_output.ToString());
                 }
 
@@ -169,7 +136,7 @@ namespace TDF_Test
             {
                 StringBuilder console_output = new StringBuilder();
 
-                Demodulate_Testsignal(testsignal_current, ref console_output);
+                Demodulate_Testsignal(testsignal_current, correlator_in_use, ref console_output);
 
                 Console.Write(console_output.ToString());
             }
@@ -178,7 +145,51 @@ namespace TDF_Test
 
         }
 
-        private static int Demodulate_Testsignal(TestSignalInfo testsignal_current, ref StringBuilder console_output, bool generate_correlator = false, int zero_offset = 0, int one_offset = 0)
+        public struct TestSignalInfo
+        {
+            public TestSignalInfo(string _filepath, double _frequency, string _comment, double _snr, Station_Status _status, DateTime _date, int _errors = 0, Signal_Type _signaltype = Signal_Type.TDF)
+            {
+                FilePath = _filepath;
+                Comment = _comment;
+                SNR = _snr;
+                Frequency = _frequency;
+                Status = _status;
+                // add 1 minute to timestamp from start of recording timestamp
+                Recorded_Timestamp_UTC = _date.AddMinutes(1);
+                SignalType = _signaltype;
+                Expected_Errors = _errors;
+            }
+            public string FilePath;
+            public string Comment;
+            public double Frequency;
+            public double SNR;
+            public Station_Status Status;
+            public DateTime Recorded_Timestamp_UTC;
+            public Signal_Type SignalType;
+            public int Expected_Errors;
+            public enum Station_Status
+            {
+                OnAir,
+                Maintenance
+            }
+
+            public enum Signal_Type
+            {
+                TDF, DCFp
+            }
+        }
+
+        public enum Modes
+        {
+            Standard,
+            Verify
+        }
+
+
+
+        private static int Demodulate_Testsignal(TestSignalInfo testsignal_current, CorrelatorType _correlatortype,
+            ref StringBuilder console_output, 
+            bool generate_correlator = false, int zero_offset = 0, int one_offset = 0)
         {
             // frequency offset of USB receiver
             double frequency = testsignal_current.Frequency;
@@ -236,19 +247,28 @@ namespace TDF_Test
             console_output.AppendFormat("FM moving average filter size {0}\r\nFM rectifier filter size {1}\r\n", fm_lpf.Size, fm_rectified_lpf.Size);
             double fm_unfiltered_square, fm_filtered_square;
             Demodulate(i_filtered, q_filtered, fm_unfiltered, pm_unfiltered, fm_filtered, fm_lpf, out fm_unfiltered_square, out fm_filtered_square);
+            Perform_PM_Correction(phase_error_per_sample_vs_frequency, ref pm_unfiltered, pm_filtered_drift, ref console_output);
 
-            if (generate_correlator)
-                Generate_Correlators(fm_filtered, zero_offset, one_offset);
-
+            if (generate_correlator && _correlatortype == CorrelatorType.FM)
+                Generate_Correlators(fm_filtered, _correlatortype, zero_offset, one_offset);
+            else if (generate_correlator && _correlatortype == CorrelatorType.PM)
+                Generate_Correlators(pm_filtered_drift, _correlatortype, zero_offset, one_offset);
             // attempt an SNR calculation based on full band (signal and noise)
             // and filtered square values (mostly just signal we assume)
 
             FM_SNR_Calculation(fm_unfiltered, fm_filtered, ref fm_unfiltered_square, ref fm_filtered_square, ref console_output);
-            Perform_PM_Correction(phase_error_per_sample_vs_frequency, pm_unfiltered, pm_filtered_drift, ref console_output);
+            
             double[] fm_filtered_rectified = Generate_Rectified_FM(data, IQ_decimation_factor, fm_filtered, fm_lpf, fm_rectified_lpf);
 
             double[] minute_start_correlation, zero_correlation, one_correlation;
-            Perform_Correlations(fm_filtered, fm_filtered_rectified, out minute_start_correlation, out zero_correlation, out one_correlation, ref console_output);
+            if (_correlatortype == CorrelatorType.FM)
+                Perform_Correlations(ref fm_filtered, ref fm_filtered_rectified, ref zero_correlator_template_FM, 
+                    ref one_correlator_template_FM, out minute_start_correlation, out zero_correlation, out one_correlation, _correlatortype, ref console_output);
+            else
+                Perform_Correlations(ref pm_filtered_drift, ref fm_filtered_rectified, ref zero_correlator_template_PM, 
+                    ref one_correlator_template_PM, out minute_start_correlation, out zero_correlation, out one_correlation, _correlatortype, ref console_output);
+            // TODO: also correlate on PM for minute start, or use a rectified PM output?
+
 
             int minutestart_sample = Find_Minute_Start(decimated_sampleperiod, fm_unfiltered, minute_start_correlation, ref console_output);
 
@@ -261,7 +281,7 @@ namespace TDF_Test
 
             Perform_Detection(decimated_sampleperiod, fm_unfiltered, zero_correlation, one_correlation,
                 minutestart_sample, out datasampler_stop, out payload_data, out second_sampling_ratio,
-                out second_sampling_times, ref console_output);
+                out second_sampling_times, _correlatortype, ref console_output);
             Print_Demodulated_Bits(decimated_sampleperiod, datasampler_stop, payload_data, ref console_output);
             Print_Demodulated_Bits_Informative(console_output, zero_correlation, one_correlation, payload_data, second_sampling_ratio);
 
@@ -672,16 +692,28 @@ namespace TDF_Test
             out int datasampler_stop,
             out bool[] payload_data,
             out double[] second_sampling_ratio,
-            out double[] second_sampling_times, ref StringBuilder console_output
+            out double[] second_sampling_times, CorrelatorType _correlatortype, ref StringBuilder console_output
             )
         {
 
-            // some variables we want to tweak
-            // 0 is the optimal value
             double datasampler_bias_scale_offset = 0;
             // offset to the ratio of one/zero
-            // this is the optimal value
-            double datasampler_ratio_offset = -0.1;
+            double datasampler_ratio_offset = 0;
+
+            if (_correlatortype == CorrelatorType.FM)
+            {
+                // 0 is the optimal value
+                datasampler_bias_scale_offset = 0;
+                // this is the optimal value
+                datasampler_ratio_offset = -0.1;
+            }
+            else if (_correlatortype == CorrelatorType.PM)
+            {
+                // 0 is the optimal value
+                datasampler_bias_scale_offset = 0;
+                // this is the optimal value
+                datasampler_ratio_offset = -0.12;
+            }
 
 
             int datasampler_start = minutestart_sample + (int)(0.75 / decimated_sampleperiod);
@@ -740,8 +772,11 @@ namespace TDF_Test
                     datasampler_bias_scale = max_zero / max_one;
                     // correct manually to make it work better in poor SNR
                     datasampler_bias_scale *= 1 + datasampler_bias_scale_offset;
-                    // correct for template length
-                    datasampler_bias_scale *= (double)zero_correlator_template.Length / (double)one_correlator_template.Length;
+                    // correct for template length; slight layering violation
+                    if (_correlatortype == CorrelatorType.FM)
+                        datasampler_bias_scale *= (double)zero_correlator_template_FM.Length / (double)one_correlator_template_FM.Length;
+                    else if (_correlatortype == CorrelatorType.PM)
+                        datasampler_bias_scale *= (double)zero_correlator_template_PM.Length / (double)one_correlator_template_PM.Length;
                 }
 
                 max_one *= datasampler_bias_scale;
@@ -900,9 +935,9 @@ namespace TDF_Test
             return minutestart_sample;
         }
 
-        private static void Perform_Correlations(double[] fm_filtered,
-            double[] fm_filtered_rectified, out double[] minute_start_correlation,
-            out double[] zero_correlation, out double[] one_correlation, ref StringBuilder console_output)
+        private static void Perform_Correlations(ref double[] data_correlation_source,
+            ref double[] minute_correlation_source, ref double[] _zero_correlator, ref double[] _one_correlator, out double[] minute_start_correlation,
+            out double[] zero_correlation, out double[] one_correlation, CorrelatorType _type, ref StringBuilder console_output)
         {
             /* The technique for correlation here is to template match using least square error matching
                          * i.e. we are sensitive to the exact amplitude, not just the shape
@@ -911,17 +946,23 @@ namespace TDF_Test
                          */
 
 
-            console_output.AppendFormat("Doing correlation for start of minute\r\n");
-            minute_start_correlation = new double[fm_filtered.Length];
+            console_output.AppendFormat("Doing correlations in {0} mode.\r\n", _type.GetString());
+            minute_start_correlation = new double[data_correlation_source.Length];
             double minute_start_correlation_sum = 0;
 
-            // correlation for minute start
-            // this should perhaps not be a correlator?
-            for (int i = 0; i < fm_filtered_rectified.Length - minute_correlator_template.Length; i++)
+            double correlation_scale = -1;
+            if (_type == CorrelatorType.PM)
+            {
+                correlation_scale = 1;
+            }
+
+            // correlation for minute start, just zeros of a given length
+            // this should perhaps not be a correlator for efficiency?
+            for (int i = 0; i < minute_correlation_source.Length - minute_correlator_template.Length; i++)
             {
                 for (int j = 0; j < minute_correlator_template.Length; j++)
                 {
-                    minute_start_correlation[i] += -Math.Pow(minute_correlator_template[j] - fm_filtered_rectified[i + j], 2);
+                    minute_start_correlation[i] += -1*Math.Pow(minute_correlator_template[j] - minute_correlation_source[i + j], 2);
                 }
 
                 minute_start_correlation_sum += minute_start_correlation[i];
@@ -930,19 +971,18 @@ namespace TDF_Test
 
             minute_start_correlation_sum /= minute_start_correlation.Length;
 
-
-            console_output.AppendFormat("Doing first correlation for bits 0\r\n");
-
-            zero_correlation = new double[fm_filtered.Length];
+            zero_correlation = new double[data_correlation_source.Length];
             double zero_correlation_sum = 0;
 
             // correlation 1, look for second start with data 0
-            for (int i = 0; i < fm_filtered.Length - zero_correlator_template.Length; i++)
+            for (int i = 0; i < data_correlation_source.Length - _zero_correlator.Length; i++)
             {
-                for (int j = 0; j < zero_correlator_template.Length; j++)
+                for (int j = 0; j < _zero_correlator.Length; j++)
                 {
-                    //correlation1[i] += correlator_1[j] * fm_filtered[i + j];
-                    zero_correlation[i] += -Math.Pow(zero_correlator_template[j] - fm_filtered[i + j], 2);
+                    if (_type == CorrelatorType.PM)
+                        zero_correlation[i] = (1+_zero_correlator[j]) * data_correlation_source[i + j];
+                    else
+                        zero_correlation[i] += correlation_scale*Math.Pow(_zero_correlator[j] - data_correlation_source[i + j], 2);
                     //correlation1[i] += (correlator_1[j] > 0 ? 1 : 0) * fm_filtered[i + j];
                     //correlation1[i] += (correlator_1[j] > 0 ? 0:1) ^ (fm_filtered[i + j] > 0 ? 1 : 0);
                 }
@@ -951,17 +991,18 @@ namespace TDF_Test
             }
             zero_correlation_sum /= zero_correlation.Length;
 
-            console_output.AppendFormat("Doing correlation for bits 1\r\n");
-            one_correlation = new double[fm_filtered.Length];
+            one_correlation = new double[data_correlation_source.Length];
             double one_correlation_sum = 0;
 
             // correlation 1, look for second start with data 0
-            for (int i = 0; i < fm_filtered.Length - one_correlator_template.Length; i++)
+            for (int i = 0; i < data_correlation_source.Length - _one_correlator.Length; i++)
             {
-                for (int j = 0; j < one_correlator_template.Length; j++)
+                for (int j = 0; j < _one_correlator.Length; j++)
                 {
-                    //correlation1[i] += correlator_1[j] * fm_filtered[i + j];
-                    one_correlation[i] += -Math.Pow(one_correlator_template[j] - fm_filtered[i + j], 2);
+                    if (_type == CorrelatorType.PM)
+                        one_correlation[i] += (1+_one_correlator[j]) * data_correlation_source[i + j];
+                    else
+                        one_correlation[i] += correlation_scale*Math.Pow(_one_correlator[j] - data_correlation_source[i + j], 2);
                     //correlation1[i] += (correlator_1[j] > 0 ? 1 : 0) * fm_filtered[i + j];
                     //correlation1[i] += (correlator_1[j] > 0 ? 0:1) ^ (fm_filtered[i + j] > 0 ? 1 : 0);
                 }
@@ -972,47 +1013,80 @@ namespace TDF_Test
 
             one_correlation_sum /= one_correlation.Length;
 
-            // offset correct the correlators
-            for (int i = 0; i < zero_correlation.Length; i++)
+            if (_type == CorrelatorType.FM)
             {
-                zero_correlation[i] -= zero_correlation_sum;
-                one_correlation[i] -= one_correlation_sum;
-                minute_start_correlation[i] -= minute_start_correlation_sum;
+                // offset correct the correlators
+                for (int i = 0; i < zero_correlation.Length; i++)
+                {
+                    zero_correlation[i] -= zero_correlation_sum;
+                    one_correlation[i] -= one_correlation_sum;
+                    minute_start_correlation[i] -= minute_start_correlation_sum;
+                }
             }
         }
 
         /* Generate correlators, input is FM data to sample, and the UTC 0 ms position of the two waveforms */
-        private static void Generate_Correlators(double[] fm_filtered, int zero_offset, int one_offset)
+        private static void Generate_Correlators(double[] correlator_template_source, CorrelatorType _type, int zero_offset, int one_offset)
         {
             StringBuilder correlation_output = new StringBuilder();
-
+            double average_value = 0;
+            double max_value = double.NegativeInfinity;
+            double min_value = double.PositiveInfinity;
             // generate correlation templates, these are valid for the first websdr file (with fantastic SNR)
             int correlator1_template_offset = zero_offset;
+
             for (int i = correlator1_template_offset - 28; i < correlator1_template_offset + 28; i++)
             {
-                correlation_output.AppendFormat("{0},", fm_filtered[i]);
+                if (correlator_template_source[i] > max_value)
+                    max_value = correlator_template_source[i];
+                if (correlator_template_source[i] < min_value)
+                    min_value = correlator_template_source[i];
+                average_value += correlator_template_source[i];
             }
 
-            File.WriteAllText("correlation_zero.txt", correlation_output.ToString());
+            double template_scale = max_value - min_value;
+
+            for (int i = correlator1_template_offset - 28; i < correlator1_template_offset + 28; i++)
+            {
+                correlation_output.AppendFormat("{0},", (correlator_template_source[i] - (average_value/56))/ template_scale);
+            }
+
+            File.WriteAllText(String.Format("correlation_zero_{0}.txt", _type.GetString()), correlation_output.ToString());
 
             correlation_output.Clear();
             int correlator2_template_offset = one_offset;
+
+            average_value = 0;
+            max_value = double.NegativeInfinity;
+            min_value = double.PositiveInfinity;
+            for (int i = correlator1_template_offset - 25; i < correlator1_template_offset + 43; i++)
+            {
+                if (correlator_template_source[i] > max_value)
+                    max_value = correlator_template_source[i];
+                if (correlator_template_source[i] < min_value)
+                    min_value = correlator_template_source[i];
+                average_value += correlator_template_source[i];
+            }
+
+            template_scale = max_value - min_value;
+
             // generate correlation template
             for (int i = correlator2_template_offset - 25; i < correlator2_template_offset + 43; i++)
             {
-                correlation_output.AppendFormat("{0},", fm_filtered[i]);
+                correlation_output.AppendFormat("{0},", (correlator_template_source[i] - (average_value / 56)) / template_scale);
             }
 
-            File.WriteAllText("correlation_one.txt", correlation_output.ToString());
+            File.WriteAllText(String.Format("correlation_one_{0}.txt", _type.GetString()), correlation_output.ToString());
 
             correlation_output.Clear();
+
             // generate correlation template
             for (int i = 1475; i < 1700; i++)
             {
                 correlation_output.AppendFormat("{0},", 0);// fm_filtered_rectified[i]);
             }
 
-            File.WriteAllText("correlation_minute.txt", correlation_output.ToString());
+            File.WriteAllText(String.Format("correlation_minute_{0}.txt", _type.GetString()), correlation_output.ToString());
         }
 
         private static double[] Generate_Rectified_FM(double[] data, int IQ_decimation_factor, double[] fm_filtered, MovingAverageFilter fm_lpf, MovingAverageFilter fm_rectified_lpf)
@@ -1043,7 +1117,7 @@ namespace TDF_Test
         }
 
         private static void Perform_PM_Correction(double phase_error_per_sample_vs_frequency,
-            double[] pm_unfiltered, double[] pm_filtered_drift, ref StringBuilder console_output)
+            ref double[] pm_unfiltered, double[] pm_filtered_drift, ref StringBuilder console_output)
         {
             // perform phase correction for PM; in the real system this will be done as a frequency reference regulator
             // but we simply compute the first order correction since we assume our oscillator is stable
@@ -1058,12 +1132,21 @@ namespace TDF_Test
             // average drift per sample
             double pm_drift_rate = pm_drift / (pm_unfiltered.Length - pm_unfiltered.Length / 4);
 
+            NWaves.Filters.DcRemovalFilter dc_filter = new DcRemovalFilter(0.9);
+
+            // stabilize filter
+            for (int i = 0; i < pm_unfiltered.Length; i++)
+            { 
+                dc_filter.Process((float)pm_unfiltered[i]);
+            }
+
             // correct pm filtered data
             for (int i = 0; i < pm_unfiltered.Length; i++)
             {
-                pm_filtered_drift[i] = pm_unfiltered[i] - (pm_drift_rate * i);
+                //pm_filtered_drift[i] = pm_unfiltered[i] - (pm_drift_rate * i);
+                pm_filtered_drift[i] = dc_filter.Process((float)pm_unfiltered[i]);
             }
-            console_output.AppendFormat("Drift corrected, {0} per sample ({1} total)\r\n", pm_drift_rate, pm_drift);
+            console_output.AppendFormat("Drift calculated, {0} per sample ({1} total)\r\n", pm_drift_rate, pm_drift);
             console_output.AppendFormat("Calculated frequency error: {0}\r\n", pm_drift_rate / phase_error_per_sample_vs_frequency);
         }
 
@@ -1272,6 +1355,29 @@ namespace TDF_Test
                     pos += 2;
                 }
                 i++;
+            }
+        }
+    }
+
+
+    public enum CorrelatorType
+    {
+        FM,
+        PM
+    }
+
+    public static class CorrelatorTypeExtension
+    {
+        public static string GetString(this CorrelatorType me)
+        {
+            switch (me)
+            {
+                case CorrelatorType.FM:
+                    return "FM";
+                case CorrelatorType.PM:
+                    return "PM";
+                default:
+                    return "Unknown";
             }
         }
     }
