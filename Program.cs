@@ -94,6 +94,9 @@ namespace TDF_Test
             //10 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T181314Z, 157 kHz, Wide-U.wav", 5000,
                 "Good signal, early evening", 30, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 18, 14, 00, DateTimeKind.Utc)));
+            // 11
+            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T200920Z, 157 kHz, Wide-U.wav", 5000,
+                "Excellent signal, evening", 43, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 20, 10, 00, DateTimeKind.Utc)));
 
             TestSignalInfo testsignal_current = testsignals[testindex];
 
@@ -107,7 +110,7 @@ namespace TDF_Test
             }
 
             // generate correlators if desired
-            if(true)
+            if(false)
             {
                 StringBuilder console_output = new StringBuilder();
                 int zero = 1725;
@@ -121,6 +124,7 @@ namespace TDF_Test
             if (mode == Modes.Verify)
             {
                 int fail_count = 0;
+                int antifail_count = 0;
 
                 foreach (TestSignalInfo signal in testsignals)
                 {
@@ -147,17 +151,19 @@ namespace TDF_Test
                     }*/
 
                     errors = Demodulate_Testsignal(signal, ref console_output);
-                    if (errors != signal.Expected_Errors)
+                    if (errors > signal.Expected_Errors)
                         fail_count++;
+                    else if (errors < signal.Expected_Errors)
+                        antifail_count++;
 
-                    Console.WriteLine("Index {0:D2}, expected errors {1}, found {2}",
-                        testsignals.IndexOf(signal), signal.Expected_Errors, errors);
+                    Console.WriteLine("Index {0:D2}, expected errors {1}, found {2}{4}. Comment: {3}",
+                        testsignals.IndexOf(signal), signal.Expected_Errors, errors, signal.Comment, errors < signal.Expected_Errors ? " (better than expected!)" : "");
 
                     File.WriteAllText(String.Format("Verify_Result_{0}_f{1}_e{2}.txt", testsignals.IndexOf(signal), errors, signal.Expected_Errors),
                         console_output.ToString());
                 }
 
-                Console.WriteLine("Finished tests, {0} failures of {1} total", fail_count, testsignals.Count);
+                Console.WriteLine("Finished tests, {0} failures of {1} total{2}", fail_count, testsignals.Count, antifail_count > 0 ? String.Format(". {0} test(s) exceeded specification!", antifail_count) : ".");
             }
             else
             {
@@ -448,6 +454,8 @@ namespace TDF_Test
                 decode_error_count++;
             }
             console_output.AppendFormat("Decode found {0} errors, expected {2}, SNR {1})\r\n", decode_error_count, testsignal_current.SNR, testsignal_current.Expected_Errors);
+            if (decode_error_count < testsignal_current.Expected_Errors)
+                console_output.AppendFormat("Error count ({0}) was better than specified!\r\n", decode_error_count);
             if (testsignal_current.Status == TestSignalInfo.Station_Status.Maintenance)
                 console_output.AppendFormat("Station was known to be off air, errors are expected.\r\n");
             console_output.AppendFormat("Finished\r\n");
