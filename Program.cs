@@ -95,16 +95,28 @@ namespace TDF_Test
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T181314Z, 157 kHz, Wide-U.wav", 5000,
                 "Good signal, early evening", 30, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 18, 14, 00, DateTimeKind.Utc)));
 
+            TestSignalInfo testsignal_current = testsignals[testindex];
 
             if (mode == Modes.Standard)
             {
                 Console.WriteLine("Using test index {0}, signal type {7}.\r\nFile {1} (IF = {6})\r\nSNR {2}, station was {3}.\r\nTime transmitted: {4}.\r\nComment: {5}",
-                testindex, testsignals[testindex].FilePath, testsignals[testindex].SNR,
-                testsignals[testindex].Status == TestSignalInfo.Station_Status.OnAir ? "on air" : "off air",
-                testsignals[testindex].Recorded_Timestamp_UTC.ToString("o"), testsignals[testindex].Comment, testsignals[testindex].Frequency,
-                testsignals[testindex].SignalType == TestSignalInfo.Signal_Type.TDF ? "TDF" : "DCF77 Phase");
+                testindex, testsignal_current.FilePath, testsignal_current.SNR,
+                testsignal_current.Status == TestSignalInfo.Station_Status.OnAir ? "on air" : "off air",
+                testsignal_current.Recorded_Timestamp_UTC.ToString("o"), testsignal_current.Comment, testsignal_current.Frequency,
+                testsignal_current.SignalType == TestSignalInfo.Signal_Type.TDF ? "TDF" : "DCF77 Phase");
             }
 
+            // generate correlators if desired
+            if(true)
+            {
+                StringBuilder console_output = new StringBuilder();
+                int zero = 1725;
+                int one = 2926;
+                Demodulate_Testsignal(testsignals[0], ref console_output, true, zero, one);
+                Console.WriteLine("Generated correlators, offset {0} (0) and {1} (1)", zero, one);
+            }
+
+            double[] sweep_results = new double[20];
 
             if (mode == Modes.Verify)
             {
@@ -112,23 +124,36 @@ namespace TDF_Test
 
                 foreach (TestSignalInfo signal in testsignals)
                 {
+                    int errors = 0;
                     StringBuilder console_output = new StringBuilder();
                     console_output.AppendFormat("Using test index {0}, signal type {7}.\r\nFile {1} (IF = {6})\r\nSNR {2}, station was {3}.\r\nTime transmitted: {4}.\r\nComment: {5}\r\n\r\n",
-                    testsignals.IndexOf(signal), testsignals[testindex].FilePath, testsignals[testindex].SNR,
-                    testsignals[testindex].Status == TestSignalInfo.Station_Status.OnAir ? "on air" : "off air",
-                    testsignals[testindex].Recorded_Timestamp_UTC.ToString("o"), testsignals[testindex].Comment, testsignals[testindex].Frequency,
-                    testsignals[testindex].SignalType == TestSignalInfo.Signal_Type.TDF ? "TDF" : "DCF77 Phase");
+                    testsignals.IndexOf(signal), signal.FilePath, signal.SNR,
+                    signal.Status == TestSignalInfo.Station_Status.OnAir ? "on air" : "off air",
+                    signal.Recorded_Timestamp_UTC.ToString("o"), signal.Comment, signal.Frequency,
+                    signal.SignalType == TestSignalInfo.Signal_Type.TDF ? "TDF" : "DCF77 Phase");
 
-                    
+                    // parameter sweep function
+                    // used to determine optimal coefficients by linear search
+                    /*for (int i = 0; i < 20; i++)
+                    {
+                        errors = 0;
+                        datasampler_ratio_offset = -0.5 * (double)i/5 + 1;
+                        errors = Demodulate_Testsignal(signal, ref console_output, datasampler_bias_scale_offset, datasampler_ratio_offset);
+                        sweep_results[i] += errors;
+                        if (errors != signal.Expected_Errors)
+                            fail_count++;
 
-                    int errors = Demodulate_Testsignal(signal, ref console_output);
+                        Console.WriteLine("Index {0:D2}, expected errors {1}, found {2}, {3} [{4}]", testsignals.IndexOf(signal), signal.Expected_Errors, errors, datasampler_bias_scale_offset, i);
+                    }*/
+
+                    errors = Demodulate_Testsignal(signal, ref console_output);
                     if (errors != signal.Expected_Errors)
                         fail_count++;
 
-                    Console.WriteLine("Index {0:D2}, expected errors {1}, found {2}", testsignals.IndexOf(signal), signal.Expected_Errors, errors);
+                    Console.WriteLine("Index {0:D2}, expected errors {1}, found {2}",
+                        testsignals.IndexOf(signal), signal.Expected_Errors, errors);
 
-
-                    File.WriteAllText(String.Format("Verify_Result_{0}_f{1}_e{2}.txt", testsignals.IndexOf(signal), errors, signal.Expected_Errors), 
+                    File.WriteAllText(String.Format("Verify_Result_{0}_f{1}_e{2}.txt", testsignals.IndexOf(signal), errors, signal.Expected_Errors),
                         console_output.ToString());
                 }
 
@@ -136,8 +161,6 @@ namespace TDF_Test
             }
             else
             {
-                TestSignalInfo testsignal_current = testsignals[testindex];
-
                 StringBuilder console_output = new StringBuilder();
 
                 Demodulate_Testsignal(testsignal_current, ref console_output);
@@ -149,7 +172,7 @@ namespace TDF_Test
 
         }
 
-        private static int Demodulate_Testsignal(TestSignalInfo testsignal_current, ref StringBuilder console_output)
+        private static int Demodulate_Testsignal(TestSignalInfo testsignal_current, ref StringBuilder console_output, bool generate_correlator = false, int zero_offset = 0, int one_offset = 0)
         {
             // frequency offset of USB receiver
             double frequency = testsignal_current.Frequency;
@@ -198,14 +221,18 @@ namespace TDF_Test
             }
 
             console_output.AppendFormat("Using sample rate {0}, output decimation {1}, IQ conversion, LO {2}\r\n", samplerate, IQ_decimation_factor, frequency);
-            Perform_Downconversion(frequency, samplerate, data, IQ_decimation_factor, i_unfiltered, q_unfiltered, i_filtered, q_filtered);
+            Perform_Downconversion(frequency, samplerate, data, IQ_decimation_factor, i_unfiltered, q_unfiltered, i_filtered, q_filtered, ref console_output);
 
-            console_output.AppendFormat("Performing FM demodulation\r\n");
+            console_output.AppendFormat("FM demodulation start\r\n");
 
             NWaves.Filters.MovingAverageFilter fm_lpf = new NWaves.Filters.MovingAverageFilter(8);
             NWaves.Filters.MovingAverageFilter fm_rectified_lpf = new NWaves.Filters.MovingAverageFilter(64);
+            console_output.AppendFormat("FM moving average filter size {0}\r\nFM rectifier filter size {1}\r\n", fm_lpf.Size, fm_rectified_lpf.Size);
             double fm_unfiltered_square, fm_filtered_square;
             Demodulate(i_filtered, q_filtered, fm_unfiltered, pm_unfiltered, fm_filtered, fm_lpf, out fm_unfiltered_square, out fm_filtered_square);
+
+            if (generate_correlator)
+                Generate_Correlators(fm_filtered, zero_offset, one_offset);
 
             // attempt an SNR calculation based on full band (signal and noise)
             // and filtered square values (mostly just signal we assume)
@@ -213,8 +240,6 @@ namespace TDF_Test
             FM_SNR_Calculation(fm_unfiltered, fm_filtered, ref fm_unfiltered_square, ref fm_filtered_square, ref console_output);
             Perform_PM_Correction(phase_error_per_sample_vs_frequency, pm_unfiltered, pm_filtered_drift, ref console_output);
             double[] fm_filtered_rectified = Generate_Rectified_FM(data, IQ_decimation_factor, fm_filtered, fm_lpf, fm_rectified_lpf);
-
-            //Generate_Correlators(fm_filtered);
 
             double[] minute_start_correlation, zero_correlation, one_correlation;
             Perform_Correlations(fm_filtered, fm_filtered_rectified, out minute_start_correlation, out zero_correlation, out one_correlation, ref console_output);
@@ -228,7 +253,7 @@ namespace TDF_Test
             double[] second_sampling_times;
 
 
-            Perform_Detection(decimated_sampleperiod, fm_unfiltered, zero_correlation, one_correlation, 
+            Perform_Detection(decimated_sampleperiod, fm_unfiltered, zero_correlation, one_correlation,
                 minutestart_sample, out datasampler_stop, out payload_data, out second_sampling_ratio,
                 out second_sampling_times, ref console_output);
             Print_Demodulated_Bits(decimated_sampleperiod, datasampler_stop, payload_data, ref console_output);
@@ -422,7 +447,7 @@ namespace TDF_Test
                 console_output.AppendFormat("Decoded date and time is not valid.\r\n");
                 decode_error_count++;
             }
-            console_output.AppendFormat("Decoded with {0} (detectable) errors (known SNR {1})\r\n", decode_error_count, testsignal_current.SNR);
+            console_output.AppendFormat("Decode found {0} errors, expected {2}, SNR {1})\r\n", decode_error_count, testsignal_current.SNR, testsignal_current.Expected_Errors);
             if (testsignal_current.Status == TestSignalInfo.Station_Status.Maintenance)
                 console_output.AppendFormat("Station was known to be off air, errors are expected.\r\n");
             console_output.AppendFormat("Finished\r\n");
@@ -439,17 +464,26 @@ namespace TDF_Test
             console_output.AppendLine();
         }
 
-        private static void Perform_Detection(double decimated_sampleperiod, 
-            double[] fm_unfiltered, 
-            double[] zero_correlation, 
-            double[] one_correlation, 
-            int minutestart_sample, 
-            out int datasampler_stop, 
+        private static void Perform_Detection(double decimated_sampleperiod,
+            double[] fm_unfiltered,
+            double[] zero_correlation,
+            double[] one_correlation,
+            int minutestart_sample,
+            out int datasampler_stop,
             out bool[] payload_data,
             out double[] second_sampling_ratio,
             out double[] second_sampling_times, ref StringBuilder console_output
             )
         {
+
+            // some variables we want to tweak
+            // 0 is the optimal value
+            double datasampler_bias_scale_offset = 0;
+            // offset to the ratio of one/zero
+            // this is the optimal value
+            double datasampler_ratio_offset = -0.1;
+
+
             int datasampler_start = minutestart_sample + (int)(0.75 / decimated_sampleperiod);
             datasampler_stop = minutestart_sample + (int)(1.0 / decimated_sampleperiod);
             payload_data = new bool[59];
@@ -457,13 +491,10 @@ namespace TDF_Test
             second_sampling_ratio = new double[59];
 
             double datasampler_bias_scale = 0;
-            double datasampler_bias_scale_offset = 0;
-            // offset to the ratio of one/zero
-            double datasampler_ratio_offset = -0.1;
+
 
             double second_sampling_offset = 0;
 
-            bool goodenough = false;
             // we run the decoder twice, to correct the decoder bias
             // this would be run as a continuous regulator in a real system, not a two-pass like this
             // run up to 4 times, or until the ratio settles to within +-3%
@@ -601,10 +632,10 @@ namespace TDF_Test
                 }
                 else
                 {
-                    if (decode_count % 2 == 0)
+                    if (false)
                     {
                         // midpoint between high value average and low value average
-                        datasampler_ratio_offset += (1 - second_sampling_offset) / 2;
+                        //datasampler_ratio_offset += (1 - second_sampling_offset);
                         if (datasampler_ratio_offset > 1)
                             datasampler_ratio_offset = 1;
                         if (datasampler_ratio_offset < -1)
@@ -616,12 +647,12 @@ namespace TDF_Test
                     }
                     else
                     {
-                        datasampler_bias_scale_offset += (1 - second_sampling_ratio_average) / 10;
+                        datasampler_bias_scale_offset += (1 - second_sampling_ratio_average) / 5;
 
-                        if (datasampler_bias_scale_offset > 0.4)
-                            datasampler_bias_scale_offset = 0.4;
-                        if (datasampler_bias_scale_offset < -0.4)
-                            datasampler_bias_scale_offset = -0.4;
+                        if (datasampler_bias_scale_offset > 0.2)
+                            datasampler_bias_scale_offset = 0.2;
+                        if (datasampler_bias_scale_offset < -0.2)
+                            datasampler_bias_scale_offset = -0.2;
                         if (double.IsNaN(datasampler_bias_scale_offset))
                             datasampler_bias_scale_offset = 0;
                     }
@@ -677,7 +708,7 @@ namespace TDF_Test
             double FM_Rectified_SNR = Math.Abs(FM_Noise_rms / Math.Sqrt(fm_filtered_square));
             double FM_Rectified_SNR_Log = Math.Log10(FM_Rectified_SNR) * 10;
 
-            
+
 
             console_output.AppendFormat("Modulation based SNR = {0}, or {1} dB\r\n", FM_Rectified_SNR, FM_Rectified_SNR_Log);
             return FM_Rectified_SNR;
@@ -718,8 +749,8 @@ namespace TDF_Test
             return minutestart_sample;
         }
 
-        private static void Perform_Correlations(double[] fm_filtered, 
-            double[] fm_filtered_rectified, out double[] minute_start_correlation, 
+        private static void Perform_Correlations(double[] fm_filtered,
+            double[] fm_filtered_rectified, out double[] minute_start_correlation,
             out double[] zero_correlation, out double[] one_correlation, ref StringBuilder console_output)
         {
             /* The technique for correlation here is to template match using least square error matching
@@ -799,28 +830,29 @@ namespace TDF_Test
             }
         }
 
-        private static void Generate_Correlators(double[] fm_filtered)
+        /* Generate correlators, input is FM data to sample, and the UTC 0 ms position of the two waveforms */
+        private static void Generate_Correlators(double[] fm_filtered, int zero_offset, int one_offset)
         {
             StringBuilder correlation_output = new StringBuilder();
 
             // generate correlation templates, these are valid for the first websdr file (with fantastic SNR)
-            int correlator1_template_offset = 1725;
+            int correlator1_template_offset = zero_offset;
             for (int i = correlator1_template_offset - 28; i < correlator1_template_offset + 28; i++)
             {
                 correlation_output.AppendFormat("{0},", fm_filtered[i]);
             }
 
-            File.WriteAllText("correlation_1.txt", correlation_output.ToString());
+            File.WriteAllText("correlation_zero.txt", correlation_output.ToString());
 
             correlation_output.Clear();
-            int correlator2_template_offset = 2926;
+            int correlator2_template_offset = one_offset;
             // generate correlation template
             for (int i = correlator2_template_offset - 25; i < correlator2_template_offset + 43; i++)
             {
                 correlation_output.AppendFormat("{0},", fm_filtered[i]);
             }
 
-            File.WriteAllText("correlation_2.txt", correlation_output.ToString());
+            File.WriteAllText("correlation_one.txt", correlation_output.ToString());
 
             correlation_output.Clear();
             // generate correlation template
@@ -829,7 +861,7 @@ namespace TDF_Test
                 correlation_output.AppendFormat("{0},", 0);// fm_filtered_rectified[i]);
             }
 
-            File.WriteAllText("correlation_3.txt", correlation_output.ToString());
+            File.WriteAllText("correlation_minute.txt", correlation_output.ToString());
         }
 
         private static double[] Generate_Rectified_FM(double[] data, int IQ_decimation_factor, double[] fm_filtered, MovingAverageFilter fm_lpf, MovingAverageFilter fm_rectified_lpf)
@@ -859,7 +891,7 @@ namespace TDF_Test
             return fm_filtered_rectified;
         }
 
-        private static void Perform_PM_Correction(double phase_error_per_sample_vs_frequency, 
+        private static void Perform_PM_Correction(double phase_error_per_sample_vs_frequency,
             double[] pm_unfiltered, double[] pm_filtered_drift, ref StringBuilder console_output)
         {
             // perform phase correction for PM; in the real system this will be done as a frequency reference regulator
@@ -884,7 +916,7 @@ namespace TDF_Test
             console_output.AppendFormat("Calculated frequency error: {0}\r\n", pm_drift_rate / phase_error_per_sample_vs_frequency);
         }
 
-        private static double FM_SNR_Calculation(double[] fm_unfiltered, double[] fm_filtered, ref double fm_unfiltered_square, 
+        private static double FM_SNR_Calculation(double[] fm_unfiltered, double[] fm_filtered, ref double fm_unfiltered_square,
             ref double fm_filtered_square, ref StringBuilder console_output)
         {
             // this is S^2+N^2
@@ -965,13 +997,19 @@ namespace TDF_Test
             }
         }
 
-        private static void Perform_Downconversion(double frequency, double samplerate, 
-            double[] data, int IQ_decimation_factor, 
-            double[] i_unfiltered, double[] q_unfiltered, 
-            double[] i_filtered, double[] q_filtered)
+        private static void Perform_Downconversion(double frequency, double samplerate,
+            double[] data, int IQ_decimation_factor,
+            double[] i_unfiltered, double[] q_unfiltered,
+            double[] i_filtered, double[] q_filtered, ref StringBuilder console_output)
         {
-            NWaves.Filters.MovingAverageFilter i_lpf = new NWaves.Filters.MovingAverageFilter(IQ_decimation_factor);
-            NWaves.Filters.MovingAverageFilter q_lpf = new NWaves.Filters.MovingAverageFilter(IQ_decimation_factor);
+
+            int averagecount = IQ_decimation_factor;
+            // this filter count is fairly flexible, can be reduced without significant reduction in performance
+            // can also be increased up to 5x longer without much effect
+            NWaves.Filters.MovingAverageFilter i_lpf = new NWaves.Filters.MovingAverageFilter(averagecount);
+            NWaves.Filters.MovingAverageFilter q_lpf = new NWaves.Filters.MovingAverageFilter(averagecount);
+            console_output.AppendFormat("I/Q moving average filter size {0}\r\n", averagecount);
+            
 
             double sin_value = Math.Sin(2 * Math.PI * (frequency / samplerate));
             double cos_value = Math.Cos(2 * Math.PI * (frequency / samplerate));

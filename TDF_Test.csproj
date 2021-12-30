@@ -72,9 +72,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Correlation1.cs" />
-    <Compile Include="Correlation2.cs" />
-    <Compile Include="Correlation3.cs" />
+    <Compile Include="Correlation_Zero.cs" />
+    <Compile Include="Correlation_One.cs" />
+    <Compile Include="Correlation_Minute.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
