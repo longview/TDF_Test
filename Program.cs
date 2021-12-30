@@ -16,10 +16,12 @@ namespace TDF_Test
             // input file must be mono 16-bit, 20000 Hz (oddball rate)
             // this is the good one, used for templates etc.
             //string inputfile = "..\\..\\websdr_recording_start_2021-12-28T12_57_51Z_157.0kHz.wav";
-            // this one is ok; SNR was around 30 dB, fairly typical performance
-            string inputfile = "..\\..\\2021-12-29T163350Z, 157 kHz, Wide-U.wav";
-            // this one starts at a bad phase, SNR around 40 dB
+            // this one is ok; SNR was around 30 dB, fairly typical middat
+            //string inputfile = "..\\..\\2021-12-29T163350Z, 157 kHz, Wide-U.wav";
+            // this one starts at a bad phase, SNR around 40 dB, good evening reception
             //string inputfile = "..\\..\\2021-12-29T185106Z, 157 kHz, Wide-U.wav"; 
+            // SNR below 30 dB, morning typical reception
+            string inputfile = "..\\..\\2021-12-30T090027Z, 157 kHz, Wide-U.wav"; 
 
             // frequency offset of USB receiver
             double frequency = 5000;
@@ -304,10 +306,12 @@ namespace TDF_Test
 
             /* Find maximum value
              */
-            bool minutestarted = false;
+            //bool minutestarted = false;
             double max_minute = double.NegativeInfinity;
             int minutestart_sample = 0;
             // search for up to 59 seconds
+            // TODO: should also limit it to only searching up to 60 second before the end of the file
+            //      since we need a full minute to perform a decode properly
             int max_minute_search = (int)Math.Min(((double)59 / decimated_sampleperiod), fm_unfiltered.Length);
             for (int i = 0; i < max_minute_search; i++)
             {
@@ -371,7 +375,7 @@ namespace TDF_Test
                 if (secondcount == 0)
                 {
                     datasampler_bias = max_zero / max_one;
-                    //datasampler_bias *= 0.90;
+                    datasampler_bias *= 0.90;
                     datasampler_bias *= (double)correlator_1.Length / (double)correlator_2.Length;
                 }
 
@@ -526,6 +530,7 @@ namespace TDF_Test
 
             // this conversion "knows" that we are in the same time zone as the transmitter; this is not guaranteed
             // should use the timezone info decoded above
+            // put this in a try/catch since we don't know if the datetime object will be valid
             try
             {
                 DateTime decoded_time = new DateTime(year + 2000, month, day_of_month, hours, minutes, 0, DateTimeKind.Local);
@@ -539,57 +544,6 @@ namespace TDF_Test
                 Console.WriteLine("Decoded date and time is not valid.");
             }
             Console.WriteLine("Decoded with {0} (detectable) errors", decode_error_count);
-
-            /*double threshold = -1;
-            double threshold2 = -2;
-            for (int i = 0; i < fm_unfiltered.Length; i++)
-            {
-                if (correlation1[i] > threshold)
-                {
-                    // safe to snoop
-                    if (i > 2 && i < fm_unfiltered.Length -3)
-                    {
-                        if (correlation1[i+1] > threshold)
-                        {
-                            if (correlation1[i + 2] > threshold)
-                            {
-                                Console.WriteLine("Zero at {0} s", timescale_decimated[i+1]);
-                                i += 3;
-                                continue;
-                            }
-                            Console.WriteLine("Zero at {0} s", timescale_decimated[i] + (timescale_decimated[i+1] - timescale_decimated[i])/2);
-                            i += 2;
-                            continue;
-                        }
-                        Console.WriteLine("Zero at {0} s", timescale_decimated[i]);
-                        continue;
-                    }
-                }
-                if (correlation2[i] > threshold2)
-                {
-                    // safe to snoop
-                    if (i > 2 && i < fm_unfiltered.Length - 3)
-                    {
-                        if (correlation2[i + 1] > threshold2)
-                        {
-                            if (correlation2[i + 2] > threshold2)
-                            {
-                                Console.WriteLine("One at {0} s", timescale_decimated[i + 1]);
-                                i += 3;
-                                continue;
-                            }
-                            Console.WriteLine("One at {0} s", timescale_decimated[i] + (timescale_decimated[i + 1] - timescale_decimated[i]) / 2);
-                            i += 2;
-                            continue;
-                        }
-                        Console.WriteLine("One at {0} s", timescale_decimated[i]);
-                        continue;
-                    }
-                }
-            }*/
-
-
-
             Console.WriteLine("Finished");
 
             Console.ReadLine();
