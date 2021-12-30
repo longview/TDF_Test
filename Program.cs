@@ -11,23 +11,66 @@ namespace TDF_Test
 {
     partial class Program
     {
+        public struct TestSignalInfo
+        {
+            public TestSignalInfo(string _filepath, double _frequency, string _comment, double _snr, Station_Status _status, DateTime _date)
+            {
+                FilePath = _filepath;
+                Comment = _comment;
+                SNR = _snr;
+                Frequency = _frequency;
+                Status = _status;
+                // add 1 minute to timestamp from start of recording timestamp
+                Recorded_Timestamp_UTC = _date.AddMinutes(1);
+            }
+            public string FilePath;
+            public string Comment;
+            public double Frequency;
+            public double SNR;
+            public Station_Status Status;
+            public DateTime Recorded_Timestamp_UTC;
+            public enum Station_Status
+            {
+                OnAir,
+                Maintenance
+            }
+        }
+
         static void Main(string[] args)
         {
+
+
+            int testindex = 5;
+
+            List<TestSignalInfo> testsignals = new List<TestSignalInfo>();
             // input file must be mono 16-bit, 20000 Hz (oddball rate)
-            // this is the good one, used for templates etc.
-            string inputfile = "..\\..\\websdr_recording_start_2021-12-28T12_57_51Z_157.0kHz.wav";
-            // this one is ok; SNR was around 30 dB, fairly typical middat
-            //string inputfile = "..\\..\\2021-12-29T163350Z, 157 kHz, Wide-U.wav";
-            // this one starts at a bad phase, SNR around 40 dB, good evening reception
-            //string inputfile = "..\\..\\2021-12-29T185106Z, 157 kHz, Wide-U.wav"; 
-            // SNR below 30 dB, morning typical reception
-            //string inputfile = "..\\..\\2021-12-30T090027Z, 157 kHz, Wide-U.wav";
-            // SNR of nothing, this one probably can't be decoded and should be rejected in a real clock design
-            // This was recorded during the scheduled transmitter maintenance cycle of tuesdays 08:00-12:00
-            //string inputfile = "..\\..\\2021-12-30T102229Z, 157 kHz, Wide-U.wav";
+            testsignals.Add(new TestSignalInfo("..\\..\\websdr_recording_start_2021-12-28T12_57_51Z_157.0kHz.wav", 5000,
+                "webSDR recording, high quality", 70, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 28, 12, 58, 00)));
+
+            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-29T163350Z, 157 kHz, Wide-U.wav", 5000,
+                "Ok signal, mid day", 30, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 29, 16, 34, 00)));
+
+            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-29T185106Z, 157 kHz, Wide-U.wav", 5000,
+                "Good signal, evening", 40, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 29, 18, 52, 00)));
+
+            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T090027Z, 157 kHz, Wide-U.wav", 5000,
+                "Medium signal, morning", 22, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 09, 01, 00)));
+
+            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T102229Z, 157 kHz, Wide-U.wav", 5000,
+                "Maintenance phase, off air", 0, TestSignalInfo.Station_Status.Maintenance, new DateTime(2021, 12, 30, 10, 23, 00)));
+
+            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T105034Z, 157 kHz, Wide-U.wav", 5000,
+                "Medium signal, morning", 20, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 10, 51, 00)));
+
+            Console.WriteLine("Using test index {0}.\r\nFile {1} (IF = {6}\r\nSNR {2}, station was {3}.\r\nTime transmitted: {4}.\r\nComment: {5}",
+                testindex, testsignals[testindex].FilePath, testsignals[testindex].SNR, 
+                testsignals[testindex].Status == TestSignalInfo.Station_Status.OnAir ? "on air" : "off air",
+                testsignals[testindex].Recorded_Timestamp_UTC.ToString("o"), testsignals[testindex].Comment, testsignals[testindex].Frequency);
+
+            TestSignalInfo testsignal_current = testsignals[testindex];
 
             // frequency offset of USB receiver
-            double frequency = 5000;
+            double frequency = testsignal_current.Frequency;
 
             // TODO: this is wrong, fix it
             double phase_error_per_sample_vs_frequency = (0.6035457 + -0.1047503) / 10;
@@ -37,9 +80,9 @@ namespace TDF_Test
 
             double[] data;
             double[] data_right;
-            openWav(inputfile, out data, out data_right);
+            openWav(testsignals[testindex].FilePath, out data, out data_right);
 
-            Console.WriteLine("Read file ok, length {0} samples, {1} seconds", data.Length, data.Length / samplerate);
+            Console.WriteLine("Read file, length {0} samples, {1} seconds", data.Length, data.Length / samplerate);
 
             // debug time register to allow plotting in time
             double[] timescale = new double[data.Length];
@@ -494,10 +537,10 @@ namespace TDF_Test
                 second_delta_rms += second_sampling_times[i] - second_sampling_times[i - 1];
             }
             second_delta_rms /= second_sampling_times.Count - 1;
-            second_delta_rms = Math.Sqrt(Math.Abs(1-second_delta_rms));
+            //second_delta_rms = Math.Abs(1-second_delta_rms);
 
 
-            Console.WriteLine("Sampling time variance: {0} ms", second_delta_rms*1000);
+            Console.WriteLine("Second delta average: {0} ms", second_delta_rms*1000);
 
             Console.Write("Decoded {0} bits: ", payload_data.Count, datasampler_stop * decimated_sampleperiod);
             foreach (bool bit in payload_data)
@@ -632,6 +675,15 @@ namespace TDF_Test
                 Console.Write("Decoded time is valid: ");
                 Console.Write(decoded_offset_time.UtcDateTime.ToString("o"));
                 Console.WriteLine(" and locally {0}", decoded_time.ToString("o"));
+
+                // check if the time is equal to the test recording info
+                if (testsignal_current.Recorded_Timestamp_UTC.CompareTo(decoded_time.ToUniversalTime()) == 0)
+                    Console.WriteLine("Decoded time matches recording timestamp.");
+                else
+                {
+                    Console.WriteLine("Decoded time does not match timestamp.");
+                    decode_error_count++;
+                }
             }
             catch (Exception e)
             {
