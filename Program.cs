@@ -489,8 +489,11 @@ namespace TDF_Test
             }
             else
             {
+                // count true bits
+                for (int i = 7; i < 13; i++)
+                    decode_error_count += payload_data[i] ? 1 : 0;
+
                 console_output.AppendFormat("Unused bits 7-12 error!\r\n");
-                decode_error_count++;
             }
                 
 
@@ -811,7 +814,7 @@ namespace TDF_Test
             console_output.AppendFormat("Data slicer ratio is {1}, average value is {0}. Offset: {2}, Scale: {3}\r\n",
                 second_sampling_ratio_average,
                 second_sampling_offset, datasampler_ratio_offset, datasampler_bias_scale_offset);
-            console_output.AppendFormat("     high average {0} ({1}, low average {2} ({3})\r\n", second_sampling_ratio_high_average, second_sampling_high_count
+            console_output.AppendFormat("     high average {0} ({1}), low average {2} ({3})\r\n", second_sampling_ratio_high_average, second_sampling_high_count
                 , second_sampling_ratio_low_average, second_sampling_low_count);
 
 
