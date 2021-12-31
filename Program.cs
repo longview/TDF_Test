@@ -62,12 +62,18 @@ namespace TDF_Test
             // 12
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T235552Z, 157 kHz, Wide-U.wav", "Excellent signal, night, F1 set",
                 48, new DateTime(2021, 12, 30, 23, 56, 00, DateTimeKind.Utc), holidaytomorrow: true));
-            // 13
+            // 13 - this one finds the wrong minute start
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T181322Z, 157 kHz, Wide-U.wav", "Poor signal, evening, F1 set",
                 22, new DateTime(2021, 12, 31, 18, 14, 00, DateTimeKind.Utc), _errors: 46, holidaytomorrow: true));
-            // 14
+            // 14 - this one finds the wrong minute start
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T181524Z, 157 kHz, Wide-U.wav", "Poor signal, evening, F1 set",
                 22, new DateTime(2021, 12, 31, 18, 16, 00, DateTimeKind.Utc), _errors: 38, holidaytomorrow: true));
+            // 15
+            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T222827Z, 157 kHz, Wide-U.wav", "Good signal, evening, F1 set",
+                20, new DateTime(2021, 12, 31, 22, 29, 00, DateTimeKind.Utc), _errors: 0, holidaytomorrow: true));
+            // 16 - last of the year :)
+
+            // 17 - first of the year
 
             TestSignalInfo testsignal_current = testsignals[testindex];
 
@@ -210,7 +216,7 @@ namespace TDF_Test
         }
 
 
-        public static void Generate_Synthetic_Correlators(ref double[] FM_One, ref double[] FM_Zero, ref double[] PM_One, ref double[] PM_Zero, int moving_average_length = 0)
+        public static void Generate_Synthetic_Correlators(ref double[] FM_One, ref double[] FM_Zero, ref double[] PM_One, ref double[] PM_Zero, int moving_average_length = 0, int moving_average_length_pm = 0)
         {
             // generate synthetic correlators with "perfect" frequency response
             int samplerate = 200;
@@ -267,7 +273,24 @@ namespace TDF_Test
                 for (int i = 0; i < FM_Zero.Length; i++)
                     FM_Zero[i] = fm_lpf.Process((float)FM_Zero[i]);
             }
-            
+
+            // generate PM by integration
+            double integration_gain = 1 / 5;
+            double integrator = 0;
+            for (int i = 0; i < tempdata.Count; i++)
+            {
+                integrator += tempdata[i] * integration_gain;
+                PM_Zero[i] = integrator;
+            }
+
+
+            if (moving_average_length_pm > 0)
+            {
+                fm_lpf.Reset();
+                for (int i = 0; i < PM_Zero.Length; i++)
+                    PM_Zero[i] = fm_lpf.Process((float)PM_Zero[i]);
+            }
+
 
             fm_lpf.Reset();
             tempdata.Clear();
@@ -333,6 +356,21 @@ namespace TDF_Test
                     FM_One[i] = fm_lpf.Process((float)FM_One[i]);
             }
 
+
+            integration_gain = 1 / 5;
+            integrator = 0;
+            for (int i = 0; i < tempdata.Count; i++)
+            {
+                integrator += tempdata[i]*integration_gain;
+                PM_One[i] = integrator;
+            }
+
+            if (moving_average_length_pm > 0)
+            {
+                fm_lpf.Reset();
+                for (int i = 0; i < PM_One.Length; i++)
+                    PM_One[i] = fm_lpf.Process((float)PM_One[i]);
+            }
         }
 
 
@@ -1620,6 +1658,7 @@ namespace TDF_Test
             int averagecount = IQ_decimation_factor;
             // this filter count is fairly flexible, can be reduced without significant reduction in performance
             // can also be increased up to 5x longer without much effect
+            // TODO: try out the IIR variants?
             NWaves.Filters.MovingAverageFilter i_lpf = new NWaves.Filters.MovingAverageFilter(averagecount);
             NWaves.Filters.MovingAverageFilter q_lpf = new NWaves.Filters.MovingAverageFilter(averagecount);
             console_output.AppendFormat("I/Q moving average filter size {0}\r\n", averagecount);
