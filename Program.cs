@@ -74,7 +74,13 @@ namespace TDF_Test
                 testsignal_current.SignalType == TestSignalInfo.Signal_Type.TDF ? "TDF" : "DCF77 Phase");
             }
 
-            CorrelatorType correlator_in_use = CorrelatorType.FM_Convolve;
+            CorrelatorType correlator_in_use = CorrelatorType.FM;
+
+            // the convolver loves the synthetic reference signals
+            if (correlator_in_use.IsConvolver())
+            {
+                Generate_Synthetic_Correlators(ref one_correlator_template_FM, ref zero_correlator_template_FM, ref one_correlator_template_PM, ref zero_correlator_template_PM, 0);
+            }
 
             Console.WriteLine("Using {0} correlation", correlator_in_use.GetString());
 
@@ -188,6 +194,132 @@ namespace TDF_Test
         {
             Standard,
             Verify
+        }
+
+
+        public static void Generate_Synthetic_Correlators(ref double[] FM_One, ref double[] FM_Zero, ref double[] PM_One, ref double[] PM_Zero, int moving_average_length = 0)
+        {
+            // generate synthetic correlators with "perfect" frequency response
+            int samplerate = 200;
+            double sampletime = 1 / (double)samplerate; // 5 ms
+            double template_length_s = 0.3;
+
+            // filter used for processing
+            NWaves.Filters.MovingAverageFilter fm_lpf = new NWaves.Filters.MovingAverageFilter(moving_average_length);
+
+            // store it in a list for convenience
+            List<double> tempdata = new List<double>((int)(template_length_s / sampletime));
+
+            /* the structure of a FM zero is
+             * (20) 100 ms of 0 (pre-time)
+             * (5) +1 for 25 ms
+             * (10) -1 for 50 ms (middle of this negative pulse is the UTC mark)
+             * (10) +1 for 25 ms
+             * (25) 0 for 125 ms
+             * 
+             * total length = 300 ms
+             */
+
+            // generate FM zero
+            // pre-time
+            for (int i = 0; i < 15; i++)
+            {
+                tempdata.Add(0);
+            }
+            // +1
+            for (int i = 0; i < 5; i++)
+            {
+                tempdata.Add(+1);
+            }
+            // -1
+            for (int i = 0; i < 10; i++)
+            {
+                tempdata.Add(-1);
+            }
+            // +1
+            for (int i = 0; i < 5; i++)
+            {
+                tempdata.Add(+1);
+            }
+            // 0
+            for (int i = 0; i < 20; i++)
+            {
+                tempdata.Add(0);
+            }
+
+            FM_Zero = tempdata.ToArray();
+
+            if (moving_average_length > 0)
+            {
+                for (int i = 0; i < FM_Zero.Length; i++)
+                    FM_Zero[i] = fm_lpf.Process((float)FM_Zero[i]);
+            }
+            
+
+            fm_lpf.Reset();
+            tempdata.Clear();
+
+            /* the structure of a FM one is
+             * 20 100 ms of 0 (pre-time)
+             * 5 +1 for 25 ms
+             * 10 -1 for 50 ms
+             * 10 +1 for 50 ms
+             * 10 -1 for 50 ms
+             * 5 +1 for 25 ms
+             * 5 0 for 25 ms?
+             * 
+             * total length = 300 ms
+             */
+
+            // generating one FM
+
+            // pre-time 15
+            for (int i = 0; i < 20; i++)
+            {
+                tempdata.Add(0);
+            }
+            // +1 5
+            for (int i = 0; i < 5; i++)
+            {
+                tempdata.Add(+1);
+            }
+            // -1 10
+            for (int i = 0; i < 10; i++)
+            {
+                tempdata.Add(-1);
+            }
+            // +1 10
+            for (int i = 0; i < 10; i++)
+            {
+                tempdata.Add(+1);
+            }
+            // -1 10
+            for (int i = 0; i < 10; i++)
+            {
+                tempdata.Add(-1);
+            }
+            // +1 5
+            for (int i = 0; i < 5; i++)
+            {
+                tempdata.Add(1);
+            }
+            // add some nulls
+            tempdata.Add(0);
+
+            /*// 0 5
+            for (int i = 0; i < 10; i++)
+            {
+                tempdata.Add(0);
+            }*/
+
+            FM_One = tempdata.ToArray();
+
+            if (moving_average_length > 0)
+            {
+                for (int i = 0; i < FM_One.Length; i++)
+                    FM_One[i] = fm_lpf.Process((float)FM_One[i]);
+            }
+
         }
 
 
@@ -318,7 +450,7 @@ namespace TDF_Test
             console_output.AppendFormat("05   HA8  {0,5}   N/A     {1:F4}\r\n",
                 payload_data[count].ToString(), second_sampling_ratio[count]);
             count++;
-            console_output.AppendFormat("06   0    {0,5}   False   {1:F4}\r\n",
+            console_output.AppendFormat("06  HA16  {0,5}   False   {1:F4}\r\n",
                 payload_data[count].ToString(), second_sampling_ratio[count]);
             count++;
             console_output.AppendFormat("07   0    {0,5}   False   {1:F4}\r\n",
@@ -704,6 +836,21 @@ namespace TDF_Test
             double datasampler_bias_scale_offset = 0;
             // offset to the ratio of one/zero
             double datasampler_ratio_offset = 0;
+            int datasampler_start = 0;
+
+            datasampler_start = minutestart_sample + (int)(0.75 / decimated_sampleperiod);
+            datasampler_stop = minutestart_sample + (int)(1.2 / decimated_sampleperiod);
+
+            double datasampler_threshold = 1;
+            bool datasampler_invert = false;
+
+            double datasampler_second_neg_range = 0.95;
+            double datasampler_second_pos_range = 1.05;
+
+            // this should be relatively wide unless the minute-start detector is very accurate
+            // the SNR for the first second is usually good, so a wider window doesn't seem to hurt performance
+            datasampler_start = minutestart_sample + (int)(0.75 / decimated_sampleperiod);
+            datasampler_stop = minutestart_sample + (int)(1.0 / decimated_sampleperiod);
 
             if (_correlatortype == CorrelatorType.FM)
             {
@@ -715,9 +862,18 @@ namespace TDF_Test
             else if (_correlatortype == CorrelatorType.FM_Convolve)
             {
                 // 0 is the optimal value
-                datasampler_bias_scale_offset = 0;
+                datasampler_bias_scale_offset = -0.1;
                 // this is the optimal value
-                datasampler_ratio_offset = -0.3;
+                //datasampler_ratio_offset = 0.1;
+                datasampler_threshold = 1.15;
+                datasampler_invert = false;
+
+                // offset the range we search for this correlator
+                minutestart_sample += 10;
+                datasampler_start = minutestart_sample + (int)(0.9 / decimated_sampleperiod);
+                datasampler_stop = minutestart_sample + (int)(1.1 / decimated_sampleperiod);
+                datasampler_second_neg_range = 0.9;
+                datasampler_second_pos_range = 1.1;
             }
             else if (_correlatortype == CorrelatorType.PM_Convolve)
             {
@@ -735,21 +891,17 @@ namespace TDF_Test
             }
 
 
-            int datasampler_start = minutestart_sample + (int)(0.75 / decimated_sampleperiod);
-            datasampler_stop = minutestart_sample + (int)(1.0 / decimated_sampleperiod);
+
             payload_data = new bool[59];
             second_sampling_times = new double[59];
             second_sampling_ratio = new double[59];
 
-            double datasampler_bias_scale = 0;
+            double datasampler_bias_scale = 1;
 
 
             double second_sampling_offset = 0;
 
-            // this should be relatively wide unless the minute-start detector is very accurate
-            // the SNR for the first second is usually good, so a wider window doesn't seem to hurt performance
-            datasampler_start = minutestart_sample + (int)(0.75 / decimated_sampleperiod);
-            datasampler_stop = minutestart_sample + (int)(1.0 / decimated_sampleperiod);
+
             int secondcount = 0;
 
             console_output.AppendFormat("Next bit expected at: ({1}){0}", (datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod, 0);
@@ -770,11 +922,50 @@ namespace TDF_Test
                         max_zero_time = i;
                     }
 
-                    if (one_correlation[i] > max_one)
+                    if (_correlatortype == CorrelatorType.FM_Convolve)
+                    {
+                        // the peak of a one-correlation is 20 later than the ones
+                        // we correct that and use the zeros as the reference mark
+                        if (one_correlation[i+20] > max_one)
+                        {
+                            max_one = one_correlation[i];
+                            max_one_time = i;
+                        }
+                    }
+                    else if (one_correlation[i] > max_one)
                     {
                         max_one = one_correlation[i];
                         max_one_time = i;
                     }
+                }
+
+                // test to improve detection reliability
+                // basically a 3-element correlation on the expected correlation waveform
+                if (_correlatortype == CorrelatorType.FM_Convolve)
+                {
+                    // the optimal match is symmetric about the peak
+                    // at +-8 we expect symmetric negative values
+                    double zero_leading_valley = zero_correlation[max_zero_time - 9];
+                    double zero_trailing_valley = zero_correlation[max_zero_time + 9];
+
+                    // at +-15 we expect a zero-crossing, and at +-20 we want a value close to 0
+                    //double zero_leading_zero = zero_correlation[max_zero_time - 20];
+                    //double zero_trailing_zero = zero_correlation[max_zero_time + 20];
+
+                    //max_zero = max_zero + ((zero_leading_valley * -1) * (zero_trailing_valley * -1));// - (Math.Abs(zero_leading_zero) * Math.Abs(zero_trailing_zero));
+                    //max_zero = max_zero + (zero_leading_valley * -1) + (zero_trailing_valley * -1);
+                    //max_zero = max_zero - Math.Abs(zero_leading_valley - zero_trailing_valley);
+
+                    //double one_leading_peak = zero_correlation[max_zero_time - 20];
+                    //double one_trailing_peak = zero_correlation[max_zero_time + 20];
+
+                    double one_leading_valley = one_correlation[max_one_time - 10 + 20];
+                    double one_trailing_valley = one_correlation[max_one_time + 10 + 20];
+
+                    //double one_trailing_peak = zero_correlation[max_zero_time + 25];
+                    //max_one = max_one - Math.Abs(one_leading_valley - one_trailing_valley);
+                    //max_one = max_one + ((one_leading_valley * -1) * (one_trailing_valley * -1));// + ((one_leading_peak) * (one_trailing_peak));// + (one_trailing_peak * 1);
+                    //max_one = max_one + (one_leading_valley * -1) + (one_trailing_valley * -1);// + (one_trailing_peak * 1);
                 }
 
                 // the first second we run is always a 0, assuming we detected the minute correctly
@@ -825,26 +1016,32 @@ namespace TDF_Test
                 // at this point we could in future try to do e.g. a 2nd order polynomial curve fit
                 // to improve our time resolution
 
-                bool bit = ratio > 1;
+                bool bit = ratio > datasampler_threshold;
+
+                if (datasampler_invert)
+                    bit = !bit;
 
                 payload_data[secondcount] = bit;
 
+                double max_time = 0;
                 // we now look for the bits within a small time window to improve detection probability
                 // we are effectively phase locked now and should get the correct sample point very precisely for all future seconds
                 if (bit)
                 {
-                    datasampler_start = max_one_time + (int)(0.97 / decimated_sampleperiod);
-                    datasampler_stop = max_one_time + (int)(1.03 / decimated_sampleperiod);
+                    datasampler_start = max_one_time + (int)(datasampler_second_neg_range / decimated_sampleperiod);
+                    datasampler_stop = max_one_time + (int)(datasampler_second_pos_range / decimated_sampleperiod);
+                    max_time = max_one_time;
                 }
                 else
                 {
-                    datasampler_start = max_zero_time + (int)(0.97 / decimated_sampleperiod);
-                    datasampler_stop = max_zero_time + (int)(1.03 / decimated_sampleperiod);
+                    datasampler_start = max_zero_time + (int)(datasampler_second_neg_range / decimated_sampleperiod);
+                    datasampler_stop = max_zero_time + (int)(datasampler_second_pos_range / decimated_sampleperiod);
+                    max_time = max_zero_time;
                 }
 
                 // print out the decoded bit, time, and bit number
                 // this is very useful for debugging since we can quickly look up the relevant bit in the arrayview
-                console_output.AppendFormat(":{2} ({1}){0}", (datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod, secondcount + 1, bit ? "1" : "0");
+                console_output.AppendFormat(":{2}:({3}) (B{1}:{0})", (datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod, secondcount + 1, bit ? "1" : "0", datasampler_start + (datasampler_stop - datasampler_start));
                 // add all but the first second sample point (first one is usually slightly off)
                 second_sampling_times[secondcount] = (datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod;
 
@@ -1000,6 +1197,8 @@ namespace TDF_Test
             NWaves.Operations.Convolution.OlaBlockConvolver con_one = null;
             NWaves.Operations.Convolution.OlaBlockConvolver con_minute = null;
             int kernelsize = 128;
+            int kerneldelay = kernelsize / 2;
+            kerneldelay += 32;
             if (_type.IsConvolver())
             {
                 
@@ -1064,7 +1263,7 @@ namespace TDF_Test
                 if (_type.IsConvolver() && con_zero != null)
                 {
                     // dump the kernel size to avoid delay
-                    int j = i-kernelsize; 
+                    int j = i- kerneldelay; 
 
                     zero_correlation[j < 0 ? 0 : j] = con_zero.Process((float)data_correlation_source[i]);
                     continue;
@@ -1093,7 +1292,7 @@ namespace TDF_Test
             {
                 if (_type.IsConvolver() && con_one != null)
                 {
-                    int j = i - kernelsize;
+                    int j = i - kerneldelay;
                     one_correlation[j < 0 ? 0 : j] = con_one.Process((float)data_correlation_source[i]);
                     continue;
                 }
