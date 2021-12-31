@@ -74,7 +74,7 @@ namespace TDF_Test
                 testsignal_current.SignalType == TestSignalInfo.Signal_Type.TDF ? "TDF" : "DCF77 Phase");
             }
 
-            CorrelatorType correlator_in_use = CorrelatorType.PM_Convolve;
+            CorrelatorType correlator_in_use = CorrelatorType.FM_Convolve;
 
             Console.WriteLine("Using {0} correlation", correlator_in_use.GetString());
 
@@ -266,7 +266,7 @@ namespace TDF_Test
             double[] fm_filtered_rectified = Generate_Rectified_FM(data, IQ_decimation_factor, fm_filtered, fm_lpf, fm_rectified_lpf);
 
             double[] minute_start_correlation, zero_correlation, one_correlation;
-            if (_correlatortype == CorrelatorType.FM || _correlatortype == CorrelatorType.FM_Convolve)
+            if (_correlatortype.UsesFM())
                 Perform_Correlations(ref fm_filtered, ref fm_filtered_rectified, ref zero_correlator_template_FM, 
                     ref one_correlator_template_FM, out minute_start_correlation, out zero_correlation, out one_correlation, _correlatortype, ref console_output);
             else
@@ -1000,7 +1000,7 @@ namespace TDF_Test
             NWaves.Operations.Convolution.OlaBlockConvolver con_one = null;
             NWaves.Operations.Convolution.OlaBlockConvolver con_minute = null;
             int kernelsize = 128;
-            if (_type == CorrelatorType.FM_Convolve || _type == CorrelatorType.PM_Convolve)
+            if (_type.IsConvolver())
             {
                 
                 float[] convolver_kernel_zero = new float[_zero_correlator.Length];
@@ -1061,7 +1061,7 @@ namespace TDF_Test
             // correlation 1, look for second start with data 0
             for (int i = 0; i < data_correlation_source.Length - _zero_correlator.Length; i++)
             {
-                if ((_type == CorrelatorType.FM_Convolve || _type == CorrelatorType.PM_Convolve) && con_zero != null)
+                if (_type.IsConvolver() && con_zero != null)
                 {
                     // dump the kernel size to avoid delay
                     int j = i-kernelsize; 
@@ -1091,7 +1091,7 @@ namespace TDF_Test
             // correlation 1, look for second start with data 0
             for (int i = 0; i < data_correlation_source.Length - _one_correlator.Length; i++)
             {
-                if ((_type == CorrelatorType.FM_Convolve || _type == CorrelatorType.PM_Convolve) && con_one != null)
+                if (_type.IsConvolver() && con_one != null)
                 {
                     int j = i - kernelsize;
                     one_correlation[j < 0 ? 0 : j] = con_one.Process((float)data_correlation_source[i]);
@@ -1126,7 +1126,7 @@ namespace TDF_Test
                     minute_start_correlation[i] -= minute_start_correlation_sum;
                 }
             }
-            else if (_type == CorrelatorType.FM_Convolve || _type == CorrelatorType.PM_Convolve)
+            else if (_type.IsConvolver())
             {
                 //NWaves.Filters.MovingAverageFilter corr_zero_lpf = new MovingAverageFilter(4);
                 //NWaves.Filters.MovingAverageFilter corr_one_lpf = new MovingAverageFilter(4);
@@ -1520,6 +1520,43 @@ namespace TDF_Test
                     return "PM Convolver";
                 default:
                     return "Unknown";
+            }
+        }
+
+
+        public static bool IsConvolver(this CorrelatorType me)
+        {
+            switch (me)
+            {
+                case CorrelatorType.FM_Convolve:
+                case CorrelatorType.PM_Convolve:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        public static bool UsesPM(this CorrelatorType me)
+        {
+            switch (me)
+            {
+                case CorrelatorType.PM:
+                case CorrelatorType.PM_Convolve:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        public static bool UsesFM(this CorrelatorType me)
+        {
+            switch (me)
+            {
+                case CorrelatorType.FM:
+                case CorrelatorType.FM_Convolve:
+                    return true;
+                default:
+                    return false;
             }
         }
     }
