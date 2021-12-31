@@ -25,40 +25,43 @@ namespace TDF_Test
 
             //0 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\websdr_recording_start_2021-12-28T12_57_51Z_157.0kHz.wav", 5000,
-                "webSDR recording, high quality", 70, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 28, 12, 58, 00, DateTimeKind.Utc)));
+                "webSDR recording, high quality", 70, new DateTime(2021, 12, 28, 12, 58, 00, DateTimeKind.Utc)));
             //1 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-29T163350Z, 157 kHz, Wide-U.wav", 5000,
-                "Ok signal, mid day", 30, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 29, 16, 34, 00, DateTimeKind.Utc)));
+                "Ok signal, mid day", 30, new DateTime(2021, 12, 29, 16, 34, 00, DateTimeKind.Utc)));
             //2 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-29T185106Z, 157 kHz, Wide-U.wav", 5000,
-                "Good signal, evening", 40, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 29, 18, 52, 00, DateTimeKind.Utc)));
+                "Good signal, evening", 40, new DateTime(2021, 12, 29, 18, 52, 00, DateTimeKind.Utc)));
             //3 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T090027Z, 157 kHz, Wide-U.wav", 5000,
-                "Medium signal, morning", 24, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 09, 01, 00, DateTimeKind.Utc)));
+                "Medium signal, morning", 24, new DateTime(2021, 12, 30, 09, 01, 00, DateTimeKind.Utc)));
             //4 full of errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T102229Z, 157 kHz, Wide-U.wav", 5000,
-                "Maintenance phase, off air", 0, TestSignalInfo.Station_Status.Maintenance, new DateTime(2021, 12, 30, 10, 23, 00, DateTimeKind.Utc), 10));
+                "Maintenance phase, off air", 0, new DateTime(2021, 12, 30, 10, 23, 00, DateTimeKind.Utc), 10, TestSignalInfo.Station_Status.Maintenance));
             //5 no errors, bit 19/20 is tricky
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T105034Z, 157 kHz, Wide-U.wav", 5000,
-                "Medium signal, morning", 24, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 10, 51, 00, DateTimeKind.Utc)));
+                "Medium signal, morning", 24, new DateTime(2021, 12, 30, 10, 51, 00, DateTimeKind.Utc)));
             //6 decodes with 5 errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T121742Z, 157 kHz, Wide-U_20.wav", 5000,
-                "Poor signal, afternoon", 20, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 12, 18, 00, DateTimeKind.Utc), 5));
+                "Poor signal, afternoon", 20, new DateTime(2021, 12, 30, 12, 18, 00, DateTimeKind.Utc), 5));
             //7 decodes with 3 errors, bit 48 is wrong
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T121914Z, 157 kHz, Wide-U_20.wav", 5000,
-                "Poor signal, afternoon", 20, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 12, 20, 00, DateTimeKind.Utc), 3));
+                "Poor signal, afternoon", 20, new DateTime(2021, 12, 30, 12, 20, 00, DateTimeKind.Utc), 3));
             //8 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T142316Z, 157 kHz, Wide-U.wav", 5000,
-                "Poor signal, afternoon", 20, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 14, 24, 00, DateTimeKind.Utc)));
+                "Poor signal, afternoon", 20, new DateTime(2021, 12, 30, 14, 24, 00, DateTimeKind.Utc)));
             //9 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T172433Z, 157 kHz, Wide-U.wav", 5000,
-                "Good signal, early evening", 29, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 17, 25, 00, DateTimeKind.Utc)));
+                "Good signal, early evening", 29, new DateTime(2021, 12, 30, 17, 25, 00, DateTimeKind.Utc)));
             //10 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T181314Z, 157 kHz, Wide-U.wav", 5000,
-                "Good signal, early evening", 30, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 18, 14, 00, DateTimeKind.Utc)));
+                "Good signal, early evening", 30, new DateTime(2021, 12, 30, 18, 14, 00, DateTimeKind.Utc)));
             // 11
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T200920Z, 157 kHz, Wide-U.wav", 5000,
-                "Excellent signal, evening", 43, TestSignalInfo.Station_Status.OnAir, new DateTime(2021, 12, 30, 20, 10, 00, DateTimeKind.Utc)));
+                "Excellent signal, evening", 43, new DateTime(2021, 12, 30, 20, 10, 00, DateTimeKind.Utc)));
+            // 12
+            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T235552Z, 157 kHz, Wide-U.wav", 5000,
+                "Excellent signal, night, F1 set", 48, new DateTime(2021, 12, 30, 23, 56, 00, DateTimeKind.Utc)));
 
             TestSignalInfo testsignal_current = testsignals[testindex];
 
@@ -78,7 +81,9 @@ namespace TDF_Test
             // generate correlators if desired
             if(false)
             {
+#pragma warning disable CS0162 // Unreachable code detected
                 StringBuilder console_output = new StringBuilder();
+#pragma warning restore CS0162 // Unreachable code detected
                 int zero = 1725;
                 int one = 2926;
                 Demodulate_Testsignal(testsignals[0], CorrelatorType.PM, ref console_output, true, zero, one);
@@ -147,7 +152,7 @@ namespace TDF_Test
 
         public struct TestSignalInfo
         {
-            public TestSignalInfo(string _filepath, double _frequency, string _comment, double _snr, Station_Status _status, DateTime _date, int _errors = 0, Signal_Type _signaltype = Signal_Type.TDF)
+            public TestSignalInfo(string _filepath, double _frequency, string _comment, double _snr, DateTime _date, int _errors = 0, Station_Status _status = Station_Status.OnAir, Signal_Type _signaltype = Signal_Type.TDF)
             {
                 FilePath = _filepath;
                 Comment = _comment;
@@ -660,7 +665,7 @@ namespace TDF_Test
                     decode_error_count++;
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 console_output.AppendFormat("Decoded date and time is not valid.\r\n");
                 decode_error_count++;
@@ -840,20 +845,29 @@ namespace TDF_Test
             double second_sampling_ratio_low_average = 0;
             int second_sampling_low_count = 0;
             double second_sampling_ratio_average = 0;
+            double second_sampling_ratio_high_rms = 0;
+            double second_sampling_ratio_low_rms = 0;
+
             foreach (double d in second_sampling_ratio)
             {
                 second_sampling_ratio_average += d;
                 if (d > 1)
                 {
+                    second_sampling_ratio_high_rms += Math.Pow(d, 2);
                     second_sampling_ratio_high_average += d;
                     second_sampling_high_count++;
                 }
                 else
                 {
+                    second_sampling_ratio_low_rms += Math.Pow(d, 2);
                     second_sampling_ratio_low_average += d;
                     second_sampling_low_count++;
                 }
             }
+
+            second_sampling_ratio_high_rms = Math.Sqrt(second_sampling_ratio_high_rms/second_sampling_high_count);
+            second_sampling_ratio_low_rms = Math.Sqrt(second_sampling_ratio_low_rms/second_sampling_low_count);
+
             second_sampling_ratio_average /= second_sampling_ratio.Length;
             second_sampling_ratio_high_average /= second_sampling_high_count;
             second_sampling_ratio_low_average /= second_sampling_low_count;
@@ -867,6 +881,8 @@ namespace TDF_Test
                 second_sampling_offset, datasampler_ratio_offset, datasampler_bias_scale_offset);
             console_output.AppendFormat("     high average {0} ({1}), low average {2} ({3})\r\n", second_sampling_ratio_high_average, second_sampling_high_count
                 , second_sampling_ratio_low_average, second_sampling_low_count);
+            console_output.AppendFormat("High NR {0} [dB], Low NR {1} [dB], Sum {2} [dB]\r\n", 10 * Math.Log10(second_sampling_ratio_high_rms), 10 * Math.Log10(second_sampling_ratio_low_rms),
+                10 * Math.Log10(Math.Pow(second_sampling_ratio_high_rms, 2) + Math.Pow(second_sampling_ratio_low_rms,2)));
 
 
             double second_delta_rms = 0;
