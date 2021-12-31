@@ -932,6 +932,14 @@ namespace TDF_Test
 
             if (_correlatortype.IsBiased())
             {
+                /*
+                 * Note for final system:
+                 * We can use this solution for fields where we can predict the values.
+                 * For mostly static but unknowable fields like leap seconds (and perhaps holidays):
+                 *  Keep an average per bit position of the correlation ratio
+                 *  Reset an hour change?
+                 *  This means we can integrate multiple transmissions of each bit to achieve a better SNR.
+                 */
                 console_output.AppendFormat("Note: biased with reference bitstream, threshold offset ±{0}, center {1}\r\n", sampler_threshold_autobias, sampler_threshold_autobias_reference);
             }
 
