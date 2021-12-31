@@ -35,6 +35,8 @@ The minute start correlator may be slightly too noise sensitive, and could perha
 
 The correlator waveforms are extracted from the included webSDR recording, and output to .txt files in the working dir (this happens every time you run it). The values can be pasted into the appropriate cs file.
 
+Work is in progress on alternate correlator techniques, including convulational detectors, and synthetic correlator reference generators.
+
 After computation, a search is made for the minute start by simply finding the peak of the correlator 3 array.
 When this is found, the search window for correlation is narrowed, and the first binary 0 is located initially.
 (This is guaranteed to be 0)
@@ -51,6 +53,8 @@ The intent is to implement this functionality in a real-time processor (i.e. STM
 However, it does prove that a receiver is viable, and that my local reception is adequate for detection.
 
 The same principles could also be used to implement a DCF77 phase mode receiver (using the spread spectrum modulation it transmits).
+
+The program now also includes a timecode bitstream generator which allows more precise bit-error detection, and could be used to build a full-chain system simulator.
 
 # Use
 The program outputs to a console, as you'd expect. I use a VS 2019 extension called _ArrayPlotter_ to view the internal data structures, the array *decimated_sampleperiod* can be used as a X-scale.
