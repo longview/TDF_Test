@@ -62,6 +62,12 @@ namespace TDF_Test
             // 12
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T235552Z, 157 kHz, Wide-U.wav", 5000,
                 "Excellent signal, night, F1 set", 48, new DateTime(2021, 12, 30, 23, 56, 00, DateTimeKind.Utc)));
+            // 13
+            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T181322Z, 157 kHz, Wide-U.wav", 5000,
+                "Poor signal, evening, F1 set", 22, new DateTime(2021, 12, 31, 18, 14, 00, DateTimeKind.Utc), 13));
+            // 14
+            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T181524Z, 157 kHz, Wide-U.wav", 5000,
+                "Poor , evening, F1 set", 22, new DateTime(2021, 12, 31, 18, 16, 00, DateTimeKind.Utc), 9));
 
             TestSignalInfo testsignal_current = testsignals[testindex];
 
