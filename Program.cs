@@ -74,7 +74,7 @@ namespace TDF_Test
                 testsignal_current.SignalType == TestSignalInfo.Signal_Type.TDF ? "TDF" : "DCF77 Phase");
             }
 
-            CorrelatorType correlator_in_use = CorrelatorType.FM;
+            CorrelatorType correlator_in_use = CorrelatorType.FM_Convolve;
 
             Console.WriteLine("Using {0} correlation", correlator_in_use.GetString());
 
@@ -254,7 +254,7 @@ namespace TDF_Test
             Demodulate(i_filtered, q_filtered, fm_unfiltered, pm_unfiltered, fm_filtered, fm_lpf, out fm_unfiltered_square, out fm_filtered_square);
             Perform_PM_Correction(phase_error_per_sample_vs_frequency, ref pm_unfiltered, pm_filtered_drift, ref console_output);
 
-            if (generate_correlator && _correlatortype == CorrelatorType.FM)
+            if (generate_correlator && (_correlatortype == CorrelatorType.FM || _correlatortype == CorrelatorType.FM_Convolve))
                 Generate_Correlators(fm_filtered, _correlatortype, zero_offset, one_offset);
             else if (generate_correlator && _correlatortype == CorrelatorType.PM)
                 Generate_Correlators(pm_filtered_drift, _correlatortype, zero_offset, one_offset);
@@ -266,7 +266,7 @@ namespace TDF_Test
             double[] fm_filtered_rectified = Generate_Rectified_FM(data, IQ_decimation_factor, fm_filtered, fm_lpf, fm_rectified_lpf);
 
             double[] minute_start_correlation, zero_correlation, one_correlation;
-            if (_correlatortype == CorrelatorType.FM)
+            if (_correlatortype == CorrelatorType.FM || _correlatortype == CorrelatorType.FM_Convolve)
                 Perform_Correlations(ref fm_filtered, ref fm_filtered_rectified, ref zero_correlator_template_FM, 
                     ref one_correlator_template_FM, out minute_start_correlation, out zero_correlation, out one_correlation, _correlatortype, ref console_output);
             else
@@ -712,6 +712,13 @@ namespace TDF_Test
                 // this is the optimal value
                 datasampler_ratio_offset = -0.1;
             }
+            else if (_correlatortype == CorrelatorType.FM_Convolve)
+            {
+                // 0 is the optimal value
+                datasampler_bias_scale_offset = 0;
+                // this is the optimal value
+                datasampler_ratio_offset = -0.3;
+            }
             else if (_correlatortype == CorrelatorType.PM)
             {
                 // 0 is the optimal value
@@ -981,16 +988,54 @@ namespace TDF_Test
             minute_start_correlation = new double[data_correlation_source.Length];
             double minute_start_correlation_sum = 0;
 
-            double correlation_scale = -1;
-            if (_type == CorrelatorType.PM)
+            NWaves.Operations.Convolution.OlaBlockConvolver con_zero = null;
+            NWaves.Operations.Convolution.OlaBlockConvolver con_one = null;
+            NWaves.Operations.Convolution.OlaBlockConvolver con_minute = null;
+            int kernelsize = 128;
+            if (_type == CorrelatorType.FM_Convolve)
             {
-                correlation_scale = 1;
+                
+                float[] convolver_kernel_zero = new float[_zero_correlator.Length];
+                for (int i = 0; i < _zero_correlator.Length; i++)
+                {
+                    convolver_kernel_zero[i] = (float)_zero_correlator[i];
+                }
+
+                con_zero = new NWaves.Operations.Convolution.OlaBlockConvolver(convolver_kernel_zero, kernelsize);
+
+
+                float[] convolver_kernel_one = new float[_one_correlator.Length];
+                for (int i = 0; i < _one_correlator.Length; i++)
+                {
+                    convolver_kernel_one[i] = (float)_one_correlator[i];
+                }
+
+                con_one = new NWaves.Operations.Convolution.OlaBlockConvolver(convolver_kernel_one, kernelsize);
+
+                /*float[] convolver_kernel_minute = new float[minute_correlator_template.Length];
+                for (int i = 0; i < _one_correlator.Length; i++)
+                {
+                    convolver_kernel_one[i] = 0;
+                }
+
+                con_minute = new NWaves.Operations.Convolution.OlaBlockConvolver(convolver_kernel_minute, kernelsize);*/
+
             }
+
+
+
+            double correlation_scale = -1;
 
             // correlation for minute start, just zeros of a given length
             // this should perhaps not be a correlator for efficiency?
             for (int i = 0; i < minute_correlation_source.Length - minute_correlator_template.Length; i++)
             {
+                /*if (_type == CorrelatorType.FM_Convolve && con_minute != null)
+                {
+                    minute_start_correlation[i] = con_minute.Process((float)data_correlation_source[i]);
+                    continue;
+                }*/
+
                 for (int j = 0; j < minute_correlator_template.Length; j++)
                 {
                     minute_start_correlation[i] += -1*Math.Pow(minute_correlator_template[j] - minute_correlation_source[i + j], 2);
@@ -1008,6 +1053,15 @@ namespace TDF_Test
             // correlation 1, look for second start with data 0
             for (int i = 0; i < data_correlation_source.Length - _zero_correlator.Length; i++)
             {
+                if (_type == CorrelatorType.FM_Convolve && con_zero != null)
+                {
+                    // dump the kernel size to avoid delay
+                    int j = i-kernelsize; 
+
+                    zero_correlation[j < 0 ? 0 : j] = con_zero.Process((float)data_correlation_source[i]);
+                    continue;
+                }
+
                 for (int j = 0; j < _zero_correlator.Length; j++)
                 {
                     if (_type == CorrelatorType.PM)
@@ -1029,6 +1083,13 @@ namespace TDF_Test
             // correlation 1, look for second start with data 0
             for (int i = 0; i < data_correlation_source.Length - _one_correlator.Length; i++)
             {
+                if (_type == CorrelatorType.FM_Convolve && con_one != null)
+                {
+                    int j = i - kernelsize;
+                    one_correlation[j < 0 ? 0 : j] = con_one.Process((float)data_correlation_source[i]);
+                    continue;
+                }
+
                 for (int j = 0; j < _one_correlator.Length; j++)
                 {
                     if (_type == CorrelatorType.PM)
@@ -1044,6 +1105,7 @@ namespace TDF_Test
 
             }
 
+
             one_correlation_sum /= one_correlation.Length;
 
             if (_type == CorrelatorType.FM)
@@ -1056,7 +1118,30 @@ namespace TDF_Test
                     minute_start_correlation[i] -= minute_start_correlation_sum;
                 }
             }
-            else
+            else if (_type == CorrelatorType.FM_Convolve)
+            {
+                //NWaves.Filters.MovingAverageFilter corr_zero_lpf = new MovingAverageFilter(4);
+                //NWaves.Filters.MovingAverageFilter corr_one_lpf = new MovingAverageFilter(4);
+                //NWaves.Filters.MovingAverageFilter corr_minute_lpf = new MovingAverageFilter(16);
+                // square the data
+                for (int i = 0; i < zero_correlation.Length; i++)
+                {
+                    //zero_correlation[i] = corr_zero_lpf.Process((float)zero_correlation[i]);//((float)Math.Pow(zero_correlation[i],2));
+                    //one_correlation[i] = corr_one_lpf.Process((float)zero_correlation[i]);//((float)Math.Pow(one_correlation[i], 2));
+                    //minute_start_correlation[i] = corr_minute_lpf.Process((float)Math.Pow(minute_start_correlation[i], 2));
+                }
+                /*
+                // try to window the data, maybe filter it idk
+                float[] window = NWaves.Windows.Window.Flattop(16);
+                double[] window_d = new double[window.Length];
+                for (int i = 0; i < window.Length; i++)
+                    window_d[i] = (double)window[i];
+                NWaves.Windows.WindowExtensions.ApplyWindow(zero_correlation, window_d);
+                NWaves.Windows.WindowExtensions.ApplyWindow(one_correlation, window_d);
+                //NWaves.Windows.WindowExtensions.ApplyWindow(minute_start_correlation, window_d);*/
+
+            }
+            else if (_type == CorrelatorType.PM)
             {
                 NWaves.Filters.DcRemovalFilter dc_filter_one = new DcRemovalFilter(0.9);
                 NWaves.Filters.DcRemovalFilter dc_filter_zero = new DcRemovalFilter(0.9);
@@ -1406,7 +1491,8 @@ namespace TDF_Test
     public enum CorrelatorType
     {
         FM,
-        PM
+        PM,
+        FM_Convolve
     }
 
     public static class CorrelatorTypeExtension
@@ -1419,6 +1505,8 @@ namespace TDF_Test
                     return "FM";
                 case CorrelatorType.PM:
                     return "PM";
+                case CorrelatorType.FM_Convolve:
+                    return "FM Convolver";
                 default:
                     return "Unknown";
             }
