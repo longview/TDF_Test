@@ -452,14 +452,13 @@ namespace TDF_Test
             
             double[] fm_filtered_rectified = Generate_Rectified_FM(data, IQ_decimation_factor, fm_filtered, fm_rectified_lpf_average_len);
 
-            double[] minute_start_correlation, zero_correlation, one_correlation;
+            double[] zero_correlation, one_correlation;
             if (_correlatortype.UsesFM())
                 Perform_Correlations(ref fm_filtered, ref fm_filtered_rectified, ref zero_correlator_template_FM, 
-                    ref one_correlator_template_FM, out minute_start_correlation, out zero_correlation, out one_correlation, _correlatortype, ref console_output);
+                    ref one_correlator_template_FM, out zero_correlation, out one_correlation, _correlatortype, ref console_output);
             else
                 Perform_Correlations(ref pm_filtered_drift, ref fm_filtered_rectified, ref zero_correlator_template_PM, 
-                    ref one_correlator_template_PM, out minute_start_correlation, out zero_correlation, out one_correlation, _correlatortype, ref console_output);
-            // TODO: also correlate on PM for minute start, or use a rectified PM output?
+                    ref one_correlator_template_PM, out zero_correlation, out one_correlation, _correlatortype, ref console_output);
 
 
             int minutestart_sample = Find_Minute_Start(decimated_sampleperiod, fm_filtered_rectified, ref console_output);
@@ -1368,23 +1367,18 @@ namespace TDF_Test
         }
 
         private static void Perform_Correlations(ref double[] data_correlation_source,
-            ref double[] minute_correlation_source, ref double[] _zero_correlator, ref double[] _one_correlator, out double[] minute_start_correlation,
+            ref double[] minute_correlation_source, ref double[] _zero_correlator, ref double[] _one_correlator,
             out double[] zero_correlation, out double[] one_correlation, CorrelatorType _type, ref StringBuilder console_output)
         {
             /* The technique for correlation here is to template match using least square error matching
                          * i.e. we are sensitive to the exact amplitude, not just the shape
-                         * We first find the start of a minute using template 3 on the *rectified* FM data
-                         * this then determines where we look in the bit 0 or 1 sets
                          */
 
 
             console_output.AppendFormat("Doing correlations in {0} mode.\r\n", _type.GetString());
-            minute_start_correlation = new double[data_correlation_source.Length];
-            double minute_start_correlation_sum = 0;
 
             NWaves.Operations.Convolution.OlaBlockConvolver con_zero = null;
             NWaves.Operations.Convolution.OlaBlockConvolver con_one = null;
-            NWaves.Operations.Convolution.OlaBlockConvolver con_minute = null;
             int kernelsize = 128;
             int kerneldelay = kernelsize / 2;
             kerneldelay += 32;
@@ -1408,40 +1402,9 @@ namespace TDF_Test
 
                 con_one = new NWaves.Operations.Convolution.OlaBlockConvolver(convolver_kernel_one, kernelsize);
 
-                /*float[] convolver_kernel_minute = new float[minute_correlator_template.Length];
-                for (int i = 0; i < _one_correlator.Length; i++)
-                {
-                    convolver_kernel_one[i] = 0;
-                }
-
-                con_minute = new NWaves.Operations.Convolution.OlaBlockConvolver(convolver_kernel_minute, kernelsize);*/
-
             }
-
-
 
             double correlation_scale = -1;
-
-            // correlation for minute start, just zeros of a given length
-            // this should perhaps not be a correlator for efficiency?
-            for (int i = 0; i < minute_correlation_source.Length - minute_correlator_template.Length; i++)
-            {
-                /*if (_type == CorrelatorType.FM_Convolve && con_minute != null)
-                {
-                    minute_start_correlation[i] = con_minute.Process((float)data_correlation_source[i]);
-                    continue;
-                }*/
-
-                for (int j = 0; j < minute_correlator_template.Length; j++)
-                {
-                    minute_start_correlation[i] += -1000*Math.Pow(minute_correlator_template[j] - minute_correlation_source[i + j], 2);
-                }
-
-                minute_start_correlation_sum += minute_start_correlation[i];
-
-            }
-
-            minute_start_correlation_sum /= minute_start_correlation.Length;
 
             zero_correlation = new double[data_correlation_source.Length];
             double zero_correlation_sum = 0;
@@ -1511,7 +1474,6 @@ namespace TDF_Test
                 {
                     zero_correlation[i] -= zero_correlation_sum;
                     one_correlation[i] -= one_correlation_sum;
-                    //minute_start_correlation[i] -= minute_start_correlation_sum;
                 }
             }
             else if (_type.IsConvolver())
