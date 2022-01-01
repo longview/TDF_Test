@@ -1395,6 +1395,8 @@ namespace TDF_Test
             double zero_correlation_sum = 0;
             double zero_correlation_min = double.PositiveInfinity;
 
+            bool reverse_correlators = false;
+
             // correlation for zero bits
             for (int i = 0; i < data_correlation_source.Length - _zero_correlator.Length; i++)
             {
@@ -1410,7 +1412,10 @@ namespace TDF_Test
                 for (int j = 0; j < _zero_correlator.Length; j++)
                 {
                     int k = i - kerneldelay_zero;
-                    zero_correlation[k < 0 ? 0 : k] += correlation_scale * Math.Pow(_zero_correlator[j] - data_correlation_source[i + j], 2);
+                    if (reverse_correlators)
+                        zero_correlation[k < 0 ? 0 : k] += correlation_scale * Math.Pow(_zero_correlator[(_zero_correlator.Length-1) - j] - data_correlation_source[i + j], 2);
+                    else
+                        zero_correlation[k < 0 ? 0 : k] += correlation_scale * Math.Pow(_zero_correlator[j] - data_correlation_source[i + j], 2);
                 }
 
                 if (i > kerneldelay_zero)
@@ -1450,7 +1455,10 @@ namespace TDF_Test
                 for (int j = 0; j < _one_correlator.Length; j++)
                 {
                     int k = i - kerneldelay_one;
-                    one_correlation[k < 0 ? 0 : k] += correlation_scale * Math.Pow(_one_correlator[j] - data_correlation_source[i + j], 2);
+                    if (reverse_correlators)
+                        one_correlation[k < 0 ? 0 : k] += correlation_scale * Math.Pow(_one_correlator[(_one_correlator.Length - 1) - j] - data_correlation_source[i + j], 2);
+                    else
+                        one_correlation[k < 0 ? 0 : k] += correlation_scale * Math.Pow(_one_correlator[j] - data_correlation_source[i + j], 2);
                 }
 
                 if (i > kerneldelay_one)
