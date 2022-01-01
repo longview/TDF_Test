@@ -65,16 +65,23 @@ namespace TDF_Test
                 48, new DateTime(2021, 12, 30, 23, 56, 00, DateTimeKind.Utc), holidaytomorrow: true));
             // 13 - tricky start, minute is around 7000
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T181322Z, 157 kHz, Wide-U.wav", "Poor signal, evening, F1 set",
-                22, new DateTime(2021, 12, 31, 18, 14, 00, DateTimeKind.Utc), _errors: 46, holidaytomorrow: true));
+                22, new DateTime(2021, 12, 31, 18, 14, 00, DateTimeKind.Utc), _errors: 35, holidaytomorrow: true));
             // 14 - minute start around 6500
-            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T181524Z, 157 kHz, Wide-U.wav", "Poor signal, evening, F1 set",
-                22, new DateTime(2021, 12, 31, 18, 16, 00, DateTimeKind.Utc), _errors: 38, holidaytomorrow: true));
+            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T181524Z, 157 kHz, Wide-U.wav", "Poor signal, evening",
+                22, new DateTime(2021, 12, 31, 18, 16, 00, DateTimeKind.Utc), _errors: 35, holidaytomorrow: true));
             // 15
-            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T222827Z, 157 kHz, Wide-U.wav", "Good signal, evening, F1 set",
+            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T222827Z, 157 kHz, Wide-U.wav", "Good signal, evening",
                 20, new DateTime(2021, 12, 31, 22, 29, 00, DateTimeKind.Utc), _errors: 0, holidaytomorrow: true));
             // 16 - last of the year :)
-
+            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T225740Z, 157 kHz, Wide-U.wav", "Good signal, evening",
+                30, new DateTime(2021, 12, 31, 22, 58, 00, DateTimeKind.Utc), _errors: 0, holidaytomorrow: true));
             // 17 - first of the year
+            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T225835Z, 157 kHz, Wide-U.wav", "Good signal, evening",
+                30, new DateTime(2021, 12, 31, 22, 59, 00, DateTimeKind.Utc), _errors: 0, holidaytoday: true));
+            // 18
+            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T225930Z, 157 kHz, Wide-U.wav", "Good signal, evening",
+                30, new DateTime(2021, 12, 31, 23, 00, 00, DateTimeKind.Utc), _errors: 0, holidaytoday: true));
+
 
             TestSignalInfo testsignal_current = testsignals[testindex];
 
@@ -90,7 +97,7 @@ namespace TDF_Test
             CorrelatorType correlator_in_use = CorrelatorType.FM_Biased;
 
             // the convolver loves the synthetic reference signals
-            if (correlator_in_use.IsConvolver() || correlator_in_use == CorrelatorType.PM)
+            if (correlator_in_use.IsConvolver())
             {
                 Generate_Synthetic_Correlators(ref one_correlator_template_FM, ref zero_correlator_template_FM, ref one_correlator_template_PM, ref zero_correlator_template_PM, 0);
             }
@@ -452,10 +459,10 @@ namespace TDF_Test
 
             double[] zero_correlation, one_correlation;
             if (_correlatortype.UsesFM())
-                Perform_Correlations(ref fm_filtered, ref fm_filtered_rectified, ref zero_correlator_template_FM, 
+                Perform_Correlations(ref fm_filtered, ref zero_correlator_template_FM, 
                     ref one_correlator_template_FM, out zero_correlation, out one_correlation, _correlatortype, ref console_output);
             else
-                Perform_Correlations(ref pm_filtered_drift, ref fm_filtered_rectified, ref zero_correlator_template_PM, 
+                Perform_Correlations(ref pm_filtered_drift, ref zero_correlator_template_PM, 
                     ref one_correlator_template_PM, out zero_correlation, out one_correlation, _correlatortype, ref console_output);
 
 
@@ -465,12 +472,9 @@ namespace TDF_Test
             int datasampler_stop;
             bool[] payload_data;
             double[] second_sampling_ratio;
-            double[] second_sampling_times;
-
 
             Perform_Detection(decimated_sampleperiod, fm_unfiltered, zero_correlation, one_correlation,
-                minutestart_sample, out datasampler_stop, out payload_data, out second_sampling_ratio,
-                out second_sampling_times, _correlatortype, testsignal_current, ref console_output);
+                minutestart_sample, out datasampler_stop, out payload_data, _correlatortype, testsignal_current, out second_sampling_ratio, ref console_output);
 
 
             console_output.Append("Decode: ");
@@ -803,7 +807,7 @@ namespace TDF_Test
 
             if (month > 12 || month < 1)
             {
-                console_output.AppendFormat("Month {0} is outside of allowable range (1-13)\r\n", month);
+                console_output.AppendFormat("Month {0} is outside of allowable range (1-12)\r\n", month);
                 decode_error_count++;
             }
 
@@ -888,9 +892,7 @@ namespace TDF_Test
             double[] one_correlation,
             int minutestart_sample,
             out int datasampler_stop,
-            out bool[] payload_data,
-            out double[] second_sampling_ratio,
-            out double[] second_sampling_times, CorrelatorType _correlatortype, TestSignalInfo testsignal, ref StringBuilder console_output
+            out bool[] payload_data, CorrelatorType _correlatortype, TestSignalInfo testsignal,out double[] second_sampling_ratio, ref StringBuilder console_output
             )
         {
 
@@ -947,7 +949,7 @@ namespace TDF_Test
 
 
             payload_data = new bool[59];
-            second_sampling_times = new double[59];
+            double[] second_sampling_times = new double[59];
             second_sampling_ratio = new double[59];
 
             double datasampler_bias_scale = 1;
@@ -960,7 +962,8 @@ namespace TDF_Test
             // this can make the purest of noise become valid data
             // 0.15 removes many minor errors
             // 0.3 fixes a lot
-            double sampler_threshold_autobias = 0.5;//0.15;
+            // 0.5 will likely suppress errors such as wrong status bits etc.
+            double sampler_threshold_autobias = 0.25;//0.15;
 
             if (_correlatortype.IsBiased())
             {
@@ -1373,8 +1376,7 @@ namespace TDF_Test
             return minutestart_sample;
         }
 
-        private static void Perform_Correlations(ref double[] data_correlation_source,
-            ref double[] minute_correlation_source, ref double[] _zero_correlator, ref double[] _one_correlator,
+        private static void Perform_Correlations(ref double[] data_correlation_source, ref double[] _zero_correlator, ref double[] _one_correlator,
             out double[] zero_correlation, out double[] one_correlation, CorrelatorType _type, ref StringBuilder console_output)
         {
             /* The technique for correlation here is to template match using least square error matching

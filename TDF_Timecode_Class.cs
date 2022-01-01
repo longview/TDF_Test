@@ -118,7 +118,7 @@ namespace TDF_Test
                 if (!_bit_errors[i])
                     continue;
 
-                sb.AppendFormat("[{0}] {1,5} should be {2,5}, \"{3}\"\r\n", i, input[i], _bits[i],
+                sb.AppendFormat("[{0,2}] {1,5} should be {2,5}, \"{3}\"\r\n", i, input[i], _bits[i],
                     BitPosition_ToString((BitPositions)i));
             }
 
