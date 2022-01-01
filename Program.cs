@@ -17,8 +17,8 @@ namespace TDF_Test
         static void Main(string[] args)
         {
 
-            Modes mode = Modes.Verify;
-            //Modes mode = Modes.Standard;
+            //Modes mode = Modes.Verify;
+            Modes mode = Modes.Standard;
             int testindex = 14;
 
             List<TestSignalInfo> testsignals = new List<TestSignalInfo>();
@@ -989,7 +989,7 @@ namespace TDF_Test
 
             int secondcount = 0;
 
-            console_output.AppendFormat("Next bit expected at: ({1}){0}", (datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod, 0);
+            console_output.Append("Bit sample times:\r\n");
 
             while (datasampler_stop < fm_unfiltered.Length - 1 && secondcount < 59)
             {
@@ -1134,7 +1134,7 @@ namespace TDF_Test
 
                 // print out the decoded bit, time, and bit number
                 // this is very useful for debugging since we can quickly look up the relevant bit in the arrayview
-                console_output.AppendFormat(":{2}:({3}) (B{1}:{0})", (datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod, secondcount + 1, bit ? "1" : "0", datasampler_start + (datasampler_stop - datasampler_start));
+                console_output.AppendFormat("{0,2}:{1,6} ", secondcount, max_time);
                 // add all but the first second sample point (first one is usually slightly off)
                 second_sampling_times[secondcount] = (datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod;
 
