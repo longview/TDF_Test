@@ -1670,8 +1670,8 @@ namespace TDF_Test
             // this filter count is fairly flexible, can be reduced without significant reduction in performance
             // can also be increased up to 5x longer without much effect
             // TODO: try out the IIR variants?
-            NWaves.Filters.MovingAverageFilter i_lpf = new NWaves.Filters.MovingAverageFilter(averagecount);
-            NWaves.Filters.MovingAverageFilter q_lpf = new NWaves.Filters.MovingAverageFilter(averagecount);
+            NWaves.Filters.MovingAverageRecursiveFilter i_lpf = new NWaves.Filters.MovingAverageRecursiveFilter(averagecount);
+            NWaves.Filters.MovingAverageRecursiveFilter q_lpf = new NWaves.Filters.MovingAverageRecursiveFilter(averagecount);
             console_output.AppendFormat("I/Q moving average filter size {0}\r\n", averagecount);
             
 
