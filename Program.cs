@@ -1894,7 +1894,9 @@ namespace TDF_Test
         FM_Biased,
         PM,
         FM_Convolve,
-        PM_Convolve
+        FM_Convolve_Biased,
+        PM_Convolve,
+        PM_Convolve_Biased
     }
 
     public static class CorrelatorTypeExtension
@@ -1910,9 +1912,13 @@ namespace TDF_Test
                 case CorrelatorType.PM:
                     return "PM";
                 case CorrelatorType.FM_Convolve:
-                    return "FM Convolver";
+                    return "FM convolver";
+                case CorrelatorType.FM_Convolve_Biased:
+                    return "FM convolver with bias";
                 case CorrelatorType.PM_Convolve:
-                    return "PM Convolver";
+                    return "PM convolver";
+                case CorrelatorType.PM_Convolve_Biased:
+                    return "PM convolver with bias";
                 default:
                     return "Unknown";
             }
@@ -1924,7 +1930,9 @@ namespace TDF_Test
             switch (me)
             {
                 case CorrelatorType.FM_Convolve:
+                case CorrelatorType.FM_Convolve_Biased:
                 case CorrelatorType.PM_Convolve:
+                case CorrelatorType.PM_Convolve_Biased:
                     return true;
                 default:
                     return false;
@@ -1937,6 +1945,7 @@ namespace TDF_Test
             {
                 case CorrelatorType.PM:
                 case CorrelatorType.PM_Convolve:
+                case CorrelatorType.PM_Convolve_Biased:
                     return true;
                 default:
                     return false;
@@ -1950,6 +1959,7 @@ namespace TDF_Test
                 case CorrelatorType.FM:
                 case CorrelatorType.FM_Convolve:
                 case CorrelatorType.FM_Biased:
+                case CorrelatorType.FM_Convolve_Biased:
                     return true;
                 default:
                     return false;
@@ -1961,6 +1971,8 @@ namespace TDF_Test
             switch (me)
             {
                 case CorrelatorType.FM_Biased:
+                case CorrelatorType.FM_Convolve_Biased:
+                case CorrelatorType.PM_Convolve_Biased:
                     return true;
                 default:
                     return false;
