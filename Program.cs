@@ -87,10 +87,10 @@ namespace TDF_Test
                 testsignal_current.SignalType == TestSignalInfo.Signal_Type.TDF ? "TDF" : "DCF77 Phase");
             }
 
-            CorrelatorType correlator_in_use = CorrelatorType.FM_Convolve_Biased;
+            CorrelatorType correlator_in_use = CorrelatorType.FM_Biased;
 
             // the convolver loves the synthetic reference signals
-            if (correlator_in_use.IsConvolver())
+            if (correlator_in_use.IsConvolver() || correlator_in_use == CorrelatorType.PM)
             {
                 Generate_Synthetic_Correlators(ref one_correlator_template_FM, ref zero_correlator_template_FM, ref one_correlator_template_PM, ref zero_correlator_template_PM, 0);
             }
@@ -276,7 +276,7 @@ namespace TDF_Test
             }
 
             // generate PM by integration
-            double integration_gain = 1 / 5;
+            double integration_gain = 0.2;
             double integrator = 0;
             for (int i = 0; i < tempdata.Count; i++)
             {
@@ -311,7 +311,7 @@ namespace TDF_Test
             // generating one FM
 
             // pre-time 15
-            for (int i = 0; i < 20; i++)
+            for (int i = 0; i < 15; i++)
             {
                 tempdata.Add(0);
             }
@@ -341,7 +341,7 @@ namespace TDF_Test
                 tempdata.Add(1);
             }
             // add some nulls
-            tempdata.Add(0);
+            //tempdata.Add(0);
 
             /*// 0 5
             for (int i = 0; i < 10; i++)
@@ -357,8 +357,6 @@ namespace TDF_Test
                     FM_One[i] = fm_lpf.Process((float)FM_One[i]);
             }
 
-
-            integration_gain = 1 / 5;
             integrator = 0;
             for (int i = 0; i < tempdata.Count; i++)
             {
@@ -934,12 +932,9 @@ namespace TDF_Test
                 datasampler_second_neg_range = 0.95;
                 datasampler_second_pos_range = 1.05;
             }
-            else if (_correlatortype == CorrelatorType.PM_Convolve)
+            else if (_correlatortype == CorrelatorType.PM_Convolve || _correlatortype == CorrelatorType.PM_Convolve_Biased)
             {
-                // 0 is the optimal value
-                datasampler_bias_scale_offset = 0;
-                // this is the optimal value
-                datasampler_ratio_offset = -0.3;
+                datasampler_threshold = 1.5;
             }
             else if (_correlatortype == CorrelatorType.PM)
             {
@@ -965,7 +960,7 @@ namespace TDF_Test
             // this can make the purest of noise become valid data
             // 0.15 removes many minor errors
             // 0.3 fixes a lot
-            double sampler_threshold_autobias = 0.3;//0.15;
+            double sampler_threshold_autobias = 0.5;//0.15;
 
             if (_correlatortype.IsBiased())
             {
@@ -993,7 +988,9 @@ namespace TDF_Test
             while (datasampler_stop < fm_unfiltered.Length - 1 && secondcount < 59)
             {
                 double max_zero = double.NegativeInfinity;
+                double min_zero = double.PositiveInfinity;
                 int max_zero_time = 0;
+                int min_zero_time = 0;
 
                 double max_one = double.NegativeInfinity;
                 int max_one_time = 0;
@@ -1005,34 +1002,24 @@ namespace TDF_Test
                         max_zero = zero_correlation[i];
                         max_zero_time = i;
                     }
-                    else if (one_correlation[i] > max_one)
+                    if (one_correlation[i] > max_one)
                     {
                         max_one = one_correlation[i];
                         max_one_time = i;
                     }
 
-                    /*if (_correlatortype == CorrelatorType.FM_Convolve)
+                    if (zero_correlation[i] < min_zero)
                     {
-                        // the peak of a one-correlation is 20 later than the ones
-                        // we correct that and use the zeros as the reference mark
-                        if (one_correlation[i+20] > max_one)
-                        {
-                            max_one = one_correlation[i];
-                            max_one_time = i;
-                        }
+                        min_zero = zero_correlation[i];
+                        min_zero_time = i;
                     }
-                    else if (one_correlation[i] > max_one)
-                    {
-                        max_one = one_correlation[i];
-                        max_one_time = i;
-                    }*/
                 }
 
                 // test to improve detection reliability
                 // basically a 3-element correlation on the expected correlation waveform
-                if (_correlatortype == CorrelatorType.FM_Convolve || _correlatortype == CorrelatorType.FM_Convolve_Biased)
+                if (_correlatortype == CorrelatorType.FM_Convolve || _correlatortype == CorrelatorType.FM_Convolve_Biased || _correlatortype == CorrelatorType.PM_Convolve)
                 {
-                    double current_zero = zero_correlation[max_zero_time];
+                    double current_zero = max_zero;
                     // the optimal match is symmetric about the peak
                     // at +-8 we expect symmetric negative values
                     double zero_leading_valley = zero_correlation[max_zero_time - 10];
@@ -1040,41 +1027,36 @@ namespace TDF_Test
                     double zero_symmetry = Math.Abs(zero_leading_valley - zero_trailing_valley);
                     double zero_offset = current_zero + (zero_leading_valley + zero_trailing_valley) / 2;
                     double zero_weighted_correlation = current_zero + (Math.Abs(current_zero - zero_leading_valley) + Math.Abs(current_zero - zero_trailing_valley));
-                    zero_weighted_correlation -= zero_symmetry;
-                    zero_weighted_correlation += zero_offset;
+                    //zero_weighted_correlation -= zero_symmetry;
+                    //zero_weighted_correlation += zero_offset;
 
                     max_zero = zero_weighted_correlation;
 
-                    // at +-15 we expect a zero-crossing, and at +-20 we want a value close to 0
-                    //double zero_leading_zero = zero_correlation[max_zero_time - 20];
-                    //double zero_trailing_zero = zero_correlation[max_zero_time + 20];
-
-                    //max_zero = max_zero + ((zero_leading_valley * -1) * (zero_trailing_valley * -1));// - (Math.Abs(zero_leading_zero) * Math.Abs(zero_trailing_zero));
-                    //max_zero = max_zero + (zero_leading_valley * -1) + (zero_trailing_valley * -1);
-                    //max_zero = max_zero - Math.Abs(zero_leading_valley - zero_trailing_valley);
-
-                    //double one_leading_peak = zero_correlation[max_zero_time - 20];
-                    //double one_trailing_peak = zero_correlation[max_zero_time + 20];
-                    double current_one = one_correlation[max_one_time]; ;
+                    double current_one = max_one;
                     double one_leading_valley = one_correlation[max_one_time + 10];
                     double one_trailing_valley = one_correlation[max_one_time - 10];
                     double one_symmetry = Math.Abs(one_leading_valley - one_trailing_valley);
                     double one_offset = current_one + (one_leading_valley + one_trailing_valley) / 2;
                     double one_weighted_correlation = current_one + (Math.Abs(current_one - one_leading_valley) + Math.Abs(current_one - one_trailing_valley));
-                    one_weighted_correlation -= one_symmetry;
-                    one_weighted_correlation += one_offset;
+                    //one_weighted_correlation -= one_symmetry;
+                    //one_weighted_correlation += one_offset;
 
                     max_one = one_weighted_correlation;
 
-                    // weight for valleys
-                    //weighted_correlation += Math.Abs(minute_start_correlation[i - 300]);// + Math.Abs(minute_start_correlation[i + 200]);
+                    // the response of the zero detector to a one is the inverse of a zero, so try to match on that?
+                    /*double current_one = min_zero;
+                    
+                    double one_leading_valley = zero_correlation[min_zero_time + 10];
+                    double one_trailing_valley = zero_correlation[min_zero_time - 10];
+                    double one_symmetry = Math.Abs(one_leading_valley - one_trailing_valley) + 1;
+                    double one_offset = current_one + (one_leading_valley + one_trailing_valley) / 2;
+                    double one_weighted_correlation = current_one + (Math.Abs(current_one - one_leading_valley) + Math.Abs(current_one - one_trailing_valley));
+                    one_weighted_correlation -= one_symmetry;
+                    one_weighted_correlation += one_offset;
 
-
-
-                    //double one_trailing_peak = zero_correlation[max_zero_time + 25];
-                    //max_one = max_one - Math.Abs(one_leading_valley - one_trailing_valley);
-                    //max_one = max_one + ((one_leading_valley * -1) * (one_trailing_valley * -1));// + ((one_leading_peak) * (one_trailing_peak));// + (one_trailing_peak * 1);
-                    //max_one = max_one + (one_leading_valley * -1) + (one_trailing_valley * -1);// + (one_trailing_peak * 1);
+                    max_one = one_weighted_correlation * -1;
+                    // the inverse zero detector is slightly late
+                    max_one_time = min_zero_time - 24;*/
                 }
 
                 // the first second we run is always a 0, assuming we detected the minute correctly
@@ -1404,12 +1386,22 @@ namespace TDF_Test
 
             NWaves.Operations.Convolution.OlaBlockConvolver con_zero = null;
             NWaves.Operations.Convolution.OlaBlockConvolver con_one = null;
-            int kernelsize = 128;
+            int kernelsize = 512;
             int kerneldelay = kernelsize / 2;
-            kerneldelay += 67;
+            kerneldelay += 259;
 
-            int kerneldelay_zero = kerneldelay;
-            int kerneldelay_one = kerneldelay + 11;
+            int kerneldelay_zero = 0;
+            int kerneldelay_one = 0;
+            if (_type == CorrelatorType.FM_Convolve || _type == CorrelatorType.FM_Convolve_Biased)
+            {
+                kerneldelay_zero = kerneldelay;
+                kerneldelay_one = kerneldelay + 9;
+            }
+            else if (_type == CorrelatorType.PM_Convolve)
+            {
+                kerneldelay_zero = kerneldelay - 6;
+                kerneldelay_one = kerneldelay - 6;
+            }
             
             if (_type.IsConvolver())
             {
@@ -1435,8 +1427,12 @@ namespace TDF_Test
 
             double correlation_scale = -1;
 
+            if (_type == CorrelatorType.PM)
+                correlation_scale = 1;
+
             zero_correlation = new double[data_correlation_source.Length];
             double zero_correlation_sum = 0;
+            double zero_correlation_min = double.PositiveInfinity;
 
             // correlation 1, look for second start with data 0
             for (int i = 0; i < data_correlation_source.Length - _zero_correlator.Length; i++)
@@ -1452,21 +1448,18 @@ namespace TDF_Test
 
                 for (int j = 0; j < _zero_correlator.Length; j++)
                 {
-                    if (_type == CorrelatorType.PM)
-                        zero_correlation[i] += correlation_scale * Math.Pow(_zero_correlator[j] - data_correlation_source[i + j], 2);
-                    //zero_correlation[i] = (1+_zero_correlator[j]) * data_correlation_source[i + j];
-                    else
-                        zero_correlation[i] += correlation_scale*Math.Pow(_zero_correlator[j] - data_correlation_source[i + j], 2);
-                    //correlation1[i] += (correlator_1[j] > 0 ? 1 : 0) * fm_filtered[i + j];
-                    //correlation1[i] += (correlator_1[j] > 0 ? 0:1) ^ (fm_filtered[i + j] > 0 ? 1 : 0);
+                    int k = i - kerneldelay_zero;
+                    zero_correlation[k < 0 ? 0 : k] += correlation_scale * Math.Pow(_zero_correlator[j] - data_correlation_source[i + j], 2);
                 }
                 zero_correlation_sum += zero_correlation[i];
+                zero_correlation_min = Math.Min(zero_correlation[i], zero_correlation_min);
 
             }
             zero_correlation_sum /= zero_correlation.Length;
 
             one_correlation = new double[data_correlation_source.Length];
             double one_correlation_sum = 0;
+            double one_correlation_min = double.PositiveInfinity;
 
             // correlation 1, look for second start with data 0
             for (int i = 0; i < data_correlation_source.Length - _one_correlator.Length; i++)
@@ -1480,17 +1473,12 @@ namespace TDF_Test
 
                 for (int j = 0; j < _one_correlator.Length; j++)
                 {
-                    if (_type == CorrelatorType.PM)
-                        one_correlation[i] += correlation_scale * Math.Pow(_one_correlator[j] - data_correlation_source[i + j], 2);
-                    //one_correlation[i] += (1+_one_correlator[j]) * data_correlation_source[i + j];
-                    else
-                        one_correlation[i] += correlation_scale*Math.Pow(_one_correlator[j] - data_correlation_source[i + j], 2);
-                    //correlation1[i] += (correlator_1[j] > 0 ? 1 : 0) * fm_filtered[i + j];
-                    //correlation1[i] += (correlator_1[j] > 0 ? 0:1) ^ (fm_filtered[i + j] > 0 ? 1 : 0);
+                    int k = i - kerneldelay_one;
+                    one_correlation[k < 0 ? 0 : k] += correlation_scale * Math.Pow(_one_correlator[j] - data_correlation_source[i + j], 2);
                 }
 
                 one_correlation_sum += one_correlation[i];
-
+                one_correlation_min = Math.Min(one_correlation[i], one_correlation_min);
             }
 
 
@@ -1503,41 +1491,20 @@ namespace TDF_Test
                 {
                     zero_correlation[i] -= zero_correlation_sum;
                     one_correlation[i] -= one_correlation_sum;
+                    one_correlation_min = Math.Min(one_correlation[i], one_correlation_min);
+                    zero_correlation_min = Math.Min(zero_correlation[i], zero_correlation_min);
                 }
             }
-            else if (_type.IsConvolver())
+            if (_type == CorrelatorType.PM)
             {
-                //NWaves.Filters.MovingAverageFilter corr_zero_lpf = new MovingAverageFilter(4);
-                //NWaves.Filters.MovingAverageFilter corr_one_lpf = new MovingAverageFilter(4);
-                //NWaves.Filters.MovingAverageFilter corr_minute_lpf = new MovingAverageFilter(16);
-                // square the data
                 for (int i = 0; i < zero_correlation.Length; i++)
                 {
-                    //zero_correlation[i] = corr_zero_lpf.Process((float)zero_correlation[i]);//((float)Math.Pow(zero_correlation[i],2));
-                    //one_correlation[i] = corr_one_lpf.Process((float)zero_correlation[i]);//((float)Math.Pow(one_correlation[i], 2));
-                    //minute_start_correlation[i] = corr_minute_lpf.Process((float)Math.Pow(minute_start_correlation[i], 2));
+                    zero_correlation[i] -= zero_correlation_min;
+                    one_correlation[i] -= one_correlation_min;
                 }
-                /*
-                // try to window the data, maybe filter it idk
-                float[] window = NWaves.Windows.Window.Flattop(16);
-                double[] window_d = new double[window.Length];
-                for (int i = 0; i < window.Length; i++)
-                    window_d[i] = (double)window[i];
-                NWaves.Windows.WindowExtensions.ApplyWindow(zero_correlation, window_d);
-                NWaves.Windows.WindowExtensions.ApplyWindow(one_correlation, window_d);
-                //NWaves.Windows.WindowExtensions.ApplyWindow(minute_start_correlation, window_d);*/
+            }
 
-            }
-            else if (_type == CorrelatorType.PM)
-            {
-                NWaves.Filters.DcRemovalFilter dc_filter_one = new DcRemovalFilter(0.9);
-                NWaves.Filters.DcRemovalFilter dc_filter_zero = new DcRemovalFilter(0.9);
-                for (int i = 0; i < zero_correlation.Length; i++)
-                {
-                    zero_correlation[i] = dc_filter_zero.Process((float)zero_correlation[i]) + 1e4;
-                    one_correlation[i] = dc_filter_one.Process((float)one_correlation[i]) + 1e4;
-                }
-            }
+            return;
         }
 
         /* Generate correlators, input is FM data to sample, and the UTC 0 ms position of the two waveforms */
@@ -1641,28 +1608,34 @@ namespace TDF_Test
             // we skip the first 1/4 of the data due to filter settling
             double pm_drift = pm_unfiltered[pm_unfiltered.Length - 1] - pm_unfiltered[pm_unfiltered.Length / 4];
 
-            //for (int i = 0; i < pm_filtered.Length; i++)
-            //{
-            //    pm_drift += pm_filtered_drift[i];
-            //}
-            //double pm_drift_rate = pm_drift / pm_filtered.Length;
-            // average drift per sample
             double pm_drift_rate = pm_drift / (pm_unfiltered.Length - pm_unfiltered.Length / 4);
 
-            NWaves.Filters.DcRemovalFilter dc_filter = new DcRemovalFilter(0.9);
+            NWaves.Filters.DcRemovalFilter dc_filter = new DcRemovalFilter(0.995);
 
-            // stabilize filter
+            // remove 1st order drift
             for (int i = 0; i < pm_unfiltered.Length; i++)
-            { 
-                dc_filter.Process((float)pm_unfiltered[i]);
+            {
+                pm_filtered_drift[i] = pm_unfiltered[i] - (pm_drift_rate * i);
             }
 
+            double pm_filtered_drift_offset = 0;
             // correct pm filtered data
             for (int i = 0; i < pm_unfiltered.Length; i++)
             {
-                //pm_filtered_drift[i] = pm_unfiltered[i] - (pm_drift_rate * i);
+                // this filter pass seems to have issues, so it leaves an offset
                 pm_filtered_drift[i] = dc_filter.Process((float)pm_unfiltered[i]);
+                pm_filtered_drift_offset += pm_filtered_drift[i];
             }
+
+            // remove remaining offset
+            double pm_drift2 = pm_filtered_drift[pm_filtered_drift.Length - 1] - pm_filtered_drift[pm_filtered_drift.Length / 4];
+            double pm_drift_rate2 = pm_drift2 / (pm_filtered_drift.Length - pm_filtered_drift.Length / 4);
+            for (int i = 0; i < pm_filtered_drift.Length; i++)
+            {
+                pm_filtered_drift[i] = pm_filtered_drift[i] / (pm_filtered_drift_offset / pm_filtered_drift.Length);
+                //pm_filtered_drift[i] = pm_filtered_drift[i] - (pm_drift_rate2 * i);
+            }
+
             console_output.AppendFormat("Drift calculated, {0} per sample ({1} total)\r\n", pm_drift_rate, pm_drift);
             console_output.AppendFormat("Calculated frequency error: {0}\r\n", pm_drift_rate / phase_error_per_sample_vs_frequency);
         }
