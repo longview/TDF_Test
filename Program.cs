@@ -19,7 +19,7 @@ namespace TDF_Test
 
             Modes mode = Modes.Verify;
             //Modes mode = Modes.Standard;
-            int testindex = 0;
+            int testindex = 16;
 
             List<TestSignalInfo> testsignals = new List<TestSignalInfo>();
             // input file must be mono 16-bit, 20000 Hz (oddball rate)
@@ -904,6 +904,7 @@ namespace TDF_Test
                 datasampler_bias_scale_offset = 0;
                 // this is the optimal value
                 datasampler_ratio_offset = -0.1;
+                //datasampler_threshold = 2.5;
             }
             else if (_correlatortype == CorrelatorType.FM_Convolve || _correlatortype == CorrelatorType.FM_Convolve_Biased)
             {
@@ -1004,11 +1005,26 @@ namespace TDF_Test
                     }
                 }
 
+
+                // symmetry check might improve performance?
+                /*double zero_leading_valley = zero_correlation[max_zero_time - 10];
+                double zero_trailing_valley = zero_correlation[max_zero_time + 10];
+                double zero_symmetry = Math.Abs(zero_leading_valley - zero_trailing_valley)/30;
+                max_zero -= zero_symmetry;
+
+                double one_leading_valley = one_correlation[max_one_time + 10];
+                double one_trailing_valley = one_correlation[max_one_time - 10];
+                double one_symmetry = Math.Abs(one_leading_valley - one_trailing_valley)/30;
+                max_one -= one_symmetry;*/
+
+                double zero_leading_flat = zero_correlation[max_zero_time - 20];
+                //max_zero += max_zero - zero_leading_flat;
+
                 // test to improve detection reliability
                 // basically a 3-element correlation on the expected correlation waveform
                 // this improves SNR for good signals
                 // but also seems to make things rapidly go bad when SNR is low, so no good!
-                if (_correlatortype == CorrelatorType.FM_Convolve || _correlatortype == CorrelatorType.FM_Convolve_Biased || _correlatortype == CorrelatorType.PM_Convolve)
+                /*if (_correlatortype == CorrelatorType.FM_Convolve || _correlatortype == CorrelatorType.FM_Convolve_Biased || _correlatortype == CorrelatorType.PM_Convolve)
                 {
                     double current_zero = max_zero;
                     // the optimal match is symmetric about the peak
@@ -1033,7 +1049,7 @@ namespace TDF_Test
                     //one_weighted_correlation += one_offset;
 
                     max_one = one_weighted_correlation;
-                }
+                }*/
 
                 // the first second we run is always a 0, assuming we detected the minute correctly
                 // the one-detector tends to be more reliable since it's longer, so we try to fudge it a bit
@@ -1098,27 +1114,25 @@ namespace TDF_Test
 
                 payload_data[secondcount] = bit;
 
-                double max_time = 0;
+                int max_time = 0;
                 // we now look for the bits within a small time window to improve detection probability
                 // we are effectively phase locked now and should get the correct sample point very precisely for all future seconds
                 if (bit)
-                {
-                    datasampler_start = max_one_time + (int)(datasampler_second_neg_range / decimated_sampleperiod);
-                    datasampler_stop = max_one_time + (int)(datasampler_second_pos_range / decimated_sampleperiod);
+                { 
                     max_time = max_one_time;
                 }
                 else
                 {
-                    datasampler_start = max_zero_time + (int)(datasampler_second_neg_range / decimated_sampleperiod);
-                    datasampler_stop = max_zero_time + (int)(datasampler_second_pos_range / decimated_sampleperiod);
                     max_time = max_zero_time;
                 }
+
+                datasampler_start = max_time + (int)(datasampler_second_neg_range / decimated_sampleperiod);
+                datasampler_stop = max_time + (int)(datasampler_second_pos_range / decimated_sampleperiod);
 
                 // print out the decoded bit, time, and bit number
                 // this is very useful for debugging since we can quickly look up the relevant bit in the arrayview
                 console_output.AppendFormat("{0,2}:{1,6} ", secondcount, max_time);
-                // add all but the first second sample point (first one is usually slightly off)
-                second_sampling_times[secondcount] = (datasampler_start + (datasampler_stop - datasampler_start)) * decimated_sampleperiod;
+                second_sampling_times[secondcount] = max_time + 200;
 
                 secondcount++;
             }
@@ -1170,18 +1184,6 @@ namespace TDF_Test
                 , second_sampling_ratio_low_average, second_sampling_low_count);
             console_output.AppendFormat("High NR {0} [dB], Low NR {1} [dB], Sum {2} [dB]\r\n", 10 * Math.Log10(second_sampling_ratio_high_rms), 10 * Math.Log10(second_sampling_ratio_low_rms),
                 10 * Math.Log10(Math.Pow(second_sampling_ratio_high_rms, 2) + Math.Pow(second_sampling_ratio_low_rms,2)));
-
-
-            double second_delta_rms = 0;
-            for (int i = 1; i < second_sampling_times.Length; i++)
-            {
-                second_delta_rms += second_sampling_times[i] - second_sampling_times[i - 1];
-            }
-            second_delta_rms /= second_sampling_times.Length - 1;
-            //second_delta_rms = Math.Abs(1-second_delta_rms);
-
-
-            console_output.AppendFormat("Second delta average: {0} ms\r\n", second_delta_rms * 1000);
         }
 
         private static double Calculate_Signal_SNR(double[] fm_filtered, double fm_filtered_square, int minutestart_sample, ref StringBuilder console_output)
@@ -1346,6 +1348,16 @@ namespace TDF_Test
                 kerneldelay_zero = kerneldelay - 6;
                 kerneldelay_one = kerneldelay - 6;
             }
+
+            switch (_type)
+            {
+                // corrections to align correlation outputs with input data
+                case CorrelatorType.FM:
+                case CorrelatorType.FM_Biased:
+                    kerneldelay_zero = -28;
+                    kerneldelay_one = -24;
+                    break;
+            }
             
             if (_type.IsConvolver())
             {
@@ -1395,11 +1407,26 @@ namespace TDF_Test
                     int k = i - kerneldelay_zero;
                     zero_correlation[k < 0 ? 0 : k] += correlation_scale * Math.Pow(_zero_correlator[j] - data_correlation_source[i + j], 2);
                 }
-                zero_correlation_sum += zero_correlation[i];
+
+                if (i > kerneldelay_zero)
+                    zero_correlation_sum += zero_correlation[i - kerneldelay_zero];
                 zero_correlation_min = Math.Min(zero_correlation[i], zero_correlation_min);
 
             }
             zero_correlation_sum /= zero_correlation.Length;
+
+            // fill in the edges
+            if (kerneldelay_zero > 0)
+            {
+                zero_correlation[0] = zero_correlation[1];
+            }
+            else if (kerneldelay_zero < 0)
+            {
+                for (int i = kerneldelay_zero; i < 0; i++)
+                {
+                    zero_correlation[i - kerneldelay_zero] = zero_correlation[-kerneldelay_zero];
+                }
+            }
 
             one_correlation = new double[data_correlation_source.Length];
             double one_correlation_sum = 0;
@@ -1421,12 +1448,25 @@ namespace TDF_Test
                     one_correlation[k < 0 ? 0 : k] += correlation_scale * Math.Pow(_one_correlator[j] - data_correlation_source[i + j], 2);
                 }
 
-                one_correlation_sum += one_correlation[i];
+                if (i > kerneldelay_one)
+                    one_correlation_sum += one_correlation[i - kerneldelay_one];
                 one_correlation_min = Math.Min(one_correlation[i], one_correlation_min);
             }
 
-
             one_correlation_sum /= one_correlation.Length;
+
+            // fill in the edges
+            if (kerneldelay_one > 0)
+            {
+                one_correlation[0] = one_correlation[1];
+            }
+            else if (kerneldelay_one < 0)
+            {
+                for (int i = kerneldelay_one; i < 0; i++)
+                {
+                    one_correlation[i - kerneldelay_one] = one_correlation[-kerneldelay_one];
+                }
+            }
 
             if (_type == CorrelatorType.FM || _type == CorrelatorType.FM_Biased)
             {
