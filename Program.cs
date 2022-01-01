@@ -1221,6 +1221,7 @@ namespace TDF_Test
         private static int Find_Minute_Start(double decimated_sampleperiod, double[] minute_correlation_source, ref StringBuilder console_output)
         {
             /* Find maximum value and assume this is the start of a minute 
+             * Perform a LMS correlation looking for a bunch of zeros
              * This new version uses a convolution filter and some clever weighting of the output waveform to determine the minute start fairly well!
              */
             //bool minutestarted = false;
@@ -1234,8 +1235,7 @@ namespace TDF_Test
             double[] minute_convolved_hpf = new double[minute_start_correlation.Length];
             double[] minute_convolved_weighted = new double[minute_start_correlation.Length];
 
-            // old correlator for reference
-            /*
+            // old correlator as first stage
             for (int i = 0; i < minute_correlation_source.Length - minute_correlator_template.Length; i++)
             {
 
@@ -1244,7 +1244,7 @@ namespace TDF_Test
                     minute_start_correlation[i] += -1000 * Math.Pow(minute_correlator_template[j] - minute_correlation_source[i + j], 2);
                 }
 
-            }*/
+            }
 
             List<float> minute_correlation_kernel = new List<float>();
 
@@ -1277,17 +1277,6 @@ namespace TDF_Test
                 minute_convolved_hpf[i - convolution_peak_offset] = con_hpf.Process((float)minute_convolved_raw[i - convolution_peak_offset]);
                 minute_convolved_lpf[i - convolution_peak_offset] = con_lpf.Process((float)minute_convolved_raw[i - convolution_peak_offset]);
             }
-
-            //minute_weighted_correlation = new double[minute_start_correlation.Length];
-            // a second correlator!
-            /*for (int i = 0; i < minute_start_correlation.Length - minute_correlation_kernel.Count; i++)
-            {
-
-                for (int j = 0; j < minute_correlation_kernel.Count; j++)
-                {
-                    minute_weighted_correlation[i] += Math.Pow(minute_correlation_kernel[j] - minute_start_correlation[i + j], 2);
-                }
-            }*/
 
             // search for up to 59 seconds
             // TODO: should also limit it to only searching up to 60 second before the end of the file
