@@ -1747,39 +1747,6 @@ namespace TDF_Test
             }
         }
 
-        /* Function to get parity of number n.
-    It returns 1 if n has odd parity, and
-    returns 0 if n has even parity */
-        static bool getParity(int n)
-        {
-            bool parity = false;
-            while (n != 0)
-            {
-                parity = !parity;
-                n = n & (n - 1);
-            }
-            return parity;
-
-        }
-
-        static int bitcount(int a)
-        {
-            byte[] numberAsByte = new byte[] { (byte)a };
-            BitArray bits = new BitArray(numberAsByte);
-            int count = 0;
-            for (int i = 0; i < 8; i++)
-            {
-                if (bits[i])
-                {
-                    count++;
-                }
-            }
-
-            return count;
-        }
-
-
-
         // convert two bytes to one double in the range -1 to 1
         static double bytesToDouble(byte firstByte, byte secondByte)
         {

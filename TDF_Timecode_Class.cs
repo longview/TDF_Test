@@ -355,7 +355,7 @@ namespace TDF_Test
                 case BitPositions.HA16:
                     return "Hamming weight 21-58, 16";
                 case BitPositions.IGNORED15:
-                    return "Ignored";
+                    return "Ignored (error not counted)";
                 case BitPositions.M:
                     return "M Start of minute";
                 case BitPositions.MIN01:
@@ -425,12 +425,10 @@ namespace TDF_Test
         }
 
         // https://stackoverflow.com/questions/2448303/converting-a-int-to-a-bcd-byte-array
-        // but didn't seem to work so rewrite
+        // but didn't seem to work so rewritten
         private byte[] ToBcd(int value)
         {
-            if (value < 0 || value > 99999999)
-                throw new ArgumentOutOfRangeException("value");
-            byte[] ret = new byte[4];
+            byte[] ret = new byte[2];
             while (value >= 10)
             {
                 ret[1] += 10;
@@ -438,13 +436,6 @@ namespace TDF_Test
             }
             ret[0] = (byte)value;
             ret[1] /= 10;
-            /*for (int i = 0; i < 4; i++)
-            {
-                ret[i] = (byte)(value % 10);
-                value /= 10;
-                ret[i] |= (byte)((value % 10) << 4);
-                value /= 10;
-            }*/
             return ret;
         }
     }
