@@ -17,8 +17,8 @@ namespace TDF_Test
         static void Main(string[] args)
         {
 
-            //Modes mode = Modes.Verify;
-            Modes mode = Modes.Standard;
+            Modes mode = Modes.Verify;
+            //Modes mode = Modes.Standard;
             int testindex = 0;
 
             List<TestSignalInfo> testsignals = new List<TestSignalInfo>();
@@ -87,7 +87,7 @@ namespace TDF_Test
                 testsignal_current.SignalType == TestSignalInfo.Signal_Type.TDF ? "TDF" : "DCF77 Phase");
             }
 
-            CorrelatorType correlator_in_use = CorrelatorType.FM_Convolve;
+            CorrelatorType correlator_in_use = CorrelatorType.FM_Convolve_Biased;
 
             // the convolver loves the synthetic reference signals
             if (correlator_in_use.IsConvolver())
@@ -901,9 +901,6 @@ namespace TDF_Test
             double datasampler_ratio_offset = 0;
             int datasampler_start = 0;
 
-            datasampler_start = minutestart_sample + (int)(1.0 / decimated_sampleperiod);
-            datasampler_stop = minutestart_sample + (int)(1.75 / decimated_sampleperiod);
-
             double datasampler_threshold = 1;
             bool datasampler_invert = false;
 
@@ -922,21 +919,20 @@ namespace TDF_Test
                 // this is the optimal value
                 datasampler_ratio_offset = -0.1;
             }
-            else if (_correlatortype == CorrelatorType.FM_Convolve)
+            else if (_correlatortype == CorrelatorType.FM_Convolve || _correlatortype == CorrelatorType.FM_Convolve_Biased)
             {
                 // 0 is the optimal value
-                datasampler_bias_scale_offset = -0.1;
-                // this is the optimal value
-                //datasampler_ratio_offset = 0.1;
-                datasampler_threshold = 1.15;
+                datasampler_bias_scale_offset = 0;
+                //datasampler_ratio_offset = -0.1;
+                datasampler_threshold = 1.5;
                 datasampler_invert = false;
 
                 // offset the range we search for this correlator
-                minutestart_sample += 10;
-                datasampler_start = minutestart_sample + (int)(0.9 / decimated_sampleperiod);
-                datasampler_stop = minutestart_sample + (int)(1.1 / decimated_sampleperiod);
-                datasampler_second_neg_range = 0.9;
-                datasampler_second_pos_range = 1.1;
+                //minutestart_sample += 10;
+                //datasampler_start = minutestart_sample + (int)(0.9 / decimated_sampleperiod);
+                //datasampler_stop = minutestart_sample + (int)(1.1 / decimated_sampleperiod);
+                datasampler_second_neg_range = 0.95;
+                datasampler_second_pos_range = 1.05;
             }
             else if (_correlatortype == CorrelatorType.PM_Convolve)
             {
@@ -982,7 +978,11 @@ namespace TDF_Test
                  *  This means we can integrate multiple transmissions of each bit to achieve a better SNR.
                  */
                 console_output.AppendFormat("Note: biased with reference bitstream, thresholds now {0:F3}/{1:F3}\r\n", sampler_threshold_autobias+ sampler_threshold_autobias_reference,
-                    1/ (sampler_threshold_autobias + sampler_threshold_autobias_reference));
+                    (sampler_threshold_autobias_reference - sampler_threshold_autobias));
+            }
+            else
+            {
+
             }
 
 
@@ -1005,8 +1005,13 @@ namespace TDF_Test
                         max_zero = zero_correlation[i];
                         max_zero_time = i;
                     }
+                    else if (one_correlation[i] > max_one)
+                    {
+                        max_one = one_correlation[i];
+                        max_one_time = i;
+                    }
 
-                    if (_correlatortype == CorrelatorType.FM_Convolve)
+                    /*if (_correlatortype == CorrelatorType.FM_Convolve)
                     {
                         // the peak of a one-correlation is 20 later than the ones
                         // we correct that and use the zeros as the reference mark
@@ -1020,17 +1025,25 @@ namespace TDF_Test
                     {
                         max_one = one_correlation[i];
                         max_one_time = i;
-                    }
+                    }*/
                 }
 
                 // test to improve detection reliability
                 // basically a 3-element correlation on the expected correlation waveform
-                if (_correlatortype == CorrelatorType.FM_Convolve)
+                if (_correlatortype == CorrelatorType.FM_Convolve || _correlatortype == CorrelatorType.FM_Convolve_Biased)
                 {
+                    double current_zero = zero_correlation[max_zero_time];
                     // the optimal match is symmetric about the peak
                     // at +-8 we expect symmetric negative values
-                    double zero_leading_valley = zero_correlation[max_zero_time - 9];
-                    double zero_trailing_valley = zero_correlation[max_zero_time + 9];
+                    double zero_leading_valley = zero_correlation[max_zero_time - 10];
+                    double zero_trailing_valley = zero_correlation[max_zero_time + 10];
+                    double zero_symmetry = Math.Abs(zero_leading_valley - zero_trailing_valley);
+                    double zero_offset = current_zero + (zero_leading_valley + zero_trailing_valley) / 2;
+                    double zero_weighted_correlation = current_zero + (Math.Abs(current_zero - zero_leading_valley) + Math.Abs(current_zero - zero_trailing_valley));
+                    zero_weighted_correlation -= zero_symmetry;
+                    zero_weighted_correlation += zero_offset;
+
+                    max_zero = zero_weighted_correlation;
 
                     // at +-15 we expect a zero-crossing, and at +-20 we want a value close to 0
                     //double zero_leading_zero = zero_correlation[max_zero_time - 20];
@@ -1042,9 +1055,21 @@ namespace TDF_Test
 
                     //double one_leading_peak = zero_correlation[max_zero_time - 20];
                     //double one_trailing_peak = zero_correlation[max_zero_time + 20];
+                    double current_one = one_correlation[max_one_time]; ;
+                    double one_leading_valley = one_correlation[max_one_time + 10];
+                    double one_trailing_valley = one_correlation[max_one_time - 10];
+                    double one_symmetry = Math.Abs(one_leading_valley - one_trailing_valley);
+                    double one_offset = current_one + (one_leading_valley + one_trailing_valley) / 2;
+                    double one_weighted_correlation = current_one + (Math.Abs(current_one - one_leading_valley) + Math.Abs(current_one - one_trailing_valley));
+                    one_weighted_correlation -= one_symmetry;
+                    one_weighted_correlation += one_offset;
 
-                    double one_leading_valley = one_correlation[max_one_time - 10 + 20];
-                    double one_trailing_valley = one_correlation[max_one_time + 10 + 20];
+                    max_one = one_weighted_correlation;
+
+                    // weight for valleys
+                    //weighted_correlation += Math.Abs(minute_start_correlation[i - 300]);// + Math.Abs(minute_start_correlation[i + 200]);
+
+
 
                     //double one_trailing_peak = zero_correlation[max_zero_time + 25];
                     //max_one = max_one - Math.Abs(one_leading_valley - one_trailing_valley);
@@ -1096,7 +1121,7 @@ namespace TDF_Test
                 {
                     datasampler_threshold = sampler_threshold_autobias_reference + sampler_threshold_autobias;
                     if (testsignal.reference_timecode.GetBitstream()[secondcount])
-                        datasampler_threshold = 1 / datasampler_threshold;
+                        datasampler_threshold = sampler_threshold_autobias_reference - sampler_threshold_autobias;
                 }
                     
                 
@@ -1381,7 +1406,11 @@ namespace TDF_Test
             NWaves.Operations.Convolution.OlaBlockConvolver con_one = null;
             int kernelsize = 128;
             int kerneldelay = kernelsize / 2;
-            kerneldelay += 32;
+            kerneldelay += 67;
+
+            int kerneldelay_zero = kerneldelay;
+            int kerneldelay_one = kerneldelay + 11;
+            
             if (_type.IsConvolver())
             {
                 
@@ -1415,7 +1444,7 @@ namespace TDF_Test
                 if (_type.IsConvolver() && con_zero != null)
                 {
                     // dump the kernel size to avoid delay
-                    int j = i- kerneldelay; 
+                    int j = i- kerneldelay_zero; 
 
                     zero_correlation[j < 0 ? 0 : j] = con_zero.Process((float)data_correlation_source[i]);
                     continue;
@@ -1444,7 +1473,7 @@ namespace TDF_Test
             {
                 if (_type.IsConvolver() && con_one != null)
                 {
-                    int j = i - kerneldelay;
+                    int j = i - kerneldelay_one;
                     one_correlation[j < 0 ? 0 : j] = con_one.Process((float)data_correlation_source[i]);
                     continue;
                 }
