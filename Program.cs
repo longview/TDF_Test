@@ -134,20 +134,6 @@ namespace TDF_Test
                     signal.Recorded_Timestamp_UTC.ToString("o"), signal.Comment, signal.Frequency,
                     signal.SignalType == TestSignalInfo.Signal_Type.TDF ? "TDF" : "DCF77 Phase");
 
-                    // parameter sweep function
-                    // used to determine optimal coefficients by linear search
-                    /*for (int i = 0; i < 20; i++)
-                    {
-                        errors = 0;
-                        datasampler_ratio_offset = -0.5 * (double)i/5 + 1;
-                        errors = Demodulate_Testsignal(signal, ref console_output, datasampler_bias_scale_offset, datasampler_ratio_offset);
-                        sweep_results[i] += errors;
-                        if (errors != signal.Expected_Errors)
-                            fail_count++;
-
-                        Console.WriteLine("Index {0:D2}, expected errors {1}, found {2}, {3} [{4}]", testsignals.IndexOf(signal), signal.Expected_Errors, errors, datasampler_bias_scale_offset, i);
-                    }*/
-
                     errors = Demodulate_Testsignal(signal, correlator_in_use, ref console_output);
                     if (errors > signal.Expected_Errors)
                         fail_count++;
@@ -1020,6 +1006,8 @@ namespace TDF_Test
 
                 // test to improve detection reliability
                 // basically a 3-element correlation on the expected correlation waveform
+                // this improves SNR for good signals
+                // but also seems to make things rapidly go bad when SNR is low, so no good!
                 if (_correlatortype == CorrelatorType.FM_Convolve || _correlatortype == CorrelatorType.FM_Convolve_Biased || _correlatortype == CorrelatorType.PM_Convolve)
                 {
                     double current_zero = max_zero;
@@ -1045,21 +1033,6 @@ namespace TDF_Test
                     //one_weighted_correlation += one_offset;
 
                     max_one = one_weighted_correlation;
-
-                    // the response of the zero detector to a one is the inverse of a zero, so try to match on that?
-                    /*double current_one = min_zero;
-                    
-                    double one_leading_valley = zero_correlation[min_zero_time + 10];
-                    double one_trailing_valley = zero_correlation[min_zero_time - 10];
-                    double one_symmetry = Math.Abs(one_leading_valley - one_trailing_valley) + 1;
-                    double one_offset = current_one + (one_leading_valley + one_trailing_valley) / 2;
-                    double one_weighted_correlation = current_one + (Math.Abs(current_one - one_leading_valley) + Math.Abs(current_one - one_trailing_valley));
-                    one_weighted_correlation -= one_symmetry;
-                    one_weighted_correlation += one_offset;
-
-                    max_one = one_weighted_correlation * -1;
-                    // the inverse zero detector is slightly late
-                    max_one_time = min_zero_time - 24;*/
                 }
 
                 // the first second we run is always a 0, assuming we detected the minute correctly
@@ -1247,8 +1220,9 @@ namespace TDF_Test
 
         private static int Find_Minute_Start(double decimated_sampleperiod, double[] minute_correlation_source, ref StringBuilder console_output)
         {
-            /* Find maximum value and assume this is the start of a minute
-                         */
+            /* Find maximum value and assume this is the start of a minute 
+             * This new version uses a convolution filter and some clever weighting of the output waveform to determine the minute start fairly well!
+             */
             //bool minutestarted = false;
             double max_minute_correlation = double.NegativeInfinity;
             int minutestart_sample = 0;
@@ -1260,32 +1234,19 @@ namespace TDF_Test
             double[] minute_convolved_hpf = new double[minute_start_correlation.Length];
             double[] minute_convolved_weighted = new double[minute_start_correlation.Length];
 
-            // correlation for minute start, just zeros of a given length
-            // this should perhaps not be a correlator for efficiency?
+            // old correlator for reference
+            /*
             for (int i = 0; i < minute_correlation_source.Length - minute_correlator_template.Length; i++)
             {
-                /*if (_type == CorrelatorType.FM_Convolve && con_minute != null)
-                {
-                    minute_start_correlation[i] = con_minute.Process((float)data_correlation_source[i]);
-                    continue;
-                }*/
 
                 for (int j = 0; j < minute_correlator_template.Length; j++)
                 {
                     minute_start_correlation[i] += -1000 * Math.Pow(minute_correlator_template[j] - minute_correlation_source[i + j], 2);
                 }
 
-            }
+            }*/
 
             List<float> minute_correlation_kernel = new List<float>();
-
-            // build a correlator template for our correlated data
-            /*for (int i = 0; i < 150; i++)
-                minute_correlation_kernel.Add(-1);
-            for (int i = 0; i < 200; i++)
-                minute_correlation_kernel.Add(1);
-            for (int i = 0; i < 150; i++)
-                minute_correlation_kernel.Add(-1);*/
 
             for (int i = 0; i < 1; i++)
                 minute_correlation_kernel.Add(1);
@@ -1309,8 +1270,10 @@ namespace TDF_Test
             // do convolution, offset the start to align it with the input data (max correlation at start of kernel)
             for (int i = convolution_peak_offset; i < minute_convolved_raw.Length + convolution_peak_offset; i++)
             {
+                
                 minute_convolved_raw[i - convolution_peak_offset] = con_minute.Process((float)minute_start_correlation[(i > minute_convolved_raw.Length - 1) ? 0 : i]);
                 minute_convolved[i - convolution_peak_offset] = minute_convolved_raw[i - convolution_peak_offset];
+                // these extra outputs can be useful for debug but are not used
                 minute_convolved_hpf[i - convolution_peak_offset] = con_hpf.Process((float)minute_convolved_raw[i - convolution_peak_offset]);
                 minute_convolved_lpf[i - convolution_peak_offset] = con_lpf.Process((float)minute_convolved_raw[i - convolution_peak_offset]);
             }
@@ -1359,17 +1322,6 @@ namespace TDF_Test
                     max_minute_correlation = weighted_correlation;// minute_start_correlation[i];
                     minutestart_sample = i;
                 }
-                /*if (correlation3[i] > -1 && !minutestarted)
-                {
-                    minutestartedsample = i;
-                    minutestarted = true;
-                    continue;
-                }
-                if (correlation3[i] < -1 && minutestarted)
-                {
-                    minutestart_sample = minutestartedsample + (i - minutestartedsample);
-                    break;
-                }*/
             }
 
             console_output.AppendFormat("Found start of minute at time {0} ({1})\r\n", decimated_sampleperiod * minutestart_sample, minutestart_sample);
@@ -1381,6 +1333,7 @@ namespace TDF_Test
         {
             /* The technique for correlation here is to template match using least square error matching
                          * i.e. we are sensitive to the exact amplitude, not just the shape
+                         * Also supports convolution, but this appears to offer no benefit vs. LMS correlation here
                          */
 
 
