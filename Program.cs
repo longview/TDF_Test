@@ -38,7 +38,7 @@ namespace TDF_Test
                 24, new DateTime(2021, 12, 30, 09, 01, 00, DateTimeKind.Utc)));
             //4 full of errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T102229Z, 157 kHz, Wide-U.wav", "Maintenance phase, off air",
-                0, new DateTime(2021, 12, 30, 10, 23, 00, DateTimeKind.Utc), _errors : 23, _status : TestSignalInfo.Station_Status.Maintenance));
+                0, new DateTime(2021, 12, 30, 10, 23, 00, DateTimeKind.Utc), _errors: 23, _status: TestSignalInfo.Station_Status.Maintenance));
             //5 no errors, bit 19/20 is tricky
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T105034Z, 157 kHz, Wide-U.wav", "Medium signal, morning",
                 24, new DateTime(2021, 12, 30, 10, 51, 00, DateTimeKind.Utc)));
@@ -94,26 +94,36 @@ namespace TDF_Test
                 testsignal_current.SignalType == TestSignalInfo.Signal_Type.TDF ? "TDF" : "DCF77 Phase");
             }
 
-            CorrelatorType correlator_in_use = CorrelatorType.FM_Biased;
 
-            // the convolver loves the synthetic reference signals
-            if (correlator_in_use.IsConvolver())
-            {
-                Generate_Synthetic_Correlators(ref one_correlator_template_FM, ref zero_correlator_template_FM, ref one_correlator_template_PM, ref zero_correlator_template_PM, 0);
-            }
+            // 0 - FM
+            List<DemodulatorContext> demodulatorcontext = new List<DemodulatorContext>();
+            demodulatorcontext.Add(new DemodulatorContext(DemodulatorContext.CorrelatorTypeEnum.FM) { 
+                DataSlicerParameters = new DemodulatorContext.DataSlicerParameterStruct() { AutoBias_Level = 0.25, BiasOffset = -0.1, Threshold = 1 },
+                CorrelatorParameters = new DemodulatorContext.CorrelatorParametersStruct() { ZeroOffset = -28, OneOffset = -24, 
+                    CorrelatorDataSource = DemodulatorContext.CorrelatorDataSourceTypes.FM, CorrelatorReferenceSource = DemodulatorContext.CorrelatorReferenceSourceTypes.Real },
+                CorrelatorType = DemodulatorContext.CorrelatorTypeEnum.FM,
+                FilterParameters = new DemodulatorContext.FilterParametersStruct() { FMAverageCount = 8, IQAverageCount = 100, EnvelopeAverageCount = 64 },
+                MinuteDetectorParameters = new DemodulatorContext.MinuteDetectorParametersStruct() { Convolver_Length = 512}
+            });
+            // 1 - FM autobias
+            demodulatorcontext.Add(demodulatorcontext[0]);
+            demodulatorcontext[1].CorrelatorType = DemodulatorContext.CorrelatorTypeEnum.FM_Biased;
 
-            Console.WriteLine("Using {0} correlation", correlator_in_use.GetString());
+
+            DemodulatorContext currentdemodulator = demodulatorcontext[0];
+
+            Console.WriteLine("Using {0} correlation", currentdemodulator.ToString());
 
             // generate correlators if desired
-            if(false)
+            if (false)
             {
 #pragma warning disable CS0162 // Unreachable code detected
                 StringBuilder console_output = new StringBuilder();
 #pragma warning restore CS0162 // Unreachable code detected
                 int zero = 1725;
                 int one = 2926;
-                Demodulate_Testsignal(testsignals[0], CorrelatorType.PM, ref console_output, true, zero, one);
-                Demodulate_Testsignal(testsignals[0], CorrelatorType.FM, ref console_output, true, zero, one);
+                //Demodulate_Testsignal(testsignals[0], CorrelatorType.PM, ref console_output, true, zero, one);
+                //Demodulate_Testsignal(testsignals[0], CorrelatorType.FM, ref console_output, true, zero, one);
                 Console.WriteLine("Generated correlators, offset {0} (0) and {1} (1)", zero, one);
             }
 
@@ -134,7 +144,7 @@ namespace TDF_Test
                     signal.Recorded_Timestamp_UTC.ToString("o"), signal.Comment, signal.Frequency,
                     signal.SignalType == TestSignalInfo.Signal_Type.TDF ? "TDF" : "DCF77 Phase");
 
-                    errors = Demodulate_Testsignal(signal, correlator_in_use, ref console_output);
+                    errors = Demodulate_Testsignal(signal, ref currentdemodulator, ref console_output);
 
                     // ignore the bad signals for error computation
                     if (signal.Status == TestSignalInfo.Station_Status.OnAir)
@@ -148,7 +158,7 @@ namespace TDF_Test
                     Console.WriteLine("Index {0,2}, expected errors {1,2}, found {2,2}{4}. Comment: {3}",
                         testsignals.IndexOf(signal), signal.Expected_Errors, errors, signal.Comment, errors < signal.Expected_Errors ? "(!)" : "");
 
-                    File.WriteAllText(String.Format("Verify_Result_{0}_f{1}_e{2}_{3}.txt", testsignals.IndexOf(signal), errors, signal.Expected_Errors, correlator_in_use.GetString()),
+                    File.WriteAllText(String.Format("Verify_Result_{0}_f{1}_e{2}_{3}.txt", testsignals.IndexOf(signal), errors, signal.Expected_Errors, currentdemodulator.ToString()),
                         console_output.ToString());
                 }
 
@@ -162,7 +172,7 @@ namespace TDF_Test
                 //Decode_Received_Data(testsignal_current, testsignal_current.reference_timecode.GetBitstream(), ref console_output);
                 //Console.Write(console_output.ToString());
 
-                Demodulate_Testsignal(testsignal_current, correlator_in_use, ref console_output);
+                Demodulate_Testsignal(testsignal_current, ref currentdemodulator, ref console_output);
 
                 Console.Write(console_output.ToString());
             }
@@ -358,7 +368,7 @@ namespace TDF_Test
             integrator = 0;
             for (int i = 0; i < tempdata.Count; i++)
             {
-                integrator += tempdata[i]*integration_gain;
+                integrator += tempdata[i] * integration_gain;
                 PM_One[i] = integrator;
             }
 
@@ -372,8 +382,8 @@ namespace TDF_Test
 
 
 
-        private static int Demodulate_Testsignal(TestSignalInfo testsignal_current, CorrelatorType _correlatortype,
-            ref StringBuilder console_output, 
+        private static int Demodulate_Testsignal(TestSignalInfo testsignal_current, ref DemodulatorContext demodulator,
+            ref StringBuilder console_output,
             bool generate_correlator = false, int zero_offset = 0, int one_offset = 0)
         {
             // frequency offset of USB receiver
@@ -429,57 +439,69 @@ namespace TDF_Test
 
             console_output.AppendFormat("FM demodulation start\r\n");
 
-            int fm_lpf_average_len = 8;
-            int fm_rectified_lpf_average_len = 32;
-
-            console_output.AppendFormat("FM moving average filter size {0}\r\nFM rectifier filter size {1}\r\n", fm_lpf_average_len, fm_rectified_lpf_average_len);
+            console_output.AppendFormat("FM moving average filter size {0}\r\nFM rectifier filter size {1}\r\n", 
+                demodulator.FilterParameters.FMAverageCount, demodulator.FilterParameters.EnvelopeAverageCount);
             double fm_unfiltered_square, fm_filtered_square;
-            Demodulate(i_filtered, q_filtered, fm_unfiltered, pm_unfiltered, fm_filtered, fm_lpf_average_len, out fm_unfiltered_square, out fm_filtered_square);
+            Demodulate(i_filtered, q_filtered, fm_unfiltered, pm_unfiltered, fm_filtered, demodulator.FilterParameters.FMAverageCount, out fm_unfiltered_square, out fm_filtered_square);
             Perform_PM_Correction(phase_error_per_sample_vs_frequency, ref pm_unfiltered, pm_filtered_drift, ref console_output);
 
-            if (generate_correlator && (_correlatortype == CorrelatorType.FM || _correlatortype == CorrelatorType.FM_Convolve))
+            // obsolete now
+            /*if (generate_correlator && (_correlatortype == CorrelatorType.FM || _correlatortype == CorrelatorType.FM_Convolve))
                 Generate_Correlators(fm_filtered, _correlatortype, zero_offset, one_offset);
             else if (generate_correlator && _correlatortype == CorrelatorType.PM)
-                Generate_Correlators(pm_filtered_drift, _correlatortype, zero_offset, one_offset);
+                Generate_Correlators(pm_filtered_drift, _correlatortype, zero_offset, one_offset);*/
+
             // attempt an SNR calculation based on full band (signal and noise)
             // and filtered square values (mostly just signal we assume)
 
             FM_SNR_Calculation(fm_unfiltered, fm_filtered, ref fm_unfiltered_square, ref fm_filtered_square, ref console_output);
-            
-            double[] fm_filtered_rectified = Generate_Rectified_FM(data, IQ_decimation_factor, fm_filtered, fm_rectified_lpf_average_len);
 
-            double[] zero_correlation, one_correlation;
-            if (_correlatortype.UsesFM())
-                Perform_Correlations(ref fm_filtered, ref zero_correlator_template_FM, 
-                    ref one_correlator_template_FM, out zero_correlation, out one_correlation, _correlatortype, ref console_output);
+            double[] fm_filtered_rectified = Generate_Rectified_FM(data, IQ_decimation_factor, fm_filtered, demodulator.FilterParameters.EnvelopeAverageCount);
+
+            // make synthetic correlators if desired
+            if (demodulator.CorrelatorParameters.CorrelatorReferenceSource == DemodulatorContext.CorrelatorReferenceSourceTypes.Synthetic)
+            {
+                Generate_Synthetic_Correlators(ref one_correlator_template_FM, ref zero_correlator_template_FM, ref one_correlator_template_PM, ref zero_correlator_template_PM, 0);
+            }
+
+            if (demodulator.CorrelatorParameters.CorrelatorDataSource == DemodulatorContext.CorrelatorDataSourceTypes.FM)
+            {
+                demodulator.CorrelatorParameters.ZeroCorrelatorReference = zero_correlator_template_FM;
+                demodulator.CorrelatorParameters.OneCorrelatorReference = one_correlator_template_FM;
+                demodulator.CorrelatorParameters.DemodulatorSource = fm_filtered;
+            }
             else
-                Perform_Correlations(ref pm_filtered_drift, ref zero_correlator_template_PM, 
-                    ref one_correlator_template_PM, out zero_correlation, out one_correlation, _correlatortype, ref console_output);
+            {
+                demodulator.CorrelatorParameters.ZeroCorrelatorReference = zero_correlator_template_PM;
+                demodulator.CorrelatorParameters.OneCorrelatorReference = one_correlator_template_PM;
+                demodulator.CorrelatorParameters.DemodulatorSource = pm_filtered_drift;
+            }
 
+            demodulator.MinuteDetectorParameters.MinuteDetectorSource = fm_filtered_rectified;
 
-            int minutestart_sample = Find_Minute_Start(decimated_sampleperiod, fm_filtered_rectified, ref console_output);
+            Perform_Correlations(ref demodulator, ref console_output);
 
-            Calculate_Signal_SNR(fm_filtered, fm_filtered_square, minutestart_sample, ref console_output);
-            int datasampler_stop;
-            bool[] payload_data;
+            Find_Minute_Start(ref demodulator, decimated_sampleperiod, ref console_output);
+
+            Calculate_Signal_SNR(fm_filtered, fm_filtered_square, demodulator.MinuteDetectorParameters.MinuteDetectorResult, ref console_output);
             double[] second_sampling_ratio;
 
-            Perform_Detection(decimated_sampleperiod, fm_unfiltered, zero_correlation, one_correlation,
-                minutestart_sample, out datasampler_stop, out payload_data, _correlatortype, testsignal_current, out second_sampling_ratio, ref console_output);
+            Perform_Detection(ref demodulator, testsignal_current, decimated_sampleperiod, out second_sampling_ratio, ref console_output);
 
 
             console_output.Append("Decode: ");
-            Print_Demodulated_Bits(payload_data, ref console_output);
+            Print_Demodulated_Bits(demodulator.DemodulatedData, ref console_output);
             console_output.Append("Refrnc: ");
             Print_Demodulated_Bits(testsignal_current.Reference_Timecode.GetBitstream(), ref console_output);
 
-            int biterrors = testsignal_current.Reference_Timecode.CompareBitstream(payload_data);
+            int biterrors = testsignal_current.Reference_Timecode.CompareBitstream(demodulator.DemodulatedData);
 
-            Print_Demodulated_Bits_Informative(console_output, zero_correlation, one_correlation, payload_data, testsignal_current.Reference_Timecode.GetBitstream(), second_sampling_ratio);
+            Print_Demodulated_Bits_Informative(console_output, demodulator.CorrelatorParameters.ZeroDemodulatorResult,
+                demodulator.CorrelatorParameters.OneCorrelatorReference, demodulator.DemodulatedData, testsignal_current.Reference_Timecode.GetBitstream(), second_sampling_ratio);
 
             console_output.Append(testsignal_current.Reference_Timecode.Comparison_Error_Description);
 
-            int decode_error_count = Decode_Received_Data(testsignal_current, payload_data, ref console_output);
+            int decode_error_count = Decode_Received_Data(testsignal_current, demodulator.DemodulatedData, ref console_output);
 
             return decode_error_count + biterrors;
         }
@@ -490,181 +512,181 @@ namespace TDF_Test
             int count = 0;
             console_output.AppendFormat("No.  Sym  Value   Expct   Rat\r\n");
             console_output.AppendFormat("00   M    {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("01   A2   {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("02   A3   {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("03   HA2  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("04   HA4  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("05   HA8  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("06  HA16  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("07   0    {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("08   0    {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("09   0    {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("10   0    {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("11   0    {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("12   0    {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("13   F1   {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("14   F2   {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("15   N/A  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("16   A1   {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("17   Z1   {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("18   Z2   {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("19   X    {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("20   S    {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("21   M01  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("22   M02  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("23   M04  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("24   M08  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("25   M10  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("26   M20  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("27   M40  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("28   P1   {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("29   H01  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("30   H02  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("31   H04  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("32   H08  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("33   H10  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("34   H20  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("35   P2   {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("36  DM01  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("37  DM02  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("38  DM04  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("39  DM08  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("40  DM10  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("41  DM20  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("42  DW01  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("43  DW02  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("44  DW04  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("45  MO01  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("46  MO02  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("47  MO04  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("48  MO08  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("49  MO10  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("50   Y01  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("51   Y02  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("52   Y04  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("53   Y08  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("54   Y10  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("55   Y20  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("56   Y40  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("57   Y80  {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             count++;
             console_output.AppendFormat("58   P3   {0,5}   {2,5}{3}   {1:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*":"");
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "");
             console_output.AppendLine();
         }
 
@@ -710,7 +732,7 @@ namespace TDF_Test
 
                 console_output.AppendFormat("Unused bits 7-12 error!\r\n");
             }
-                
+
 
             console_output.AppendFormat(payload_data[13] ? "F1: Tomorrow is a public holiday!\r\n" : "F1: No holiday tomorrow\r\n");
             console_output.AppendFormat(payload_data[14] ? "F2: Today is a public holiday!\r\n" : "F2: No holiday today :(\r\n");
@@ -877,20 +899,18 @@ namespace TDF_Test
             console_output.AppendLine();
         }
 
-        private static void Perform_Detection(double decimated_sampleperiod,
-            double[] fm_unfiltered,
-            double[] zero_correlation,
-            double[] one_correlation,
-            int minutestart_sample,
-            out int datasampler_stop,
-            out bool[] payload_data, CorrelatorType _correlatortype, TestSignalInfo testsignal,out double[] second_sampling_ratio, ref StringBuilder console_output
+        private static void Perform_Detection(ref DemodulatorContext demodulator, TestSignalInfo testsignal, double decimated_sampleperiod, out double[] second_sampling_ratio, ref StringBuilder console_output
             )
         {
+
+            double[] zero_correlation = demodulator.CorrelatorParameters.ZeroDemodulatorResult;
+            double[] one_correlation = demodulator.CorrelatorParameters.OneDemodulatorResult;
 
             double datasampler_bias_scale_offset = 0;
             // offset to the ratio of one/zero
             double datasampler_ratio_offset = 0;
             int datasampler_start = 0;
+            int datasampler_stop = 0;
 
             double datasampler_threshold = 1;
             bool datasampler_invert = false;
@@ -898,11 +918,17 @@ namespace TDF_Test
             double datasampler_second_neg_range = 0.95;
             double datasampler_second_pos_range = 1.05;
 
+            int minutestart_sample = demodulator.MinuteDetectorParameters.MinuteDetectorResult;
+
             // this should be relatively wide unless the minute-start detector is very accurate
             // the SNR for the first second is usually good, so a wider window doesn't seem to hurt performance
             datasampler_start = minutestart_sample + (int)(0.75 / decimated_sampleperiod);
             datasampler_stop = minutestart_sample + (int)(1.2 / decimated_sampleperiod);
 
+            datasampler_ratio_offset = demodulator.DataSlicerParameters.BiasOffset;
+            datasampler_threshold = demodulator.DataSlicerParameters.Threshold;
+
+            /*
             if (_correlatortype == CorrelatorType.FM || _correlatortype == CorrelatorType.FM_Biased)
             {
                 // 0 is the optimal value
@@ -936,11 +962,11 @@ namespace TDF_Test
                 datasampler_bias_scale_offset = 0;
                 // this is the optimal value
                 datasampler_ratio_offset = 0.3;
-            }
+            }*/
 
 
 
-            payload_data = new bool[59];
+            demodulator.DemodulatedData = new bool[59];
             double[] second_sampling_times = new double[59];
             second_sampling_ratio = new double[59];
 
@@ -955,9 +981,9 @@ namespace TDF_Test
             // 0.15 removes many minor errors
             // 0.3 fixes a lot
             // 0.5 will likely suppress errors such as wrong status bits etc.
-            double sampler_threshold_autobias = 0.25;//0.15;
+            double sampler_threshold_autobias = demodulator.DataSlicerParameters.AutoBias_Level;//0.15;
 
-            if (_correlatortype.IsBiased())
+            if (demodulator.IsBiased())
             {
                 /*
                  * Note for final system:
@@ -967,7 +993,7 @@ namespace TDF_Test
                  *  Reset an hour change?
                  *  This means we can integrate multiple transmissions of each bit to achieve a better SNR.
                  */
-                console_output.AppendFormat("Note: biased with reference bitstream, thresholds now {0:F3}/{1:F3}\r\n", sampler_threshold_autobias+ sampler_threshold_autobias_reference,
+                console_output.AppendFormat("Note: biased with reference bitstream, thresholds now {0:F3}/{1:F3}\r\n", sampler_threshold_autobias + sampler_threshold_autobias_reference,
                     (sampler_threshold_autobias_reference - sampler_threshold_autobias));
             }
             else
@@ -980,7 +1006,7 @@ namespace TDF_Test
 
             console_output.Append("Bit sample times:\r\n");
 
-            while (datasampler_stop < fm_unfiltered.Length - 1 && secondcount < 59)
+            while (datasampler_stop < zero_correlation.Length - 1 && secondcount < 59)
             {
                 double max_zero = double.NegativeInfinity;
                 double min_zero = double.PositiveInfinity;
@@ -1072,9 +1098,9 @@ namespace TDF_Test
                     datasampler_bias_scale *= 1 + datasampler_bias_scale_offset;
                     // correct for template length; slight layering violation
                     // this check only applies to standard correlation, not the convolvers
-                    if (_correlatortype == CorrelatorType.FM || _correlatortype == CorrelatorType.FM_Biased)
+                    if (demodulator.CorrelatorType == DemodulatorContext.CorrelatorTypeEnum.FM || demodulator.CorrelatorType == DemodulatorContext.CorrelatorTypeEnum.FM_Biased)
                         datasampler_bias_scale *= (double)zero_correlator_template_FM.Length / (double)one_correlator_template_FM.Length;
-                    else if (_correlatortype == CorrelatorType.PM)
+                    else if (demodulator.CorrelatorType == DemodulatorContext.CorrelatorTypeEnum.PM)
                         datasampler_bias_scale *= (double)zero_correlator_template_PM.Length / (double)one_correlator_template_PM.Length;
                 }
 
@@ -1096,14 +1122,14 @@ namespace TDF_Test
                 }
 
                 // autobias mode, adds a bias to the threshold based on expected value
-                if (_correlatortype == CorrelatorType.FM_Biased && secondcount > 0)
+                if (demodulator.CorrelatorType == DemodulatorContext.CorrelatorTypeEnum.FM_Biased && secondcount > 0)
                 {
                     datasampler_threshold = sampler_threshold_autobias_reference + sampler_threshold_autobias;
                     if (testsignal.Reference_Timecode.GetBitstream()[secondcount])
                         datasampler_threshold = sampler_threshold_autobias_reference - sampler_threshold_autobias;
                 }
-                    
-                
+
+
                 ratio += datasampler_ratio_offset;
 
                 // store the ratio for debug analysis
@@ -1117,13 +1143,13 @@ namespace TDF_Test
                 if (datasampler_invert)
                     bit = !bit;
 
-                payload_data[secondcount] = bit;
+                demodulator.DemodulatedData[secondcount] = bit;
 
                 int max_time = 0;
                 // we now look for the bits within a small time window to improve detection probability
                 // we are effectively phase locked now and should get the correct sample point very precisely for all future seconds
                 if (bit)
-                { 
+                {
                     max_time = max_one_time;
                 }
                 else
@@ -1171,8 +1197,8 @@ namespace TDF_Test
                 }
             }
 
-            second_sampling_ratio_high_rms = Math.Sqrt(second_sampling_ratio_high_rms/second_sampling_high_count);
-            second_sampling_ratio_low_rms = Math.Sqrt(second_sampling_ratio_low_rms/second_sampling_low_count);
+            second_sampling_ratio_high_rms = Math.Sqrt(second_sampling_ratio_high_rms / second_sampling_high_count);
+            second_sampling_ratio_low_rms = Math.Sqrt(second_sampling_ratio_low_rms / second_sampling_low_count);
 
             second_sampling_ratio_average /= second_sampling_ratio.Length;
             second_sampling_ratio_high_average /= second_sampling_high_count;
@@ -1181,14 +1207,14 @@ namespace TDF_Test
             second_sampling_offset = ((second_sampling_ratio_high_average - second_sampling_ratio_low_average) / 2) + second_sampling_ratio_low_average;
 
             // midpoint should be 1 ideally
-            
+
             console_output.AppendFormat("Data slicer ratio is {1}, average value is {0}. Offset: {2}, Scale: {3}\r\n",
                 second_sampling_ratio_average,
                 second_sampling_offset, datasampler_ratio_offset, datasampler_bias_scale_offset);
             console_output.AppendFormat("     high average {0} ({1}), low average {2} ({3})\r\n", second_sampling_ratio_high_average, second_sampling_high_count
                 , second_sampling_ratio_low_average, second_sampling_low_count);
             console_output.AppendFormat("High NR {0} [dB], Low NR {1} [dB], Sum {2} [dB]\r\n", 10 * Math.Log10(second_sampling_ratio_high_rms), 10 * Math.Log10(second_sampling_ratio_low_rms),
-                10 * Math.Log10(Math.Pow(second_sampling_ratio_high_rms, 2) + Math.Pow(second_sampling_ratio_low_rms,2)));
+                10 * Math.Log10(Math.Pow(second_sampling_ratio_high_rms, 2) + Math.Pow(second_sampling_ratio_low_rms, 2)));
         }
 
         private static double Calculate_Signal_SNR(double[] fm_filtered, double fm_filtered_square, int minutestart_sample, ref StringBuilder console_output)
@@ -1225,7 +1251,7 @@ namespace TDF_Test
             return FM_Rectified_SNR;
         }
 
-        private static int Find_Minute_Start(double decimated_sampleperiod, double[] minute_correlation_source, ref StringBuilder console_output)
+        private static void Find_Minute_Start(ref DemodulatorContext demodulator, double decimated_sampleperiod, ref StringBuilder console_output)
         {
             /* Find maximum value and assume this is the start of a minute 
              * Perform a LMS correlation looking for a bunch of zeros
@@ -1235,6 +1261,7 @@ namespace TDF_Test
             double max_minute_correlation = double.NegativeInfinity;
             int minutestart_sample = 0;
 
+            double[] minute_correlation_source = demodulator.MinuteDetectorParameters.MinuteDetectorSource;
             double[] minute_start_correlation = new double[minute_correlation_source.Length];
             double[] minute_convolved = new double[minute_start_correlation.Length];
             double[] minute_convolved_raw = new double[minute_start_correlation.Length];
@@ -1262,7 +1289,7 @@ namespace TDF_Test
             for (int i = 0; i < 1; i++)
                 minute_correlation_kernel.Add(1);
 
-            int convolution_size = 512;
+            int convolution_size = demodulator.MinuteDetectorParameters.Convolver_Length;
             int convolution_delay = convolution_size / 2;
 
             // the number of samples to offset the peak by to make our peak correlation at the start of the minute marker
@@ -1277,7 +1304,7 @@ namespace TDF_Test
             // do convolution, offset the start to align it with the input data (max correlation at start of kernel)
             for (int i = convolution_peak_offset; i < minute_convolved_raw.Length + convolution_peak_offset; i++)
             {
-                
+
                 minute_convolved_raw[i - convolution_peak_offset] = con_minute.Process((float)minute_start_correlation[(i > minute_convolved_raw.Length - 1) ? 0 : i]);
                 minute_convolved[i - convolution_peak_offset] = minute_convolved_raw[i - convolution_peak_offset];
                 // these extra outputs can be useful for debug but are not used
@@ -1288,15 +1315,15 @@ namespace TDF_Test
             // search for up to 59 seconds
             // TODO: should also limit it to only searching up to 60 second before the end of the file
             //      since we need a full minute to perform a decode properly
-            int max_minute_search = (int)Math.Min(convolution_peak_offset + 500 +((double)60 / decimated_sampleperiod), minute_correlation_source.Length);
-            for (int i = convolution_peak_offset + 500; i < max_minute_search-70; i++)
+            int max_minute_search = (int)Math.Min(convolution_peak_offset + 500 + ((double)60 / decimated_sampleperiod), minute_correlation_source.Length);
+            for (int i = convolution_peak_offset + 500; i < max_minute_search - 70; i++)
             {
                 // bias it towards the distinctive correlation peak.
                 double current = minute_convolved[i];
                 double leading_valley = (minute_convolved[i - 200] + minute_convolved[i - 190] + minute_convolved[i - 195]) / 3;
                 double trailing_valley = (minute_convolved[i + 200] + minute_convolved[i + 190] + minute_convolved[i + 195]) / 3;
 
-                double offset = current + (leading_valley + trailing_valley)/2;
+                double offset = current + (leading_valley + trailing_valley) / 2;
 
                 // try to shift everything to be symmetric
                 //current += offset;
@@ -1321,31 +1348,38 @@ namespace TDF_Test
             }
 
             console_output.AppendFormat("Found start of minute at time {0} ({1})\r\n", decimated_sampleperiod * minutestart_sample, minutestart_sample);
-            return minutestart_sample;
+            demodulator.MinuteDetectorParameters.MinuteDetectorResult = minutestart_sample;
         }
 
-        private static void Perform_Correlations(ref double[] data_correlation_source, ref double[] _zero_correlator, ref double[] _one_correlator,
-            out double[] zero_correlation, out double[] one_correlation, CorrelatorType _type, ref StringBuilder console_output)
+        private static void Perform_Correlations(ref DemodulatorContext demodulator, ref StringBuilder console_output)
         {
             /* The technique for correlation here is to template match using least square error matching
                          * i.e. we are sensitive to the exact amplitude, not just the shape
                          * Also supports convolution, but this appears to offer no benefit vs. LMS correlation here
                          */
 
+            double[] _zero_correlator = demodulator.CorrelatorParameters.ZeroCorrelatorReference;
+            double[] _one_correlator = demodulator.CorrelatorParameters.OneCorrelatorReference;
+            double[] data_correlation_source = demodulator.CorrelatorParameters.DemodulatorSource;
+            demodulator.CorrelatorParameters.ZeroDemodulatorResult = new double[data_correlation_source.Length];
+            demodulator.CorrelatorParameters.OneDemodulatorResult = new double[data_correlation_source.Length];
+            double[] one_correlation = demodulator.CorrelatorParameters.OneDemodulatorResult;
+            double[] zero_correlation = demodulator.CorrelatorParameters.ZeroDemodulatorResult;
 
-            console_output.AppendFormat("Doing correlations in {0} mode.\r\n", _type.GetString());
+
+            console_output.AppendFormat("Doing correlations in {0} mode.\r\n", demodulator.ToString());
 
             NWaves.Operations.Convolution.OlaBlockConvolver con_zero = null;
             NWaves.Operations.Convolution.OlaBlockConvolver con_one = null;
-            int kernelsize = 512;
+            int kernelsize = demodulator.CorrelatorParameters.KernelLength;
             int kerneldelay = kernelsize / 2;
             kerneldelay += 259;
 
-            int kerneldelay_zero = 0;
-            int kerneldelay_one = 0;
+            int kerneldelay_zero = demodulator.CorrelatorParameters.ZeroOffset;
+            int kerneldelay_one = demodulator.CorrelatorParameters.OneOffset;
 
             // corrections to align correlation outputs with input data
-            switch (_type)
+            /*switch (_type)
             {
                 case CorrelatorType.FM_Convolve:
                 case CorrelatorType.FM_Convolve_Biased:
@@ -1362,9 +1396,9 @@ namespace TDF_Test
                     kerneldelay_zero = -28;
                     kerneldelay_one = -24;
                     break;
-            }
-            
-            if (_type.IsConvolver())
+            }*/
+
+            if (demodulator.IsConvolver())
             {
                 // initialize convolvers if needed   
                 float[] convolver_kernel_zero = new float[_zero_correlator.Length];
@@ -1388,9 +1422,6 @@ namespace TDF_Test
 
             double correlation_scale = -1;
 
-            if (_type == CorrelatorType.PM)
-                correlation_scale = 1;
-
             zero_correlation = new double[data_correlation_source.Length];
             double zero_correlation_sum = 0;
             double zero_correlation_min = double.PositiveInfinity;
@@ -1400,10 +1431,10 @@ namespace TDF_Test
             // correlation for zero bits
             for (int i = 0; i < data_correlation_source.Length - _zero_correlator.Length; i++)
             {
-                if (_type.IsConvolver() && con_zero != null)
+                if (demodulator.IsConvolver() && con_zero != null)
                 {
                     // dump the kernel size to avoid delay
-                    int j = i- kerneldelay_zero; 
+                    int j = i - kerneldelay_zero;
 
                     zero_correlation[j < 0 ? 0 : j] = con_zero.Process((float)data_correlation_source[i]);
                     continue;
@@ -1413,7 +1444,7 @@ namespace TDF_Test
                 {
                     int k = i - kerneldelay_zero;
                     if (reverse_correlators)
-                        zero_correlation[k < 0 ? 0 : k] += correlation_scale * Math.Pow(_zero_correlator[(_zero_correlator.Length-1) - j] - data_correlation_source[i + j], 2);
+                        zero_correlation[k < 0 ? 0 : k] += correlation_scale * Math.Pow(_zero_correlator[(_zero_correlator.Length - 1) - j] - data_correlation_source[i + j], 2);
                     else
                         zero_correlation[k < 0 ? 0 : k] += correlation_scale * Math.Pow(_zero_correlator[j] - data_correlation_source[i + j], 2);
                 }
@@ -1445,7 +1476,7 @@ namespace TDF_Test
             // correlation for one-bits
             for (int i = 0; i < data_correlation_source.Length - _one_correlator.Length; i++)
             {
-                if (_type.IsConvolver() && con_one != null)
+                if (demodulator.IsConvolver() && con_one != null)
                 {
                     int j = i - kerneldelay_one;
                     one_correlation[j < 0 ? 0 : j] = con_one.Process((float)data_correlation_source[i]);
@@ -1481,7 +1512,7 @@ namespace TDF_Test
                 }
             }
 
-            if (_type == CorrelatorType.FM || _type == CorrelatorType.FM_Biased)
+            if (demodulator.CorrelatorType == DemodulatorContext.CorrelatorTypeEnum.FM || demodulator.CorrelatorType == DemodulatorContext.CorrelatorTypeEnum.FM_Biased)
             {
                 // offset correct the correlators
                 for (int i = 0; i < zero_correlation.Length; i++)
@@ -1492,7 +1523,7 @@ namespace TDF_Test
                     //zero_correlation_min = Math.Min(zero_correlation[i], zero_correlation_min);
                 }
             }
-            if (_type == CorrelatorType.PM)
+            if (demodulator.CorrelatorType == DemodulatorContext.CorrelatorTypeEnum.PM)
             {
                 for (int i = 0; i < zero_correlation.Length; i++)
                 {
@@ -1501,11 +1532,15 @@ namespace TDF_Test
                 }
             }
 
+            demodulator.CorrelatorParameters.OneDemodulatorResult = one_correlation;
+            demodulator.CorrelatorParameters.ZeroDemodulatorResult = zero_correlation;
+
             return;
         }
 
         /* Generate correlators, input is FM data to sample, and the UTC 0 ms position of the two waveforms */
-        private static void Generate_Correlators(double[] correlator_template_source, CorrelatorType _type, int zero_offset, int one_offset)
+        /*
+        private static void Generate_Correlators(double[] correlator_template_source, DemodulatorContext.CorrelatorTypeEnum _type, int zero_offset, int one_offset)
         {
             StringBuilder correlation_output = new StringBuilder();
             double average_value = 0;
@@ -1527,7 +1562,7 @@ namespace TDF_Test
 
             for (int i = correlator1_template_offset - 28; i < correlator1_template_offset + 28; i++)
             {
-                correlation_output.AppendFormat("{0},", (correlator_template_source[i] - (average_value/56))/ template_scale);
+                correlation_output.AppendFormat("{0},", (correlator_template_source[i] - (average_value / 56)) / template_scale);
             }
 
             File.WriteAllText(String.Format("correlation_zero_{0}.txt", _type.GetString()), correlation_output.ToString());
@@ -1567,6 +1602,7 @@ namespace TDF_Test
 
             File.WriteAllText(String.Format("correlation_minute_{0}.txt", _type.GetString()), correlation_output.ToString());
         }
+        */
 
         private static double[] Generate_Rectified_FM(double[] data, int IQ_decimation_factor, double[] fm_filtered, int movingaveragefilter)
         {
@@ -1731,7 +1767,7 @@ namespace TDF_Test
             NWaves.Filters.MovingAverageRecursiveFilter i_lpf = new NWaves.Filters.MovingAverageRecursiveFilter(averagecount);
             NWaves.Filters.MovingAverageRecursiveFilter q_lpf = new NWaves.Filters.MovingAverageRecursiveFilter(averagecount);
             console_output.AppendFormat("I/Q moving average filter size {0}\r\n", averagecount);
-            
+
 
             double sin_value = Math.Sin(2 * Math.PI * (frequency / samplerate));
             double cos_value = Math.Cos(2 * Math.PI * (frequency / samplerate));
@@ -1812,99 +1848,175 @@ namespace TDF_Test
                 i++;
             }
         }
-    }
-
-    // TODO: this should probably be a struct/class so that we can store the various calibration coefficients centrally
-    // instead of sticking offsets etc. into each processing function
-    public enum CorrelatorType
-    {
-        FM,
-        FM_Biased,
-        PM,
-        FM_Convolve,
-        FM_Convolve_Biased,
-        PM_Convolve,
-        PM_Convolve_Biased
-    }
-
-    public static class CorrelatorTypeExtension
-    {
-        public static string GetString(this CorrelatorType me)
+        public class DemodulatorContext
         {
-            switch (me)
+            public DemodulatorContext(CorrelatorTypeEnum correlatortype)
             {
-                case CorrelatorType.FM:
-                    return "FM";
-                case CorrelatorType.FM_Biased:
-                    return "FM with bias";
-                case CorrelatorType.PM:
-                    return "PM";
-                case CorrelatorType.FM_Convolve:
-                    return "FM convolver";
-                case CorrelatorType.FM_Convolve_Biased:
-                    return "FM convolver with bias";
-                case CorrelatorType.PM_Convolve:
-                    return "PM convolver";
-                case CorrelatorType.PM_Convolve_Biased:
-                    return "PM convolver with bias";
-                default:
-                    return "Unknown";
+                CorrelatorType = correlatortype;
             }
+
+            public MinuteDetectorTypeEnum MinuteDetectorType { get; set; } = MinuteDetectorTypeEnum.Convolver;
+            public MinuteDetectorParametersStruct MinuteDetectorParameters;
+            public CorrelatorParametersStruct CorrelatorParameters;
+            public CorrelatorTypeEnum CorrelatorType { get; set; } = CorrelatorTypeEnum.FM;
+            public DataSlicerParameterStruct DataSlicerParameters { get; set; }
+            public FilterParametersStruct FilterParameters { get; set; }
+
+            public bool[] DemodulatedData;
+
+            public enum CorrelatorTypeEnum
+            {
+                FM,
+                FM_Biased,
+                PM,
+                FM_Convolve,
+                FM_Convolve_Biased,
+                PM_Convolve,
+                PM_Convolve_Biased
+            }
+
+            public enum MinuteDetectorTypeEnum
+            {
+                Convolver
+            }
+
+            public struct CorrelatorParametersStruct
+            {
+                public int ZeroOffset { get; set; }
+                public int OneOffset { get; set; }
+                public int CommonOffset { get; set; }
+                public int KernelLength { get; set; }
+                public CorrelatorReferenceSourceTypes CorrelatorReferenceSource { get; set; }
+                public CorrelatorDataSourceTypes CorrelatorDataSource { get; set; }
+                public double[] DemodulatorSource;
+                public double[] ZeroDemodulatorResult;
+                public double[] OneDemodulatorResult;
+                public double[] ZeroCorrelatorReference;
+                public double[] OneCorrelatorReference;
+            }
+
+            public enum CorrelatorDataSourceTypes
+            {
+                FM,
+                PM,
+                FM_Envelope,
+                PM_Envelope
+            }
+
+            public struct MinuteDetectorParametersStruct
+            {
+                public int Convolver_Length;
+                public double Weighting_Coefficient;
+                public double[] MinuteDetectorSource;
+                public int MinuteDetectorResult;
+            }
+
+            public enum CorrelatorReferenceSourceTypes
+            {
+                Real,
+                Synthetic,
+            }
+
+
+
+
+            public struct FilterParametersStruct
+            {
+                public int IQAverageCount { get; set; }
+                public int FMAverageCount { get; set; }
+                public int EnvelopeAverageCount { get; set; }
+            }
+
+            
+            public struct DataSlicerParameterStruct
+            {
+                public double BiasOffset { get; set; }
+                public double Threshold { get; set; }
+                public double AutoBias_Level { get; set; }
+            }
+            
+            
+            
+
+            public override string ToString()
+            {
+                switch (CorrelatorType)
+                {
+                    case CorrelatorTypeEnum.FM:
+                        return "FM";
+                    case CorrelatorTypeEnum.FM_Biased:
+                        return "FM with bias";
+                    case CorrelatorTypeEnum.PM:
+                        return "PM";
+                    case CorrelatorTypeEnum.FM_Convolve:
+                        return "FM convolver";
+                    case CorrelatorTypeEnum.FM_Convolve_Biased:
+                        return "FM convolver with bias";
+                    case CorrelatorTypeEnum.PM_Convolve:
+                        return "PM convolver";
+                    case CorrelatorTypeEnum.PM_Convolve_Biased:
+                        return "PM convolver with bias";
+                    default:
+                        return "Unknown";
+                }
+            }
+
+            public bool IsConvolver()
+            {
+                switch (CorrelatorType)
+                {
+                    case CorrelatorTypeEnum.FM_Convolve:
+                    case CorrelatorTypeEnum.FM_Convolve_Biased:
+                    case CorrelatorTypeEnum.PM_Convolve:
+                    case CorrelatorTypeEnum.PM_Convolve_Biased:
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+
+            public bool UsesPM()
+            {
+                switch (CorrelatorType)
+                {
+                    case CorrelatorTypeEnum.PM:
+                    case CorrelatorTypeEnum.PM_Convolve:
+                    case CorrelatorTypeEnum.PM_Convolve_Biased:
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+
+            public bool UsesFM()
+            {
+                switch (CorrelatorType)
+                {
+                    case CorrelatorTypeEnum.FM:
+                    case CorrelatorTypeEnum.FM_Convolve:
+                    case CorrelatorTypeEnum.FM_Biased:
+                    case CorrelatorTypeEnum.FM_Convolve_Biased:
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+
+            public bool IsBiased()
+            {
+                switch (CorrelatorType)
+                {
+                    case CorrelatorTypeEnum.FM_Biased:
+                    case CorrelatorTypeEnum.FM_Convolve_Biased:
+                    case CorrelatorTypeEnum.PM_Convolve_Biased:
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+
         }
 
 
-        public static bool IsConvolver(this CorrelatorType me)
-        {
-            switch (me)
-            {
-                case CorrelatorType.FM_Convolve:
-                case CorrelatorType.FM_Convolve_Biased:
-                case CorrelatorType.PM_Convolve:
-                case CorrelatorType.PM_Convolve_Biased:
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
-        public static bool UsesPM(this CorrelatorType me)
-        {
-            switch (me)
-            {
-                case CorrelatorType.PM:
-                case CorrelatorType.PM_Convolve:
-                case CorrelatorType.PM_Convolve_Biased:
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
-        public static bool UsesFM(this CorrelatorType me)
-        {
-            switch (me)
-            {
-                case CorrelatorType.FM:
-                case CorrelatorType.FM_Convolve:
-                case CorrelatorType.FM_Biased:
-                case CorrelatorType.FM_Convolve_Biased:
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
-        public static bool IsBiased(this CorrelatorType me)
-        {
-            switch (me)
-            {
-                case CorrelatorType.FM_Biased:
-                case CorrelatorType.FM_Convolve_Biased:
-                case CorrelatorType.PM_Convolve_Biased:
-                    return true;
-                default:
-                    return false;
-            }
-        }
     }
 }
