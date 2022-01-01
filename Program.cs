@@ -1338,20 +1338,20 @@ namespace TDF_Test
 
             int kerneldelay_zero = 0;
             int kerneldelay_one = 0;
-            if (_type == CorrelatorType.FM_Convolve || _type == CorrelatorType.FM_Convolve_Biased)
-            {
-                kerneldelay_zero = kerneldelay;
-                kerneldelay_one = kerneldelay + 9;
-            }
-            else if (_type == CorrelatorType.PM_Convolve)
-            {
-                kerneldelay_zero = kerneldelay - 6;
-                kerneldelay_one = kerneldelay - 6;
-            }
 
+            // corrections to align correlation outputs with input data
             switch (_type)
             {
-                // corrections to align correlation outputs with input data
+                case CorrelatorType.FM_Convolve:
+                case CorrelatorType.FM_Convolve_Biased:
+                    kerneldelay_zero = kerneldelay;
+                    kerneldelay_one = kerneldelay + 9;
+                    break;
+                case CorrelatorType.PM_Convolve:
+                case CorrelatorType.PM_Convolve_Biased:
+                    kerneldelay_zero = kerneldelay - 6;
+                    kerneldelay_one = kerneldelay - 6;
+                    break;
                 case CorrelatorType.FM:
                 case CorrelatorType.FM_Biased:
                     kerneldelay_zero = -28;
@@ -1361,7 +1361,7 @@ namespace TDF_Test
             
             if (_type.IsConvolver())
             {
-                
+                // initialize convolvers if needed   
                 float[] convolver_kernel_zero = new float[_zero_correlator.Length];
                 for (int i = 0; i < _zero_correlator.Length; i++)
                 {
@@ -1390,7 +1390,7 @@ namespace TDF_Test
             double zero_correlation_sum = 0;
             double zero_correlation_min = double.PositiveInfinity;
 
-            // correlation 1, look for second start with data 0
+            // correlation for zero bits
             for (int i = 0; i < data_correlation_source.Length - _zero_correlator.Length; i++)
             {
                 if (_type.IsConvolver() && con_zero != null)
@@ -1415,7 +1415,7 @@ namespace TDF_Test
             }
             zero_correlation_sum /= zero_correlation.Length;
 
-            // fill in the edges
+            // correct start values
             if (kerneldelay_zero > 0)
             {
                 zero_correlation[0] = zero_correlation[1];
@@ -1432,7 +1432,7 @@ namespace TDF_Test
             double one_correlation_sum = 0;
             double one_correlation_min = double.PositiveInfinity;
 
-            // correlation 1, look for second start with data 0
+            // correlation for one-bits
             for (int i = 0; i < data_correlation_source.Length - _one_correlator.Length; i++)
             {
                 if (_type.IsConvolver() && con_one != null)
@@ -1455,7 +1455,7 @@ namespace TDF_Test
 
             one_correlation_sum /= one_correlation.Length;
 
-            // fill in the edges
+            // correct start values
             if (kerneldelay_one > 0)
             {
                 one_correlation[0] = one_correlation[1];
@@ -1475,8 +1475,8 @@ namespace TDF_Test
                 {
                     zero_correlation[i] -= zero_correlation_sum;
                     one_correlation[i] -= one_correlation_sum;
-                    one_correlation_min = Math.Min(one_correlation[i], one_correlation_min);
-                    zero_correlation_min = Math.Min(zero_correlation[i], zero_correlation_min);
+                    //one_correlation_min = Math.Min(one_correlation[i], one_correlation_min);
+                    //zero_correlation_min = Math.Min(zero_correlation[i], zero_correlation_min);
                 }
             }
             if (_type == CorrelatorType.PM)
