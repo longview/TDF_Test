@@ -63,10 +63,10 @@ namespace TDF_Test
             // 12
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T235552Z, 157 kHz, Wide-U.wav", "Excellent signal, night, F1 set",
                 48, new DateTime(2021, 12, 30, 23, 56, 00, DateTimeKind.Utc), holidaytomorrow: true));
-            // 13 - this one finds the wrong minute start
+            // 13 - tricky start, minute is around 7000
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T181322Z, 157 kHz, Wide-U.wav", "Poor signal, evening, F1 set",
                 22, new DateTime(2021, 12, 31, 18, 14, 00, DateTimeKind.Utc), _errors: 46, holidaytomorrow: true));
-            // 14 - this one finds the wrong minute start
+            // 14 - minute start around 6500
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T181524Z, 157 kHz, Wide-U.wav", "Poor signal, evening, F1 set",
                 22, new DateTime(2021, 12, 31, 18, 16, 00, DateTimeKind.Utc), _errors: 38, holidaytomorrow: true));
             // 15
@@ -1246,6 +1246,9 @@ namespace TDF_Test
 
             double[] minute_start_correlation = new double[minute_correlation_source.Length];
             double[] minute_convolved = new double[minute_start_correlation.Length];
+            double[] minute_convolved_raw = new double[minute_start_correlation.Length];
+            double[] minute_convolved_lpf = new double[minute_start_correlation.Length];
+            double[] minute_convolved_hpf = new double[minute_start_correlation.Length];
             double[] minute_convolved_weighted = new double[minute_start_correlation.Length];
 
             // correlation for minute start, just zeros of a given length
@@ -1291,9 +1294,17 @@ namespace TDF_Test
 
             NWaves.Operations.Convolution.OlaBlockConvolver con_minute = new NWaves.Operations.Convolution.OlaBlockConvolver(minute_correlation_kernel.ToArray(), convolution_size);
 
+            NWaves.Filters.MovingAverageRecursiveFilter con_lpf = new MovingAverageRecursiveFilter(400);
+            NWaves.Filters.DcRemovalFilter con_hpf = new DcRemovalFilter(0.999);
+
             // do convolution, offset the start to align it with the input data (max correlation at start of kernel)
-            for (int i = convolution_peak_offset; i < minute_convolved.Length + convolution_peak_offset; i++)
-                minute_convolved[i - convolution_peak_offset] = con_minute.Process((float)minute_start_correlation[(i > minute_convolved.Length - 1) ? 0 : i]);
+            for (int i = convolution_peak_offset; i < minute_convolved_raw.Length + convolution_peak_offset; i++)
+            {
+                minute_convolved_raw[i - convolution_peak_offset] = con_minute.Process((float)minute_start_correlation[(i > minute_convolved_raw.Length - 1) ? 0 : i]);
+                minute_convolved[i - convolution_peak_offset] = minute_convolved_raw[i - convolution_peak_offset];
+                minute_convolved_hpf[i - convolution_peak_offset] = con_hpf.Process((float)minute_convolved_raw[i - convolution_peak_offset]);
+                minute_convolved_lpf[i - convolution_peak_offset] = con_lpf.Process((float)minute_convolved_raw[i - convolution_peak_offset]);
+            }
 
             //minute_weighted_correlation = new double[minute_start_correlation.Length];
             // a second correlator!
@@ -1309,15 +1320,15 @@ namespace TDF_Test
             // search for up to 59 seconds
             // TODO: should also limit it to only searching up to 60 second before the end of the file
             //      since we need a full minute to perform a decode properly
-            int max_minute_search = (int)Math.Min(convolution_peak_offset + 300 +((double)61 / decimated_sampleperiod), minute_correlation_source.Length);
-            for (int i = convolution_peak_offset + 300; i < max_minute_search-70; i++)
+            int max_minute_search = (int)Math.Min(convolution_peak_offset + 500 +((double)60 / decimated_sampleperiod), minute_correlation_source.Length);
+            for (int i = convolution_peak_offset + 500; i < max_minute_search-70; i++)
             {
                 // bias it towards the distinctive correlation peak.
                 double current = minute_convolved[i];
-                double leading_valley = (minute_convolved[i - 200] + minute_convolved[i - 197] + minute_convolved[i - 195]) / 3;
-                double trailing_valley = (minute_convolved[i + 200] + minute_convolved[i + 197] + minute_convolved[i + 195]) / 3;
+                double leading_valley = (minute_convolved[i - 200] + minute_convolved[i - 190] + minute_convolved[i - 195]) / 3;
+                double trailing_valley = (minute_convolved[i + 200] + minute_convolved[i + 190] + minute_convolved[i + 195]) / 3;
 
-                double offset = current - (leading_valley + trailing_valley)/2;
+                double offset = current + (leading_valley + trailing_valley)/2;
 
                 // try to shift everything to be symmetric
                 //current += offset;
@@ -1328,6 +1339,9 @@ namespace TDF_Test
                 // weight for valleys
                 //weighted_correlation += Math.Abs(minute_start_correlation[i - 300]);// + Math.Abs(minute_start_correlation[i + 200]);
 
+                weighted_correlation += offset;
+                // use weighted correlation
+                // weight further by average signal level
                 minute_convolved_weighted[i] = weighted_correlation;
 
                 //minute_weighted_correlation[i] = weighted_correlation;
