@@ -17,8 +17,9 @@ namespace TDF_Test
         static void Main(string[] args)
         {
 
-            Modes mode = Modes.Verify;
-            int testindex = 0;
+            //Modes mode = Modes.Verify;
+            Modes mode = Modes.Standard;
+            int testindex = 14;
 
             List<TestSignalInfo> testsignals = new List<TestSignalInfo>();
             // input file must be mono 16-bit, 20000 Hz (oddball rate)
@@ -44,9 +45,9 @@ namespace TDF_Test
             //6 decodes with 5 errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T121742Z, 157 kHz, Wide-U_20.wav", "Poor signal, afternoon",
                 20, new DateTime(2021, 12, 30, 12, 18, 00, DateTimeKind.Utc), _errors: 10));
-            //7 decodes with 3 errors, bit 48 is wrong
+            //7 
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T121914Z, 157 kHz, Wide-U_20.wav", "Poor signal, afternoon",
-                20, new DateTime(2021, 12, 30, 12, 20, 00, DateTimeKind.Utc), _errors: 9));
+                20, new DateTime(2021, 12, 30, 12, 20, 00, DateTimeKind.Utc), _errors: 5));
             //8 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T142316Z, 157 kHz, Wide-U.wav", "Poor signal, afternoon",
                 20, new DateTime(2021, 12, 30, 14, 24, 00, DateTimeKind.Utc)));
@@ -433,7 +434,7 @@ namespace TDF_Test
             console_output.AppendFormat("FM demodulation start\r\n");
 
             int fm_lpf_average_len = 8;
-            int fm_rectified_lpf_average_len =64;
+            int fm_rectified_lpf_average_len = 32;
 
             console_output.AppendFormat("FM moving average filter size {0}\r\nFM rectifier filter size {1}\r\n", fm_lpf_average_len, fm_rectified_lpf_average_len);
             double fm_unfiltered_square, fm_filtered_square;
@@ -461,7 +462,7 @@ namespace TDF_Test
             // TODO: also correlate on PM for minute start, or use a rectified PM output?
 
 
-            int minutestart_sample = Find_Minute_Start(decimated_sampleperiod, fm_unfiltered, minute_start_correlation, ref console_output);
+            int minutestart_sample = Find_Minute_Start(decimated_sampleperiod, fm_filtered_rectified, ref console_output);
 
             Calculate_Signal_SNR(fm_filtered, fm_filtered_square, minutestart_sample, ref console_output);
             int datasampler_stop;
@@ -901,8 +902,8 @@ namespace TDF_Test
             double datasampler_ratio_offset = 0;
             int datasampler_start = 0;
 
-            datasampler_start = minutestart_sample + (int)(0.75 / decimated_sampleperiod);
-            datasampler_stop = minutestart_sample + (int)(1.2 / decimated_sampleperiod);
+            datasampler_start = minutestart_sample + (int)(1.0 / decimated_sampleperiod);
+            datasampler_stop = minutestart_sample + (int)(1.75 / decimated_sampleperiod);
 
             double datasampler_threshold = 1;
             bool datasampler_invert = false;
@@ -913,7 +914,7 @@ namespace TDF_Test
             // this should be relatively wide unless the minute-start detector is very accurate
             // the SNR for the first second is usually good, so a wider window doesn't seem to hurt performance
             datasampler_start = minutestart_sample + (int)(0.75 / decimated_sampleperiod);
-            datasampler_stop = minutestart_sample + (int)(1.0 / decimated_sampleperiod);
+            datasampler_stop = minutestart_sample + (int)(1.2 / decimated_sampleperiod);
 
             if (_correlatortype == CorrelatorType.FM || _correlatortype == CorrelatorType.FM_Biased)
             {
@@ -1235,22 +1236,95 @@ namespace TDF_Test
             return FM_Rectified_SNR;
         }
 
-        private static int Find_Minute_Start(double decimated_sampleperiod, double[] fm_unfiltered, double[] minute_start_correlation, ref StringBuilder console_output)
+        private static int Find_Minute_Start(double decimated_sampleperiod, double[] minute_correlation_source, ref StringBuilder console_output)
         {
-            /* Find maximum value
+            /* Find maximum value and assume this is the start of a minute
                          */
             //bool minutestarted = false;
             double max_minute_correlation = double.NegativeInfinity;
             int minutestart_sample = 0;
+
+            double[] minute_start_correlation = new double[minute_correlation_source.Length];
+            double[] minute_convolved = new double[minute_start_correlation.Length];
+            double[] minute_convolved_weighted = new double[minute_start_correlation.Length];
+
+            // correlation for minute start, just zeros of a given length
+            // this should perhaps not be a correlator for efficiency?
+            for (int i = 0; i < minute_correlation_source.Length - minute_correlator_template.Length; i++)
+            {
+                /*if (_type == CorrelatorType.FM_Convolve && con_minute != null)
+                {
+                    minute_start_correlation[i] = con_minute.Process((float)data_correlation_source[i]);
+                    continue;
+                }*/
+
+                for (int j = 0; j < minute_correlator_template.Length; j++)
+                {
+                    minute_start_correlation[i] += -1000 * Math.Pow(minute_correlator_template[j] - minute_correlation_source[i + j], 2);
+                }
+
+            }
+
+            List<float> minute_correlation_kernel = new List<float>();
+
+            // build a correlator template for our correlated data
+            /*for (int i = 0; i < 150; i++)
+                minute_correlation_kernel.Add(-1);
+            for (int i = 0; i < 200; i++)
+                minute_correlation_kernel.Add(1);
+            for (int i = 0; i < 150; i++)
+                minute_correlation_kernel.Add(-1);*/
+
+            for (int i = 0; i < 1; i++)
+                minute_correlation_kernel.Add(1);
+            for (int i = 0; i < 350; i++)
+                minute_correlation_kernel.Add(0);
+            for (int i = 0; i < 1; i++)
+                minute_correlation_kernel.Add(1);
+
+            int convolution_size = 512;
+            int convolution_delay = convolution_size / 2;
+
+            // the number of samples to offset the peak by to make our peak correlation at the start of the minute marker
+            // and not the center
+            int convolution_peak_offset = (minute_correlation_kernel.Count) + convolution_delay - 490;
+
+            NWaves.Operations.Convolution.OlaBlockConvolver con_minute = new NWaves.Operations.Convolution.OlaBlockConvolver(minute_correlation_kernel.ToArray(), convolution_size);
+
+            // do convolution, offset the start to align it with the input data (max correlation at start of kernel)
+            for (int i = convolution_peak_offset; i < minute_convolved.Length + convolution_peak_offset; i++)
+                minute_convolved[i - convolution_peak_offset] = con_minute.Process((float)minute_start_correlation[(i > minute_convolved.Length - 1) ? 0 : i]);
+
+            //minute_weighted_correlation = new double[minute_start_correlation.Length];
+            // a second correlator!
+            /*for (int i = 0; i < minute_start_correlation.Length - minute_correlation_kernel.Count; i++)
+            {
+
+                for (int j = 0; j < minute_correlation_kernel.Count; j++)
+                {
+                    minute_weighted_correlation[i] += Math.Pow(minute_correlation_kernel[j] - minute_start_correlation[i + j], 2);
+                }
+            }*/
+
             // search for up to 59 seconds
             // TODO: should also limit it to only searching up to 60 second before the end of the file
             //      since we need a full minute to perform a decode properly
-            int max_minute_search = (int)Math.Min(((double)59 / decimated_sampleperiod), fm_unfiltered.Length);
-            for (int i = 0; i < max_minute_search; i++)
+            int max_minute_search = (int)Math.Min(convolution_peak_offset + 300 +((double)61 / decimated_sampleperiod), minute_correlation_source.Length);
+            for (int i = convolution_peak_offset + 300; i < max_minute_search-70; i++)
             {
-                if (minute_start_correlation[i] > max_minute_correlation)
+                // bias it towards the distinctive correlation peak.
+                double current = minute_convolved[i];
+                // weight for flat-top
+                double weighted_correlation = current + (Math.Abs(current - minute_convolved[i - 200]) + Math.Abs(current - minute_convolved[i + 200]));
+                // weight for valleys
+                //weighted_correlation += Math.Abs(minute_start_correlation[i - 300]);// + Math.Abs(minute_start_correlation[i + 200]);
+
+                minute_convolved_weighted[i] = weighted_correlation;
+
+                //minute_weighted_correlation[i] = weighted_correlation;
+                if (weighted_correlation > max_minute_correlation)
                 {
-                    max_minute_correlation = minute_start_correlation[i];
+                    max_minute_correlation = weighted_correlation;// minute_start_correlation[i];
                     minutestart_sample = i;
                 }
                 /*if (correlation3[i] > -1 && !minutestarted)
@@ -1266,7 +1340,7 @@ namespace TDF_Test
                 }*/
             }
 
-            console_output.AppendFormat("Found start of minute at time {0}\r\n", decimated_sampleperiod * minutestart_sample);
+            console_output.AppendFormat("Found start of minute at time {0} ({1})\r\n", decimated_sampleperiod * minutestart_sample, minutestart_sample);
             return minutestart_sample;
         }
 
@@ -1337,7 +1411,7 @@ namespace TDF_Test
 
                 for (int j = 0; j < minute_correlator_template.Length; j++)
                 {
-                    minute_start_correlation[i] += -1*Math.Pow(minute_correlator_template[j] - minute_correlation_source[i + j], 2);
+                    minute_start_correlation[i] += -1000*Math.Pow(minute_correlator_template[j] - minute_correlation_source[i + j], 2);
                 }
 
                 minute_start_correlation_sum += minute_start_correlation[i];
@@ -1414,7 +1488,7 @@ namespace TDF_Test
                 {
                     zero_correlation[i] -= zero_correlation_sum;
                     one_correlation[i] -= one_correlation_sum;
-                    minute_start_correlation[i] -= minute_start_correlation_sum;
+                    //minute_start_correlation[i] -= minute_start_correlation_sum;
                 }
             }
             else if (_type.IsConvolver())
