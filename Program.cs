@@ -61,10 +61,10 @@ namespace TDF_Test
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T200920Z, 157 kHz, Wide-U.wav", "Excellent signal, evening",
                 43, new DateTime(2021, 12, 30, 20, 10, 00, DateTimeKind.Utc)));
             // 12
-            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T235552Z, 157 kHz, Wide-U.wav", "Excellent signal, night, F1 set",
+            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T235552Z, 157 kHz, Wide-U.wav", "Excellent signal, night",
                 48, new DateTime(2021, 12, 30, 23, 56, 00, DateTimeKind.Utc), holidaytomorrow: true));
             // 13 - tricky start, minute is around 7000
-            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T181322Z, 157 kHz, Wide-U.wav", "Poor signal, evening, F1 set",
+            testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T181322Z, 157 kHz, Wide-U.wav", "Poor signal, evening",
                 22, new DateTime(2021, 12, 31, 18, 14, 00, DateTimeKind.Utc), _errors: 35, holidaytomorrow: true));
             // 14 - minute start around 6500
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T181524Z, 157 kHz, Wide-U.wav", "Poor signal, evening",
@@ -135,13 +135,18 @@ namespace TDF_Test
                     signal.SignalType == TestSignalInfo.Signal_Type.TDF ? "TDF" : "DCF77 Phase");
 
                     errors = Demodulate_Testsignal(signal, correlator_in_use, ref console_output);
-                    if (errors > signal.Expected_Errors)
-                        fail_count++;
-                    else if (errors < signal.Expected_Errors)
-                        antifail_count++;
 
-                    Console.WriteLine("Index {0:D2}, expected errors {1}, found {2}{4}. Comment: {3}",
-                        testsignals.IndexOf(signal), signal.Expected_Errors, errors, signal.Comment, errors < signal.Expected_Errors ? " (better than expected!)" : "");
+                    // ignore the bad signals for error computation
+                    if (signal.Status == TestSignalInfo.Station_Status.OnAir)
+                    {
+                        if (errors > signal.Expected_Errors)
+                            fail_count++;
+                        else if (errors < signal.Expected_Errors)
+                            antifail_count++;
+                    }
+
+                    Console.WriteLine("Index {0,2}, expected errors {1,2}, found {2,2}{4}. Comment: {3}",
+                        testsignals.IndexOf(signal), signal.Expected_Errors, errors, signal.Comment, errors < signal.Expected_Errors ? "(!)" : "");
 
                     File.WriteAllText(String.Format("Verify_Result_{0}_f{1}_e{2}_{3}.txt", testsignals.IndexOf(signal), errors, signal.Expected_Errors, correlator_in_use.GetString()),
                         console_output.ToString());
@@ -177,7 +182,7 @@ namespace TDF_Test
                 Status = _status;
                 // add 1 minute to timestamp from start of recording timestamp
                 Recorded_Timestamp_UTC = _date.AddMinutes(1);
-                reference_timecode = new TDF_Timecode_Class(Recorded_Timestamp_UTC, summertime_soon, holidaytomorrow, holidaytoday);
+                Reference_Timecode = new TDF_Timecode_Class(Recorded_Timestamp_UTC, summertime_soon, holidaytomorrow, holidaytoday);
                 SignalType = _signaltype;
                 Expected_Errors = _errors;
             }
@@ -190,7 +195,7 @@ namespace TDF_Test
             public Signal_Type SignalType;
             public int Expected_Errors;
 
-            public TDF_Timecode_Class reference_timecode;
+            public TDF_Timecode_Class Reference_Timecode;
             public enum Station_Status
             {
                 OnAir,
@@ -466,13 +471,13 @@ namespace TDF_Test
             console_output.Append("Decode: ");
             Print_Demodulated_Bits(payload_data, ref console_output);
             console_output.Append("Refrnc: ");
-            Print_Demodulated_Bits(testsignal_current.reference_timecode.GetBitstream(), ref console_output);
+            Print_Demodulated_Bits(testsignal_current.Reference_Timecode.GetBitstream(), ref console_output);
 
-            int biterrors = testsignal_current.reference_timecode.CompareBitstream(payload_data);
+            int biterrors = testsignal_current.Reference_Timecode.CompareBitstream(payload_data);
 
-            Print_Demodulated_Bits_Informative(console_output, zero_correlation, one_correlation, payload_data, testsignal_current.reference_timecode.GetBitstream(), second_sampling_ratio);
+            Print_Demodulated_Bits_Informative(console_output, zero_correlation, one_correlation, payload_data, testsignal_current.Reference_Timecode.GetBitstream(), second_sampling_ratio);
 
-            console_output.Append(testsignal_current.reference_timecode.Comparison_Error_Description);
+            console_output.Append(testsignal_current.Reference_Timecode.Comparison_Error_Description);
 
             int decode_error_count = Decode_Received_Data(testsignal_current, payload_data, ref console_output);
 
@@ -1094,7 +1099,7 @@ namespace TDF_Test
                 if (_correlatortype == CorrelatorType.FM_Biased && secondcount > 0)
                 {
                     datasampler_threshold = sampler_threshold_autobias_reference + sampler_threshold_autobias;
-                    if (testsignal.reference_timecode.GetBitstream()[secondcount])
+                    if (testsignal.Reference_Timecode.GetBitstream()[secondcount])
                         datasampler_threshold = sampler_threshold_autobias_reference - sampler_threshold_autobias;
                 }
                     
