@@ -86,7 +86,7 @@ namespace TDF_Test
                 testsignal_current.SignalType == TestSignalInfo.Signal_Type.TDF ? "TDF" : "DCF77 Phase");
             }
 
-            CorrelatorType correlator_in_use = CorrelatorType.FM_Biased;
+            CorrelatorType correlator_in_use = CorrelatorType.FM;
 
             // the convolver loves the synthetic reference signals
             if (correlator_in_use.IsConvolver())
@@ -382,6 +382,8 @@ namespace TDF_Test
             // frequency offset of USB receiver
             double frequency = testsignal_current.Frequency;
 
+            // TODO: add some kind of struct with e.g. filter-coefficients (perhaps the filter objects themselves?)
+            // to make it easier to tweak parameters at the top level
             double samplerate = 20000;
             double sampleperiod = 1 / samplerate;
 
@@ -430,11 +432,12 @@ namespace TDF_Test
 
             console_output.AppendFormat("FM demodulation start\r\n");
 
-            NWaves.Filters.MovingAverageFilter fm_lpf = new NWaves.Filters.MovingAverageFilter(8);
-            NWaves.Filters.MovingAverageFilter fm_rectified_lpf = new NWaves.Filters.MovingAverageFilter(64);
-            console_output.AppendFormat("FM moving average filter size {0}\r\nFM rectifier filter size {1}\r\n", fm_lpf.Size, fm_rectified_lpf.Size);
+            int fm_lpf_average_len = 8;
+            int fm_rectified_lpf_average_len =64;
+
+            console_output.AppendFormat("FM moving average filter size {0}\r\nFM rectifier filter size {1}\r\n", fm_lpf_average_len, fm_rectified_lpf_average_len);
             double fm_unfiltered_square, fm_filtered_square;
-            Demodulate(i_filtered, q_filtered, fm_unfiltered, pm_unfiltered, fm_filtered, fm_lpf, out fm_unfiltered_square, out fm_filtered_square);
+            Demodulate(i_filtered, q_filtered, fm_unfiltered, pm_unfiltered, fm_filtered, fm_lpf_average_len, out fm_unfiltered_square, out fm_filtered_square);
             Perform_PM_Correction(phase_error_per_sample_vs_frequency, ref pm_unfiltered, pm_filtered_drift, ref console_output);
 
             if (generate_correlator && (_correlatortype == CorrelatorType.FM || _correlatortype == CorrelatorType.FM_Convolve))
@@ -446,7 +449,7 @@ namespace TDF_Test
 
             FM_SNR_Calculation(fm_unfiltered, fm_filtered, ref fm_unfiltered_square, ref fm_filtered_square, ref console_output);
             
-            double[] fm_filtered_rectified = Generate_Rectified_FM(data, IQ_decimation_factor, fm_filtered, fm_lpf, fm_rectified_lpf);
+            double[] fm_filtered_rectified = Generate_Rectified_FM(data, IQ_decimation_factor, fm_filtered, fm_rectified_lpf_average_len);
 
             double[] minute_start_correlation, zero_correlation, one_correlation;
             if (_correlatortype.UsesFM())
@@ -978,7 +981,8 @@ namespace TDF_Test
                  *  Reset an hour change?
                  *  This means we can integrate multiple transmissions of each bit to achieve a better SNR.
                  */
-                console_output.AppendFormat("Note: biased with reference bitstream, threshold offset ±{0}, center {1}\r\n", sampler_threshold_autobias, sampler_threshold_autobias_reference);
+                console_output.AppendFormat("Note: biased with reference bitstream, thresholds now {0:F3}/{1:F3}\r\n", sampler_threshold_autobias+ sampler_threshold_autobias_reference,
+                    1/ (sampler_threshold_autobias + sampler_threshold_autobias_reference));
             }
 
 
@@ -1089,7 +1093,12 @@ namespace TDF_Test
 
                 // autobias mode, adds a bias to the threshold based on expected value
                 if (_correlatortype == CorrelatorType.FM_Biased && secondcount > 0)
-                    datasampler_threshold = sampler_threshold_autobias_reference + (testsignal.reference_timecode.GetBitstream()[secondcount] ? -sampler_threshold_autobias : sampler_threshold_autobias);
+                {
+                    datasampler_threshold = sampler_threshold_autobias_reference + sampler_threshold_autobias;
+                    if (testsignal.reference_timecode.GetBitstream()[secondcount])
+                        datasampler_threshold = 1 / datasampler_threshold;
+                }
+                    
                 
                 ratio += datasampler_ratio_offset;
 
@@ -1507,10 +1516,12 @@ namespace TDF_Test
             File.WriteAllText(String.Format("correlation_minute_{0}.txt", _type.GetString()), correlation_output.ToString());
         }
 
-        private static double[] Generate_Rectified_FM(double[] data, int IQ_decimation_factor, double[] fm_filtered, MovingAverageFilter fm_lpf, MovingAverageFilter fm_rectified_lpf)
+        private static double[] Generate_Rectified_FM(double[] data, int IQ_decimation_factor, double[] fm_filtered, int movingaveragefilter)
         {
+            //NWaves.Filters.MovingAverageFilter fm_rectified_lpf = new NWaves.Filters.MovingAverageFilter(64);
+            // try IIR filtering
+            NWaves.Filters.MovingAverageRecursiveFilter fm_rectified_lpf = new NWaves.Filters.MovingAverageRecursiveFilter(movingaveragefilter);
             // rectify fm_filtered, might be good?
-            fm_lpf.Reset();
             double[] fm_filtered_rectified = new double[data.Length / IQ_decimation_factor];
             double fm_filtered_rectified_rms_sum = 0;
             for (int i = 0; i < fm_filtered_rectified.Length; i++)
@@ -1588,13 +1599,13 @@ namespace TDF_Test
             return SNR_FM;
         }
 
-        private static void Demodulate(double[] i_filtered, double[] q_filtered, double[] fm_unfiltered, double[] pm_unfiltered, double[] fm_filtered, MovingAverageFilter fm_lpf, out double fm_unfiltered_square, out double fm_filtered_square)
+        private static void Demodulate(double[] i_filtered, double[] q_filtered, double[] fm_unfiltered, double[] pm_unfiltered, double[] fm_filtered, int movingaverage, out double fm_unfiltered_square, out double fm_filtered_square)
         {
             double qval_last = 0, ival_last = 0;
             double pm_integrator = 0;
             double pm_integrator_filtered = 0;
 
-
+            NWaves.Filters.MovingAverageRecursiveFilter fm_lpf = new MovingAverageRecursiveFilter(movingaverage);
 
             // do FM demodulation
             for (int i = 0; i < i_filtered.Length; i++)
@@ -1778,7 +1789,8 @@ namespace TDF_Test
         }
     }
 
-
+    // TODO: this should probably be a struct/class so that we can store the various calibration coefficients centrally
+    // instead of sticking offsets etc. into each processing function
     public enum CorrelatorType
     {
         FM,
