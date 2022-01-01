@@ -396,6 +396,8 @@ namespace TDF_Test
                     return "P2 Even parity, hours";
                 case BitPositions.P3:
                     return " P3 Even parity, DoM, DoW, Mon, Year";
+                case BitPositions.S:
+                    return "S Start of time data";
                 case BitPositions.Y01:
                     return "Year, 1";
                 case BitPositions.Y02:

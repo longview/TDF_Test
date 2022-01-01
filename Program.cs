@@ -19,7 +19,7 @@ namespace TDF_Test
 
             //Modes mode = Modes.Verify;
             Modes mode = Modes.Standard;
-            int testindex = 14;
+            int testindex = 0;
 
             List<TestSignalInfo> testsignals = new List<TestSignalInfo>();
             // input file must be mono 16-bit, 20000 Hz (oddball rate)
@@ -87,7 +87,7 @@ namespace TDF_Test
                 testsignal_current.SignalType == TestSignalInfo.Signal_Type.TDF ? "TDF" : "DCF77 Phase");
             }
 
-            CorrelatorType correlator_in_use = CorrelatorType.FM;
+            CorrelatorType correlator_in_use = CorrelatorType.FM_Convolve;
 
             // the convolver loves the synthetic reference signals
             if (correlator_in_use.IsConvolver())
