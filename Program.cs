@@ -17,8 +17,8 @@ namespace TDF_Test
         static void Main(string[] args)
         {
 
-            //Modes mode = Modes.Verify;
-            Modes mode = Modes.Standard;
+            Modes mode = Modes.Verify;
+            //Modes mode = Modes.Standard;
             int testindex = 14;
 
             List<TestSignalInfo> testsignals = new List<TestSignalInfo>();
@@ -1314,8 +1314,17 @@ namespace TDF_Test
             {
                 // bias it towards the distinctive correlation peak.
                 double current = minute_convolved[i];
-                // weight for flat-top
-                double weighted_correlation = current + (Math.Abs(current - minute_convolved[i - 200]) + Math.Abs(current - minute_convolved[i + 200]));
+                double leading_valley = (minute_convolved[i - 200] + minute_convolved[i - 197] + minute_convolved[i - 195]) / 3;
+                double trailing_valley = (minute_convolved[i + 200] + minute_convolved[i + 197] + minute_convolved[i + 195]) / 3;
+
+                double offset = current - (leading_valley + trailing_valley)/2;
+
+                // try to shift everything to be symmetric
+                //current += offset;
+                //leading_valley += offset;
+                //trailing_valley += offset;
+
+                double weighted_correlation = current + (Math.Abs(current - leading_valley) + Math.Abs(current - trailing_valley));
                 // weight for valleys
                 //weighted_correlation += Math.Abs(minute_start_correlation[i - 300]);// + Math.Abs(minute_start_correlation[i + 200]);
 
