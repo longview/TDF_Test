@@ -4,7 +4,7 @@ The signal contains (among other things) a stable time code, and the average fre
 
 It seems a good receiver can keep the second phase error below 200 µs. The seemingly official status/logging page is here: [SERVICE DES REFERENCES NATIONALES DE TEMPS](https://syrte.obspm.fr/tfc/temps/outgoing_data/ALS162/).
 
-Note that in French, the signal is referred to as ALS162, and while there still isn't an enormous amount of public documentation at least there is _some_ in French.
+Note that in French, the signal is referred to as ALS162, and while there still isn't an enormous amount of public documentation at least there is _some_ in French. The official specification is Norme Française NF C 90-002, which does not appear to be public.
 
 ![Screenshot of program](screenshot.PNG?raw=true "Screenshot")
 
@@ -12,9 +12,15 @@ This is the tech-demo for a potential embedded TDF162 radio clock.
 
 If you're just looking for a demodulator, there aren't too many SDR decoders, but the [SDRangel Radio clock plugin](https://github.com/f4exb/sdrangel/blob/master/plugins/channelrx/radioclock/readme.md) is one that looks like it should work.
 
+See also these excellent (but Spanish) descriptions of demodulation principles and bit meanings by EA4GMZ: [La señal horaria TDF en 162 kHz (II)](http://www.radiotecnia.es/la-senal-horaria-tdf-en-162-khz-ii/) and [La señal horaria ANFR en 162 kHz (III)](http://www.radiotecnia.es/la-senal-horaria-anfr-en-162-khz-iii/)
+
+Also some info here [PA3FWM Radio signals during a leap second](http://pa3fwm.nl/signals/leapsecond-2016/).
+
+The basic principles could also be used to decode [DCF77 Phase Modulation (PRN)](https://en.wikipedia.org/wiki/RBU_(radio_station)) or [RBU FSK](https://en.wikipedia.org/wiki/RBU_(radio_station)). It is likely also usable for decoding the [UK AMDS system on 198 kHz](https://www.sigidwiki.com/wiki/UK_AM_Data_System_(UK-AMDS)). TDF is my current priority due to its generally strong signal where I live, and I already have DCF77 hardware.
+
 # Principle of Operation
 
-The input is a 16 bit mono wave file at 20 kHz sample rate containing a recording of TDF162 containing one full minute (i.e. from :00 to :59 or longer) detected using a wide-USB detector tuned to 157 kHz
+The input is a 16 bit mono wave file at 20 kHz sample rate containing a recording of TDF162 containing one full minute (i.e. from :00 to :59 or longer) detected using a wide-USB detector tuned to 157 kHz. If the input wave file is not at 20 kHz, it is resampled and written back in place (cheeky, but makes my life easier).
 
 A few wave files are included that I used for verification, a webSDR recording is the reference signal since it has ridiculously high SNR. The other recordings are made using my receiver system in Norway.
 
