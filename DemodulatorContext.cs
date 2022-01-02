@@ -126,6 +126,7 @@ namespace TDF_Test
             public double FIROffsetFactor { get; set; }
             public AutoThresholdModes AutoThreshold { get; set; }
             public double AutoThresholdMaxBias { get; set; }
+            public bool UseCalibrateAllBits { get; set; }
         }
 
         public struct DataSlicerResultStruct

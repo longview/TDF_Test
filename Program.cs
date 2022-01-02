@@ -160,7 +160,7 @@ namespace TDF_Test
                 48, new DateTime(2021, 12, 30, 23, 55, 52, DateTimeKind.Utc), holidaytomorrow: true));
             // 13 - tricky start, minute is around 7000
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T181322Z, 157 kHz, Wide-U.wav", "Poor signal, evening",
-                22, new DateTime(2021, 12, 31, 18, 13, 22, DateTimeKind.Utc), _errors: 35, holidaytomorrow: true));
+                22, new DateTime(2021, 12, 31, 18, 13, 22, DateTimeKind.Utc), _errors: 33, holidaytomorrow: true));
             // 14 - minute start around 6500
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T181524Z, 157 kHz, Wide-U.wav", "Poor signal, evening",
                 22, new DateTime(2021, 12, 31, 18, 15, 24, DateTimeKind.Utc), _errors: 35, holidaytomorrow: true));
@@ -1077,17 +1077,35 @@ namespace TDF_Test
                 // obviously this must be done carefully since otherwise we will never update our expectations if something changes
                 // we could perhaps do both (i.e. record both an actual reading + the expected), time bits are expected to change linearly, and status bits are expected to
                 // be static every hour (and in most cases static for many hours). this can be used to average out errors in most cases.
-                if (secondcount == 0)
+                if (secondcount == 0 || currentdemodulator.DataSlicerParameters.UseCalibrateAllBits)
                 {
-                    // correct based on first measurement
-                    if (currentdemodulator.DataSlicerParameters.UseInitialZeroCorrection)
-                        datasampler_bias_scale = max_zero / max_one;
-                    // correct manually to make it work better in poor SNR
-                    //datasampler_bias_scale *= 1 + datasampler_bias_scale_offset;
-                    // correct for template length; slight layering violation
-                    // this check only applies to standard correlation, not the convolvers
-                    if (currentdemodulator.DataSlicerParameters.UseTemplateLengthCorrection)
-                        datasampler_bias_scale *= (double)currentdemodulator.CorrelatorParameters.ZeroCorrelatorReference.Length / (double)currentdemodulator.CorrelatorParameters.OneCorrelatorReference.Length;
+                    // with usecalibrateallbits we will recalibrate the bias scale for all known unchanging bits
+                    switch (secondcount)
+                    {
+                        case 0:
+                            if (currentdemodulator.DataSlicerParameters.UseInitialZeroCorrection)
+                                datasampler_bias_scale = max_zero / max_one;
+                            // this check only applies to standard correlation, not the convolvers
+                            if (currentdemodulator.DataSlicerParameters.UseTemplateLengthCorrection)
+                                datasampler_bias_scale *= (double)currentdemodulator.CorrelatorParameters.ZeroCorrelatorReference.Length / (double)currentdemodulator.CorrelatorParameters.OneCorrelatorReference.Length;
+                            break;
+                        case 7:
+                        case 8:
+                        case 9:
+                        case 10:
+                        case 11:
+                        case 12:
+                        case 19:
+                            datasampler_bias_scale = max_zero / max_one;
+                            if (currentdemodulator.DataSlicerParameters.UseTemplateLengthCorrection)
+                                datasampler_bias_scale *= (double)currentdemodulator.CorrelatorParameters.ZeroCorrelatorReference.Length / (double)currentdemodulator.CorrelatorParameters.OneCorrelatorReference.Length;
+                            break;
+                        case 20:
+                            //datasampler_bias_scale = max_one / max_zero;
+                            break;
+
+
+                    }
                 }
 
                 max_one *= datasampler_bias_scale;

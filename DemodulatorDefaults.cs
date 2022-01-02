@@ -41,7 +41,8 @@ namespace TDF_Test
                     FIROffsetFactor = 0.2,
                     AutoThreshold = DemodulatorContext.AutoThresholdModes.None,
                     AutoThresholdMaxBias = 1.25,
-                    UseFIROffset = false
+                    UseFIROffset = false,
+                    UseCalibrateAllBits = false,
                 },
                 CorrelatorParameters = new DemodulatorContext.CorrelatorParametersStruct()
                 {
