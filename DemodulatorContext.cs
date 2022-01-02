@@ -24,6 +24,8 @@ namespace TDF_Test
 
         public double DecimatedSamplePeriod;
 
+        public DataSlicerResultStruct DataSlicerResults;
+
         public enum CorrelatorTypeEnum
         {
             FM,
@@ -96,6 +98,20 @@ namespace TDF_Test
             public double BiasOffset { get; set; }
             public double Threshold { get; set; }
             public double AutoBias_Level { get; set; }
+            public double SearchFirstMin { get; set; }
+            public double SearchFirstMax { get; set; }
+            public double SearchRange { get; set; }
+            public bool UseInitialZeroCorrection { get; set; }
+            public bool UseTemplateLengthCorrection { get; set; }
+            public bool UseDataInversion { get; set; }
+        }
+
+        public struct DataSlicerResultStruct
+        {
+            public double[] SecondSampleTimes;
+            public double[] SecondSampleRatios;
+            public double[] OnePeaks;
+            public double[] ZeroPeaks;
         }
 
 

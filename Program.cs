@@ -17,8 +17,8 @@ namespace TDF_Test
         static void Main(string[] args)
         {
 
-            //Modes mode = Modes.Verify;
-            Modes mode = Modes.Standard;
+            Modes mode = Modes.Verify;
+            //Modes mode = Modes.Standard;
             int testindex = 16;
 
             List<TestSignalInfo> testsignals = new List<TestSignalInfo>();
@@ -53,7 +53,7 @@ namespace TDF_Test
                 20, new DateTime(2021, 12, 30, 14, 23, 16, DateTimeKind.Utc)));
             //9 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T172433Z, 157 kHz, Wide-U.wav", "Good signal, early evening",
-                29, new DateTime(2021, 12, 30, 17, 23, 33, DateTimeKind.Utc)));
+                29, new DateTime(2021, 12, 30, 17, 24, 33, DateTimeKind.Utc)));
             //10 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T181314Z, 157 kHz, Wide-U.wav", "Good signal, early evening",
                 30, new DateTime(2021, 12, 30, 18, 13, 14, DateTimeKind.Utc)));
@@ -62,7 +62,7 @@ namespace TDF_Test
                 43, new DateTime(2021, 12, 30, 20, 09, 20, DateTimeKind.Utc)));
             // 12
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T235552Z, 157 kHz, Wide-U.wav", "Excellent signal, night",
-                48, new DateTime(2021, 12, 30, 23, 56, 52, DateTimeKind.Utc), holidaytomorrow: true));
+                48, new DateTime(2021, 12, 30, 23, 55, 52, DateTimeKind.Utc), holidaytomorrow: true));
             // 13 - tricky start, minute is around 7000
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T181322Z, 157 kHz, Wide-U.wav", "Poor signal, evening",
                 22, new DateTime(2021, 12, 31, 18, 13, 22, DateTimeKind.Utc), _errors: 35, holidaytomorrow: true));
@@ -95,22 +95,7 @@ namespace TDF_Test
             }
 
 
-            // 0 - FM
-            List<DemodulatorContext> demodulatorcontext = new List<DemodulatorContext>();
-            demodulatorcontext.Add(new DemodulatorContext(DemodulatorContext.CorrelatorTypeEnum.FM) { 
-                DataSlicerParameters = new DemodulatorContext.DataSlicerParameterStruct() { AutoBias_Level = 0.25, BiasOffset = -0.1, Threshold = 1 },
-                CorrelatorParameters = new DemodulatorContext.CorrelatorParametersStruct() { ZeroOffset = -28, OneOffset = -24, 
-                    CorrelatorDataSource = DemodulatorContext.CorrelatorDataSourceTypes.FM, CorrelatorReferenceSource = DemodulatorContext.CorrelatorReferenceSourceTypes.Real },
-                CorrelatorType = DemodulatorContext.CorrelatorTypeEnum.FM,
-                FilterParameters = new DemodulatorContext.FilterParametersStruct() { FMAverageCount = 8, IQAverageCount = 100, EnvelopeAverageCount = 64 },
-                MinuteDetectorParameters = new DemodulatorContext.MinuteDetectorParametersStruct() { Convolver_Length = 512}
-            });
-            // 1 - FM autobias
-            demodulatorcontext.Add(demodulatorcontext[0]);
-            demodulatorcontext[1].CorrelatorType = DemodulatorContext.CorrelatorTypeEnum.FM_Biased;
-
-
-            DemodulatorContext currentdemodulator = demodulatorcontext[0];
+            DemodulatorContext currentdemodulator = GenerateDemodulator(DemodulatorDefaults.FM_Biased);
 
             Console.WriteLine("Using {0} correlation", currentdemodulator.ToString());
 
@@ -179,6 +164,85 @@ namespace TDF_Test
 
             Console.ReadLine();
 
+        }
+
+        public enum DemodulatorDefaults
+        {
+            FM,
+            FM_Biased,
+            FM_Convolver,
+            FM_Convolver_Biased
+        }
+
+        /* This is where the default parameters for each standard demodulator type is defined
+         * 
+         */
+        public static DemodulatorContext GenerateDemodulator(DemodulatorDefaults demodulator)
+        {
+            // base type is FM standard
+            DemodulatorContext demod = new DemodulatorContext(DemodulatorContext.CorrelatorTypeEnum.FM)
+            {
+                DataSlicerParameters = new DemodulatorContext.DataSlicerParameterStruct() {
+                    AutoBias_Level = 0.25,
+                    BiasOffset = -0.1,
+                    Threshold = 1,
+                    SearchFirstMin = 0.75,
+                    SearchFirstMax = 1.2,
+                    SearchRange = 1.05,
+                    UseInitialZeroCorrection = true,
+                    UseTemplateLengthCorrection = true,
+                    UseDataInversion = false
+                },
+                CorrelatorParameters = new DemodulatorContext.CorrelatorParametersStruct()
+                {
+                    ZeroOffset = -28,
+                    OneOffset = -24,
+                    CorrelatorDataSource = DemodulatorContext.CorrelatorDataSourceTypes.FM,
+                    CorrelatorReferenceSource = DemodulatorContext.CorrelatorReferenceSourceTypes.Real
+                },
+                CorrelatorType = DemodulatorContext.CorrelatorTypeEnum.FM,
+                FilterParameters = new DemodulatorContext.FilterParametersStruct() { FMAverageCount = 8, IQAverageCount = 100, EnvelopeAverageCount = 64 },
+                MinuteDetectorParameters = new DemodulatorContext.MinuteDetectorParametersStruct() { Convolver_Length = 512 }
+            };
+
+            switch (demodulator)
+            {
+                case DemodulatorDefaults.FM:
+                    break;
+                case DemodulatorDefaults.FM_Biased:
+                    demod.CorrelatorType = DemodulatorContext.CorrelatorTypeEnum.FM_Biased;
+                    break;
+                case DemodulatorDefaults.FM_Convolver_Biased:
+                case DemodulatorDefaults.FM_Convolver:
+                    if (demodulator == DemodulatorDefaults.FM_Convolver_Biased)
+                        demod.CorrelatorType = DemodulatorContext.CorrelatorTypeEnum.FM_Convolve_Biased;
+                    else
+                        demod.CorrelatorType = DemodulatorContext.CorrelatorTypeEnum.FM_Convolve;
+
+                    demod.CorrelatorParameters = new DemodulatorContext.CorrelatorParametersStruct()
+                    {
+                        KernelLength = 512,
+                        CommonOffset = 256 + 259,
+                        ZeroOffset = 0,
+                        OneOffset = 9,
+                        CorrelatorReferenceSource = DemodulatorContext.CorrelatorReferenceSourceTypes.Synthetic
+                    };
+                    demod.DataSlicerParameters = new DemodulatorContext.DataSlicerParameterStruct()
+                    {
+                        BiasOffset = 0,
+                        AutoBias_Level = 0.25,
+                        Threshold = 1.5,
+                        SearchFirstMin = 0.75,
+                        SearchFirstMax = 1.2,
+                        SearchRange = 1.05,
+                        UseInitialZeroCorrection = true,
+                        UseTemplateLengthCorrection = false
+                    };
+
+                    break;
+            }
+
+            return demod;
         }
 
         public struct TestSignalInfo
@@ -490,9 +554,8 @@ namespace TDF_Test
             Find_Minute_Start(ref demodulator, testsignal_current, ref console_output);
 
             Calculate_Signal_SNR(fm_filtered, fm_filtered_square, demodulator.MinuteDetectorParameters.MinuteDetectorResult, ref console_output);
-            double[] second_sampling_ratio;
 
-            Perform_Detection(ref demodulator, testsignal_current, decimated_sampleperiod, out second_sampling_ratio, ref console_output);
+            Perform_Detection(ref demodulator, testsignal_current, ref console_output);
 
 
             console_output.Append("Decode: ");
@@ -503,7 +566,7 @@ namespace TDF_Test
             int biterrors = testsignal_current.Reference_Timecode.CompareBitstream(demodulator.DemodulatedData);
 
             Print_Demodulated_Bits_Informative(console_output, demodulator.CorrelatorParameters.ZeroDemodulatorResult,
-                demodulator.CorrelatorParameters.OneCorrelatorReference, demodulator.DemodulatedData, testsignal_current.Reference_Timecode.GetBitstream(), second_sampling_ratio);
+                demodulator.CorrelatorParameters.OneCorrelatorReference, demodulator.DemodulatedData, testsignal_current.Reference_Timecode.GetBitstream(), demodulator.DataSlicerResults.SecondSampleRatios);
 
             console_output.Append(testsignal_current.Reference_Timecode.Comparison_Error_Description);
 
@@ -905,12 +968,19 @@ namespace TDF_Test
             console_output.AppendLine();
         }
 
-        private static void Perform_Detection(ref DemodulatorContext demodulator, TestSignalInfo testsignal, double decimated_sampleperiod, out double[] second_sampling_ratio, ref StringBuilder console_output
+        private static void Perform_Detection(ref DemodulatorContext demodulator, TestSignalInfo testsignal, ref StringBuilder console_output
             )
         {
 
             double[] zero_correlation = demodulator.CorrelatorParameters.ZeroDemodulatorResult;
             double[] one_correlation = demodulator.CorrelatorParameters.OneDemodulatorResult;
+            double decimated_sampleperiod = demodulator.DecimatedSamplePeriod;
+
+            demodulator.DataSlicerResults.OnePeaks = new double[59];
+            demodulator.DataSlicerResults.ZeroPeaks = new double[59];
+            demodulator.DataSlicerResults.SecondSampleRatios = new double[59];
+            demodulator.DataSlicerResults.SecondSampleTimes = new double[59];
+            demodulator.DemodulatedData = new bool[59];
 
             double datasampler_bias_scale_offset = 0;
             // offset to the ratio of one/zero
@@ -919,62 +989,28 @@ namespace TDF_Test
             int datasampler_stop = 0;
 
             double datasampler_threshold = 1;
-            bool datasampler_invert = false;
+            bool datasampler_invert = demodulator.DataSlicerParameters.UseDataInversion;
 
-            double datasampler_second_neg_range = 0.95;
-            double datasampler_second_pos_range = 1.05;
+            // the range in seconds we will search for peaks
+            double datasampler_second_neg_range = -demodulator.DataSlicerParameters.SearchRange + 2;
+            double datasampler_second_pos_range  = demodulator.DataSlicerParameters.SearchRange;
 
             int minutestart_sample = demodulator.MinuteDetectorParameters.MinuteDetectorResult;
 
+            // the initial range to search for the first 0
             // this should be relatively wide unless the minute-start detector is very accurate
             // the SNR for the first second is usually good, so a wider window doesn't seem to hurt performance
-            datasampler_start = minutestart_sample + (int)(0.75 / decimated_sampleperiod);
-            datasampler_stop = minutestart_sample + (int)(1.2 / decimated_sampleperiod);
+            datasampler_start = minutestart_sample + (int)(demodulator.DataSlicerParameters.SearchFirstMin / decimated_sampleperiod);
+            datasampler_stop = minutestart_sample + (int)(demodulator.DataSlicerParameters.SearchFirstMax / decimated_sampleperiod);
 
+            // offset to apply to ratio detected before slicing
             datasampler_ratio_offset = demodulator.DataSlicerParameters.BiasOffset;
+            // threshold for slicing, should normally be 1
             datasampler_threshold = demodulator.DataSlicerParameters.Threshold;
 
-            /*
-            if (_correlatortype == CorrelatorType.FM || _correlatortype == CorrelatorType.FM_Biased)
-            {
-                // 0 is the optimal value
-                datasampler_bias_scale_offset = 0;
-                // this is the optimal value
-                datasampler_ratio_offset = -0.1;
-                //datasampler_threshold = 2.5;
-            }
-            else if (_correlatortype == CorrelatorType.FM_Convolve || _correlatortype == CorrelatorType.FM_Convolve_Biased)
-            {
-                // 0 is the optimal value
-                datasampler_bias_scale_offset = 0;
-                //datasampler_ratio_offset = -0.1;
-                datasampler_threshold = 1.5;
-                datasampler_invert = false;
-
-                // offset the range we search for this correlator
-                //minutestart_sample += 10;
-                //datasampler_start = minutestart_sample + (int)(0.9 / decimated_sampleperiod);
-                //datasampler_stop = minutestart_sample + (int)(1.1 / decimated_sampleperiod);
-                datasampler_second_neg_range = 0.95;
-                datasampler_second_pos_range = 1.05;
-            }
-            else if (_correlatortype == CorrelatorType.PM_Convolve || _correlatortype == CorrelatorType.PM_Convolve_Biased)
-            {
-                datasampler_threshold = 1.5;
-            }
-            else if (_correlatortype == CorrelatorType.PM)
-            {
-                // 0 is the optimal value
-                datasampler_bias_scale_offset = 0;
-                // this is the optimal value
-                datasampler_ratio_offset = 0.3;
-            }*/
 
 
-
-            demodulator.DemodulatedData = new bool[59];
-            double[] second_sampling_times = new double[59];
-            second_sampling_ratio = new double[59];
+            
 
             double datasampler_bias_scale = 1;
 
@@ -1042,6 +1078,10 @@ namespace TDF_Test
                     }
                 }
 
+                // store the value found for zero/one
+                demodulator.DataSlicerResults.ZeroPeaks[secondcount] = max_zero;
+                demodulator.DataSlicerResults.OnePeaks[secondcount] = max_one;
+
 
                 // symmetry check might improve performance?
                 /*double zero_leading_valley = zero_correlation[max_zero_time - 10];
@@ -1099,15 +1139,14 @@ namespace TDF_Test
                 if (secondcount == 0)
                 {
                     // correct based on first measurement
-                    datasampler_bias_scale = max_zero / max_one;
+                    if (demodulator.DataSlicerParameters.UseInitialZeroCorrection)
+                        datasampler_bias_scale = max_zero / max_one;
                     // correct manually to make it work better in poor SNR
-                    datasampler_bias_scale *= 1 + datasampler_bias_scale_offset;
+                    //datasampler_bias_scale *= 1 + datasampler_bias_scale_offset;
                     // correct for template length; slight layering violation
                     // this check only applies to standard correlation, not the convolvers
-                    if (demodulator.CorrelatorType == DemodulatorContext.CorrelatorTypeEnum.FM || demodulator.CorrelatorType == DemodulatorContext.CorrelatorTypeEnum.FM_Biased)
-                        datasampler_bias_scale *= (double)zero_correlator_template_FM.Length / (double)one_correlator_template_FM.Length;
-                    else if (demodulator.CorrelatorType == DemodulatorContext.CorrelatorTypeEnum.PM)
-                        datasampler_bias_scale *= (double)zero_correlator_template_PM.Length / (double)one_correlator_template_PM.Length;
+                    if (demodulator.DataSlicerParameters.UseTemplateLengthCorrection)
+                        datasampler_bias_scale *= (double)demodulator.CorrelatorParameters.ZeroCorrelatorReference.Length / (double)demodulator.CorrelatorParameters.OneCorrelatorReference.Length;
                 }
 
                 max_one *= datasampler_bias_scale;
@@ -1128,7 +1167,7 @@ namespace TDF_Test
                 }
 
                 // autobias mode, adds a bias to the threshold based on expected value
-                if (demodulator.CorrelatorType == DemodulatorContext.CorrelatorTypeEnum.FM_Biased && secondcount > 0)
+                if (demodulator.IsBiased() && secondcount > 0)
                 {
                     datasampler_threshold = sampler_threshold_autobias_reference + sampler_threshold_autobias;
                     if (testsignal.Reference_Timecode.GetBitstream()[secondcount])
@@ -1139,7 +1178,7 @@ namespace TDF_Test
                 ratio += datasampler_ratio_offset;
 
                 // store the ratio for debug analysis
-                second_sampling_ratio[secondcount] = ratio;
+                demodulator.DataSlicerResults.SecondSampleRatios[secondcount] = ratio;
 
                 // at this point we could in future try to do e.g. a 2nd order polynomial curve fit
                 // to improve our time resolution
@@ -1169,7 +1208,7 @@ namespace TDF_Test
                 // print out the decoded bit, time, and bit number
                 // this is very useful for debugging since we can quickly look up the relevant bit in the arrayview
                 console_output.AppendFormat("{0,2}:{1,6} ", secondcount, max_time);
-                second_sampling_times[secondcount] = max_time + 200;
+                demodulator.DataSlicerResults.SecondSampleTimes[secondcount] = max_time;
 
                 secondcount++;
             }
@@ -1186,7 +1225,7 @@ namespace TDF_Test
             double second_sampling_ratio_high_rms = 0;
             double second_sampling_ratio_low_rms = 0;
 
-            foreach (double d in second_sampling_ratio)
+            foreach (double d in demodulator.DataSlicerResults.SecondSampleRatios)
             {
                 second_sampling_ratio_average += d;
                 if (d > 1)
@@ -1206,7 +1245,7 @@ namespace TDF_Test
             second_sampling_ratio_high_rms = Math.Sqrt(second_sampling_ratio_high_rms / second_sampling_high_count);
             second_sampling_ratio_low_rms = Math.Sqrt(second_sampling_ratio_low_rms / second_sampling_low_count);
 
-            second_sampling_ratio_average /= second_sampling_ratio.Length;
+            second_sampling_ratio_average /= demodulator.DataSlicerResults.SecondSampleRatios.Length;
             second_sampling_ratio_high_average /= second_sampling_high_count;
             second_sampling_ratio_low_average /= second_sampling_low_count;
 
@@ -1214,12 +1253,12 @@ namespace TDF_Test
 
             // midpoint should be 1 ideally
 
-            console_output.AppendFormat("Data slicer ratio is {1}, average value is {0}. Offset: {2}, Scale: {3}\r\n",
+            console_output.AppendFormat("Data slicer ratio is {1:F4}, average value is {0:F4}. Offset: {2,3}, Scale: {3:F2}\r\n",
                 second_sampling_ratio_average,
                 second_sampling_offset, datasampler_ratio_offset, datasampler_bias_scale_offset);
-            console_output.AppendFormat("     high average {0} ({1}), low average {2} ({3})\r\n", second_sampling_ratio_high_average, second_sampling_high_count
+            console_output.AppendFormat("     high average {0:F4} ({1,2}), low average {2:F4} ({3,2})\r\n", second_sampling_ratio_high_average, second_sampling_high_count
                 , second_sampling_ratio_low_average, second_sampling_low_count);
-            console_output.AppendFormat("High NR {0} [dB], Low NR {1} [dB], Sum {2} [dB]\r\n", 10 * Math.Log10(second_sampling_ratio_high_rms), 10 * Math.Log10(second_sampling_ratio_low_rms),
+            console_output.AppendFormat("High NR {0:F4} [dB], Low NR {1:F4} [dB], Sum {2:F4} [dB]\r\n", 10 * Math.Log10(second_sampling_ratio_high_rms), 10 * Math.Log10(second_sampling_ratio_low_rms),
                 10 * Math.Log10(Math.Pow(second_sampling_ratio_high_rms, 2) + Math.Pow(second_sampling_ratio_low_rms, 2)));
         }
 
@@ -1358,6 +1397,8 @@ namespace TDF_Test
             demodulator.MinuteDetectorParameters.MinuteDetectorCorrelationOutput = minute_convolved;
             demodulator.MinuteDetectorParameters.MinuteDetectorWeightedOutput = minute_convolved_weighted;
 
+            // note that the recordings often actually start a second or two after the timestamp
+            // due to how SDR-Console works
             console_output.AppendFormat("Found start of minute at time {0} ({1}), expected {2} ({3})\r\n", decimated_sampleperiod * minutestart_sample, minutestart_sample,
                 _signal.ExpectedMinuteStartSeconds, _signal.ExpectedMinuteStartSeconds/decimated_sampleperiod);
             demodulator.MinuteDetectorParameters.MinuteDetectorResult = minutestart_sample;
