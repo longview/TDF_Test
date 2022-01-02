@@ -9,7 +9,7 @@ namespace TDF_Test
     /*  A class to represent a timecode from a bitstream, or to generate a new timecode for simulation purposes.
      * 
      */
-    class TDF_Timecode_Class
+    public class TDF_Timecode_Class
     {
         public TDF_Timecode_Class(DateTime time, bool summertime = false, 
             bool holidaytomorrow = false, bool holidaytoday = false, 
