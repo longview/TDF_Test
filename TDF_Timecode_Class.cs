@@ -212,7 +212,13 @@ namespace TDF_Test
             bitgenerator.Add((DoM[1] & 2) > 0);
 
             // generate DoW
-            byte[] DoW = ToBcd((int)Current_Reported_Time.DayOfWeek);
+
+            // .NET thinks Sunday is the first day of the week
+            // this is wrong.
+            int dow_int = (int)Current_Reported_Time.DayOfWeek;
+            if (dow_int == 0)
+                dow_int = 7;
+            byte[] DoW = ToBcd(dow_int);
             bitgenerator.Add((DoW[0] & 1) > 0);
             bitgenerator.Add((DoW[0] & 2) > 0);
             bitgenerator.Add((DoW[0] & 4) > 0);

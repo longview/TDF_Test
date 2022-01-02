@@ -19,7 +19,7 @@ namespace TDF_Test
 
             Modes mode = Modes.Verify;
             //Modes mode = Modes.Standard;
-            int testindex = 0;
+            int testindex = 20;
 
             DemodulatorContext currentdemodulator = GenerateDemodulator(DemodulatorDefaults.FM_Biased);
 
@@ -87,7 +87,10 @@ namespace TDF_Test
                 30, new DateTime(2021, 12, 31, 22, 59, 30, DateTimeKind.Utc), _errors: 0, holidaytoday: true));
             // 19
             testsignals.Add(new TestSignalInfo("..\\..\\2022-01-02T110116Z, 157 kHz, Wide-U.wav", "Poor signal, mid day",
-                15, new DateTime(2022, 01, 02, 11, 01, 20, DateTimeKind.Utc), _errors: 19));
+                15, new DateTime(2022, 01, 02, 11, 01, 20, DateTimeKind.Utc), _errors: 21));
+            // 20
+            testsignals.Add(new TestSignalInfo("..\\..\\2022-01-02T115821Z, 157 kHz, Wide-U.wav", "Poor signal, mid day",
+                18, new DateTime(2022, 01, 02, 11, 58, 22, DateTimeKind.Utc), _errors: 0));
 
 
             TestSignalInfo testsignal_current = testsignals[testindex];
@@ -851,7 +854,10 @@ namespace TDF_Test
                 console_output.AppendFormat(decoded_offset_time.UtcDateTime.ToString("o"));
                 console_output.AppendFormat(" and locally {0}\r\n", decoded_time.ToString("o"));
 
-                if ((int)decoded_time.DayOfWeek != day_of_week)
+                int dow_corrected = (int)decoded_time.DayOfWeek;
+                if (dow_corrected == 0)
+                    dow_corrected = 7;
+                if (dow_corrected != day_of_week)
                 {
                     console_output.AppendFormat("Decoded day of week is wrong, {0} should be {1}\r\n", day_of_week, decoded_time.DayOfWeek);
                     decode_error_count++;
