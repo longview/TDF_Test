@@ -186,8 +186,11 @@ namespace TDF_Test
             testsignals.Add(new TestSignalInfo("..\\..\\2022-01-02T130333Z, 157 kHz, Wide-U.wav", "Poor signal, mid day",
                 16, new DateTime(2022, 01, 02, 13, 03, 33, DateTimeKind.Utc), _errors: 22));
             // 22
-            testsignals.Add(new TestSignalInfo("..\\..\\2022-01-02T155905Z, 157 kHz, Wide-U.wav", "Good signal, afternoon day",
+            testsignals.Add(new TestSignalInfo("..\\..\\2022-01-02T155905Z, 157 kHz, Wide-U.wav", "Good signal, afternoon",
                 34, new DateTime(2022, 01, 02, 15, 59, 05, DateTimeKind.Utc)));
+            // 22
+            testsignals.Add(new TestSignalInfo("..\\..\\2022-01-02T172940Z, 157 kHz, Wide-U.wav", "Good signal, early evening",
+                45, new DateTime(2022, 01, 02, 17, 29, 40, DateTimeKind.Utc)));
         }
 
         public enum Modes
