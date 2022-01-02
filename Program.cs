@@ -530,13 +530,13 @@ namespace TDF_Test
             console_output.AppendFormat("02   A3   {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
                 payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("03   HA2  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
+            console_output.AppendFormat("03  HA02  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
                 payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("04   HA4  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
+            console_output.AppendFormat("04  HA04  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
                 payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("05   HA8  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
+            console_output.AppendFormat("05  HA08  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
                 payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
             count++;
             console_output.AppendFormat("06  HA16  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
