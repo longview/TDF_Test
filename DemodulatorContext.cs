@@ -155,7 +155,7 @@ namespace TDF_Test
                 CorrelatorParameters.TimeReverseCorrelators, CorrelatorParameters.SyntheticCorrelatorAverageCount);
             sb.AppendFormat("Data slicer bias offset {0:F3}, thres. {1}, autobias level {2}, start {3}, stop {4}, increment {5}, initial zero correct {6}, template length correct {7}, data inverted {8}, symmetry weighted {9}, symmetry weight scale {10}, FIR offset {11}, FIR offset scale {12}, autothreshold max bias {13}\r\n",
                 DataSlicerParameters.BiasOffset, DataSlicerParameters.Threshold, DataSlicerParameters.AutoBias_Level, DataSlicerParameters.SearchFirstMin, DataSlicerParameters.SearchFirstMax, DataSlicerParameters.SearchRange, DataSlicerParameters.UseInitialZeroCorrection,
-                DataSlicerParameters.UseTemplateLengthCorrection, DataSlicerParameters.UseDataInversion, DataSlicerParameters.UseSymmetryWeight, DataSlicerParameters.SymmetryWeightFactor, DataSlicerParameters.UseFIROffset,
+                DataSlicerParameters.UseTemplateLengthCorrection, DataSlicerParameters.UseDataInversion, DataSlicerParameters.UseSymmetryWeight, DataSlicerParameters.SymmetryWeightFactor, 
                 DataSlicerParameters.UseFIROffset, DataSlicerParameters.FIROffsetFactor, DataSlicerParameters.AutoThresholdMaxBias);
 
 
