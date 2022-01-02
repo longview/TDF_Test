@@ -76,6 +76,7 @@
     <Compile Include="Correlation_Zero.cs" />
     <Compile Include="Correlation_One.cs" />
     <Compile Include="Correlation_Minute.cs" />
+    <Compile Include="DemodulatorContext.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TDF_Timecode_Class.cs" />

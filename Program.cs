@@ -17,8 +17,8 @@ namespace TDF_Test
         static void Main(string[] args)
         {
 
-            Modes mode = Modes.Verify;
-            //Modes mode = Modes.Standard;
+            //Modes mode = Modes.Verify;
+            Modes mode = Modes.Standard;
             int testindex = 16;
 
             List<TestSignalInfo> testsignals = new List<TestSignalInfo>();
@@ -26,61 +26,61 @@ namespace TDF_Test
 
             //0 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\websdr_recording_start_2021-12-28T12_57_51Z_157.0kHz.wav", "webSDR recording, high quality",
-                70, new DateTime(2021, 12, 28, 12, 58, 00, DateTimeKind.Utc)));
+                70, new DateTime(2021, 12, 28, 12, 57, 51, DateTimeKind.Utc)));
             //1 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-29T163350Z, 157 kHz, Wide-U.wav", "Ok signal, mid day",
-                30, new DateTime(2021, 12, 29, 16, 34, 00, DateTimeKind.Utc)));
+                30, new DateTime(2021, 12, 29, 16, 33, 50, DateTimeKind.Utc)));
             //2 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-29T185106Z, 157 kHz, Wide-U.wav", "Good signal, evening",
-                40, new DateTime(2021, 12, 29, 18, 52, 00, DateTimeKind.Utc)));
+                40, new DateTime(2021, 12, 29, 18, 51, 06, DateTimeKind.Utc)));
             //3 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T090027Z, 157 kHz, Wide-U.wav", "Medium signal, morning",
-                24, new DateTime(2021, 12, 30, 09, 01, 00, DateTimeKind.Utc)));
+                24, new DateTime(2021, 12, 30, 09, 00, 27, DateTimeKind.Utc)));
             //4 full of errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T102229Z, 157 kHz, Wide-U.wav", "Maintenance phase, off air",
-                0, new DateTime(2021, 12, 30, 10, 23, 00, DateTimeKind.Utc), _errors: 23, _status: TestSignalInfo.Station_Status.Maintenance));
+                0, new DateTime(2021, 12, 30, 10, 22, 29, DateTimeKind.Utc), _errors: 23, _status: TestSignalInfo.Station_Status.Maintenance));
             //5 no errors, bit 19/20 is tricky
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T105034Z, 157 kHz, Wide-U.wav", "Medium signal, morning",
-                24, new DateTime(2021, 12, 30, 10, 51, 00, DateTimeKind.Utc)));
+                24, new DateTime(2021, 12, 30, 10, 50, 34, DateTimeKind.Utc)));
             //6 decodes with 5 errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T121742Z, 157 kHz, Wide-U_20.wav", "Poor signal, afternoon",
-                20, new DateTime(2021, 12, 30, 12, 18, 00, DateTimeKind.Utc), _errors: 10));
+                20, new DateTime(2021, 12, 30, 12, 17, 42, DateTimeKind.Utc), _errors: 10));
             //7 
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T121914Z, 157 kHz, Wide-U_20.wav", "Poor signal, afternoon",
-                20, new DateTime(2021, 12, 30, 12, 20, 00, DateTimeKind.Utc), _errors: 5));
+                20, new DateTime(2021, 12, 30, 12, 19, 14, DateTimeKind.Utc), _errors: 5));
             //8 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T142316Z, 157 kHz, Wide-U.wav", "Poor signal, afternoon",
-                20, new DateTime(2021, 12, 30, 14, 24, 00, DateTimeKind.Utc)));
+                20, new DateTime(2021, 12, 30, 14, 23, 16, DateTimeKind.Utc)));
             //9 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T172433Z, 157 kHz, Wide-U.wav", "Good signal, early evening",
-                29, new DateTime(2021, 12, 30, 17, 25, 00, DateTimeKind.Utc)));
+                29, new DateTime(2021, 12, 30, 17, 23, 33, DateTimeKind.Utc)));
             //10 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T181314Z, 157 kHz, Wide-U.wav", "Good signal, early evening",
-                30, new DateTime(2021, 12, 30, 18, 14, 00, DateTimeKind.Utc)));
+                30, new DateTime(2021, 12, 30, 18, 13, 14, DateTimeKind.Utc)));
             // 11
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T200920Z, 157 kHz, Wide-U.wav", "Excellent signal, evening",
-                43, new DateTime(2021, 12, 30, 20, 10, 00, DateTimeKind.Utc)));
+                43, new DateTime(2021, 12, 30, 20, 09, 20, DateTimeKind.Utc)));
             // 12
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T235552Z, 157 kHz, Wide-U.wav", "Excellent signal, night",
-                48, new DateTime(2021, 12, 30, 23, 56, 00, DateTimeKind.Utc), holidaytomorrow: true));
+                48, new DateTime(2021, 12, 30, 23, 56, 52, DateTimeKind.Utc), holidaytomorrow: true));
             // 13 - tricky start, minute is around 7000
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T181322Z, 157 kHz, Wide-U.wav", "Poor signal, evening",
-                22, new DateTime(2021, 12, 31, 18, 14, 00, DateTimeKind.Utc), _errors: 35, holidaytomorrow: true));
+                22, new DateTime(2021, 12, 31, 18, 13, 22, DateTimeKind.Utc), _errors: 35, holidaytomorrow: true));
             // 14 - minute start around 6500
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T181524Z, 157 kHz, Wide-U.wav", "Poor signal, evening",
-                22, new DateTime(2021, 12, 31, 18, 16, 00, DateTimeKind.Utc), _errors: 35, holidaytomorrow: true));
+                22, new DateTime(2021, 12, 31, 18, 15, 24, DateTimeKind.Utc), _errors: 35, holidaytomorrow: true));
             // 15
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T222827Z, 157 kHz, Wide-U.wav", "Good signal, evening",
-                20, new DateTime(2021, 12, 31, 22, 29, 00, DateTimeKind.Utc), _errors: 0, holidaytomorrow: true));
+                20, new DateTime(2021, 12, 31, 22, 28, 27, DateTimeKind.Utc), _errors: 0, holidaytomorrow: true));
             // 16 - last of the year :)
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T225740Z, 157 kHz, Wide-U.wav", "Good signal, evening",
-                30, new DateTime(2021, 12, 31, 22, 58, 00, DateTimeKind.Utc), _errors: 0, holidaytomorrow: true));
+                30, new DateTime(2021, 12, 31, 22, 57, 40, DateTimeKind.Utc), _errors: 0, holidaytomorrow: true));
             // 17 - first of the year
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T225835Z, 157 kHz, Wide-U.wav", "Good signal, evening",
-                30, new DateTime(2021, 12, 31, 22, 59, 00, DateTimeKind.Utc), _errors: 0, holidaytoday: true));
+                30, new DateTime(2021, 12, 31, 22, 58, 35, DateTimeKind.Utc), _errors: 0, holidaytoday: true));
             // 18
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T225930Z, 157 kHz, Wide-U.wav", "Good signal, evening",
-                30, new DateTime(2021, 12, 31, 23, 00, 00, DateTimeKind.Utc), _errors: 0, holidaytoday: true));
+                30, new DateTime(2021, 12, 31, 22, 59, 30, DateTimeKind.Utc), _errors: 0, holidaytoday: true));
 
 
             TestSignalInfo testsignal_current = testsignals[testindex];
@@ -90,7 +90,7 @@ namespace TDF_Test
                 Console.WriteLine("Using test index {0}, signal type {7}.\r\nFile {1} (IF = {6})\r\nSNR {2}, station was {3}.\r\nTime transmitted: {4}.\r\nComment: {5}",
                 testindex, testsignal_current.FilePath, testsignal_current.SNR,
                 testsignal_current.Status == TestSignalInfo.Station_Status.OnAir ? "on air" : "off air",
-                testsignal_current.Recorded_Timestamp_UTC.ToString("o"), testsignal_current.Comment, testsignal_current.Frequency,
+                testsignal_current.RecordedTimestampUTC.ToString("o"), testsignal_current.Comment, testsignal_current.Frequency,
                 testsignal_current.SignalType == TestSignalInfo.Signal_Type.TDF ? "TDF" : "DCF77 Phase");
             }
 
@@ -141,7 +141,7 @@ namespace TDF_Test
                     console_output.AppendFormat("Using test index {0}, signal type {7}.\r\nFile {1} (IF = {6})\r\nSNR {2}, station was {3}.\r\nTime transmitted: {4}.\r\nComment: {5}\r\n\r\n",
                     testsignals.IndexOf(signal), signal.FilePath, signal.SNR,
                     signal.Status == TestSignalInfo.Station_Status.OnAir ? "on air" : "off air",
-                    signal.Recorded_Timestamp_UTC.ToString("o"), signal.Comment, signal.Frequency,
+                    signal.RecordedTimestampUTC.ToString("o"), signal.Comment, signal.Frequency,
                     signal.SignalType == TestSignalInfo.Signal_Type.TDF ? "TDF" : "DCF77 Phase");
 
                     errors = Demodulate_Testsignal(signal, ref currentdemodulator, ref console_output);
@@ -149,16 +149,16 @@ namespace TDF_Test
                     // ignore the bad signals for error computation
                     if (signal.Status == TestSignalInfo.Station_Status.OnAir)
                     {
-                        if (errors > signal.Expected_Errors)
+                        if (errors > signal.ExpectedErrors)
                             fail_count++;
-                        else if (errors < signal.Expected_Errors)
+                        else if (errors < signal.ExpectedErrors)
                             antifail_count++;
                     }
 
                     Console.WriteLine("Index {0,2}, expected errors {1,2}, found {2,2}{4}. Comment: {3}",
-                        testsignals.IndexOf(signal), signal.Expected_Errors, errors, signal.Comment, errors < signal.Expected_Errors ? "(!)" : "");
+                        testsignals.IndexOf(signal), signal.ExpectedErrors, errors, signal.Comment, errors < signal.ExpectedErrors ? "(!)" : "");
 
-                    File.WriteAllText(String.Format("Verify_Result_{0}_f{1}_e{2}_{3}.txt", testsignals.IndexOf(signal), errors, signal.Expected_Errors, currentdemodulator.ToString()),
+                    File.WriteAllText(String.Format("Verify_Result_{0}_f{1}_e{2}_{3}.txt", testsignals.IndexOf(signal), errors, signal.ExpectedErrors, currentdemodulator.ToString()),
                         console_output.ToString());
                 }
 
@@ -190,20 +190,25 @@ namespace TDF_Test
                 SNR = _snr;
                 Frequency = _frequency;
                 Status = _status;
+                
+                // store where we expect to find the start of the next minute
+                ExpectedMinuteStartSeconds = 60 - _date.Second;
                 // add 1 minute to timestamp from start of recording timestamp
-                Recorded_Timestamp_UTC = _date.AddMinutes(1);
-                Reference_Timecode = new TDF_Timecode_Class(Recorded_Timestamp_UTC, summertime_soon, holidaytomorrow, holidaytoday);
+                // and remove the seconds
+                RecordedTimestampUTC = _date.AddMinutes(2).AddSeconds(_date.Second * -1);
+                Reference_Timecode = new TDF_Timecode_Class(RecordedTimestampUTC, summertime_soon, holidaytomorrow, holidaytoday);
                 SignalType = _signaltype;
-                Expected_Errors = _errors;
+                ExpectedErrors = _errors;
             }
             public string FilePath;
             public string Comment;
             public double Frequency;
             public double SNR;
             public Station_Status Status;
-            public DateTime Recorded_Timestamp_UTC;
+            public DateTime RecordedTimestampUTC;
             public Signal_Type SignalType;
-            public int Expected_Errors;
+            public int ExpectedErrors;
+            public double ExpectedMinuteStartSeconds;
 
             public TDF_Timecode_Class Reference_Timecode;
             public enum Station_Status
@@ -412,6 +417,7 @@ namespace TDF_Test
 
             int IQ_decimation_factor = 100;
             double decimated_sampleperiod = IQ_decimation_factor * sampleperiod;
+            demodulator.DecimatedSamplePeriod = decimated_sampleperiod;
 
             // output buffer for I/Q data
             double[] i_unfiltered = new double[data.Length];
@@ -481,7 +487,7 @@ namespace TDF_Test
 
             Perform_Correlations(ref demodulator, ref console_output);
 
-            Find_Minute_Start(ref demodulator, decimated_sampleperiod, ref console_output);
+            Find_Minute_Start(ref demodulator, testsignal_current, ref console_output);
 
             Calculate_Signal_SNR(fm_filtered, fm_filtered_square, demodulator.MinuteDetectorParameters.MinuteDetectorResult, ref console_output);
             double[] second_sampling_ratio;
@@ -866,12 +872,12 @@ namespace TDF_Test
                 }
 
                 // check if the time is equal to the test recording info
-                if (testsignal_current.Recorded_Timestamp_UTC.CompareTo(decoded_time.ToUniversalTime()) == 0)
+                if (testsignal_current.RecordedTimestampUTC.CompareTo(decoded_time.ToUniversalTime()) == 0)
                     console_output.AppendFormat("Decoded time matches recording timestamp.\r\n");
                 else
                 {
-                    console_output.AppendFormat("Decoded time does not match timestamp ({0}).\r\n", testsignal_current.Recorded_Timestamp_UTC.ToUniversalTime().ToString("o"));
-                    TimeSpan decoded_time_error = testsignal_current.Recorded_Timestamp_UTC - decoded_time.ToUniversalTime();
+                    console_output.AppendFormat("Decoded time does not match timestamp ({0}).\r\n", testsignal_current.RecordedTimestampUTC.ToUniversalTime().ToString("o"));
+                    TimeSpan decoded_time_error = testsignal_current.RecordedTimestampUTC - decoded_time.ToUniversalTime();
                     console_output.AppendFormat("Decoded time error is: {0} (D:HH:MM:SS,SS')\r\n", decoded_time_error.ToString("G"));
                     decode_error_count++;
                 }
@@ -882,7 +888,7 @@ namespace TDF_Test
                 decode_error_count++;
             }
             console_output.AppendFormat("(Blind) Decode found {0} errors, SNR {1})\r\n", decode_error_count, testsignal_current.SNR);
-            if (decode_error_count < testsignal_current.Expected_Errors)
+            if (decode_error_count < testsignal_current.ExpectedErrors)
                 console_output.AppendFormat("Error count ({0}) was better than specified!\r\n", decode_error_count);
             if (testsignal_current.Status == TestSignalInfo.Station_Status.Maintenance)
                 console_output.AppendFormat("Station was known to be off air, errors are expected.\r\n");
@@ -1251,7 +1257,7 @@ namespace TDF_Test
             return FM_Rectified_SNR;
         }
 
-        private static void Find_Minute_Start(ref DemodulatorContext demodulator, double decimated_sampleperiod, ref StringBuilder console_output)
+        private static void Find_Minute_Start(ref DemodulatorContext demodulator, TestSignalInfo _signal, ref StringBuilder console_output)
         {
             /* Find maximum value and assume this is the start of a minute 
              * Perform a LMS correlation looking for a bunch of zeros
@@ -1260,6 +1266,8 @@ namespace TDF_Test
             //bool minutestarted = false;
             double max_minute_correlation = double.NegativeInfinity;
             int minutestart_sample = 0;
+
+            double decimated_sampleperiod = demodulator.DecimatedSamplePeriod;
 
             double[] minute_correlation_source = demodulator.MinuteDetectorParameters.MinuteDetectorSource;
             double[] minute_start_correlation = new double[minute_correlation_source.Length];
@@ -1347,7 +1355,11 @@ namespace TDF_Test
                 }
             }
 
-            console_output.AppendFormat("Found start of minute at time {0} ({1})\r\n", decimated_sampleperiod * minutestart_sample, minutestart_sample);
+            demodulator.MinuteDetectorParameters.MinuteDetectorCorrelationOutput = minute_convolved;
+            demodulator.MinuteDetectorParameters.MinuteDetectorWeightedOutput = minute_convolved_weighted;
+
+            console_output.AppendFormat("Found start of minute at time {0} ({1}), expected {2} ({3})\r\n", decimated_sampleperiod * minutestart_sample, minutestart_sample,
+                _signal.ExpectedMinuteStartSeconds, _signal.ExpectedMinuteStartSeconds/decimated_sampleperiod);
             demodulator.MinuteDetectorParameters.MinuteDetectorResult = minutestart_sample;
         }
 
@@ -1426,7 +1438,7 @@ namespace TDF_Test
             double zero_correlation_sum = 0;
             double zero_correlation_min = double.PositiveInfinity;
 
-            bool reverse_correlators = false;
+            bool reverse_correlators = demodulator.CorrelatorParameters.TimereverseCorrelators;
 
             // correlation for zero bits
             for (int i = 0; i < data_correlation_source.Length - _zero_correlator.Length; i++)
@@ -1848,174 +1860,7 @@ namespace TDF_Test
                 i++;
             }
         }
-        public class DemodulatorContext
-        {
-            public DemodulatorContext(CorrelatorTypeEnum correlatortype)
-            {
-                CorrelatorType = correlatortype;
-            }
-
-            public MinuteDetectorTypeEnum MinuteDetectorType { get; set; } = MinuteDetectorTypeEnum.Convolver;
-            public MinuteDetectorParametersStruct MinuteDetectorParameters;
-            public CorrelatorParametersStruct CorrelatorParameters;
-            public CorrelatorTypeEnum CorrelatorType { get; set; } = CorrelatorTypeEnum.FM;
-            public DataSlicerParameterStruct DataSlicerParameters { get; set; }
-            public FilterParametersStruct FilterParameters { get; set; }
-
-            public bool[] DemodulatedData;
-
-            public enum CorrelatorTypeEnum
-            {
-                FM,
-                FM_Biased,
-                PM,
-                FM_Convolve,
-                FM_Convolve_Biased,
-                PM_Convolve,
-                PM_Convolve_Biased
-            }
-
-            public enum MinuteDetectorTypeEnum
-            {
-                Convolver
-            }
-
-            public struct CorrelatorParametersStruct
-            {
-                public int ZeroOffset { get; set; }
-                public int OneOffset { get; set; }
-                public int CommonOffset { get; set; }
-                public int KernelLength { get; set; }
-                public CorrelatorReferenceSourceTypes CorrelatorReferenceSource { get; set; }
-                public CorrelatorDataSourceTypes CorrelatorDataSource { get; set; }
-                public double[] DemodulatorSource;
-                public double[] ZeroDemodulatorResult;
-                public double[] OneDemodulatorResult;
-                public double[] ZeroCorrelatorReference;
-                public double[] OneCorrelatorReference;
-            }
-
-            public enum CorrelatorDataSourceTypes
-            {
-                FM,
-                PM,
-                FM_Envelope,
-                PM_Envelope
-            }
-
-            public struct MinuteDetectorParametersStruct
-            {
-                public int Convolver_Length;
-                public double Weighting_Coefficient;
-                public double[] MinuteDetectorSource;
-                public int MinuteDetectorResult;
-            }
-
-            public enum CorrelatorReferenceSourceTypes
-            {
-                Real,
-                Synthetic,
-            }
-
-
-
-
-            public struct FilterParametersStruct
-            {
-                public int IQAverageCount { get; set; }
-                public int FMAverageCount { get; set; }
-                public int EnvelopeAverageCount { get; set; }
-            }
-
-            
-            public struct DataSlicerParameterStruct
-            {
-                public double BiasOffset { get; set; }
-                public double Threshold { get; set; }
-                public double AutoBias_Level { get; set; }
-            }
-            
-            
-            
-
-            public override string ToString()
-            {
-                switch (CorrelatorType)
-                {
-                    case CorrelatorTypeEnum.FM:
-                        return "FM";
-                    case CorrelatorTypeEnum.FM_Biased:
-                        return "FM with bias";
-                    case CorrelatorTypeEnum.PM:
-                        return "PM";
-                    case CorrelatorTypeEnum.FM_Convolve:
-                        return "FM convolver";
-                    case CorrelatorTypeEnum.FM_Convolve_Biased:
-                        return "FM convolver with bias";
-                    case CorrelatorTypeEnum.PM_Convolve:
-                        return "PM convolver";
-                    case CorrelatorTypeEnum.PM_Convolve_Biased:
-                        return "PM convolver with bias";
-                    default:
-                        return "Unknown";
-                }
-            }
-
-            public bool IsConvolver()
-            {
-                switch (CorrelatorType)
-                {
-                    case CorrelatorTypeEnum.FM_Convolve:
-                    case CorrelatorTypeEnum.FM_Convolve_Biased:
-                    case CorrelatorTypeEnum.PM_Convolve:
-                    case CorrelatorTypeEnum.PM_Convolve_Biased:
-                        return true;
-                    default:
-                        return false;
-                }
-            }
-
-            public bool UsesPM()
-            {
-                switch (CorrelatorType)
-                {
-                    case CorrelatorTypeEnum.PM:
-                    case CorrelatorTypeEnum.PM_Convolve:
-                    case CorrelatorTypeEnum.PM_Convolve_Biased:
-                        return true;
-                    default:
-                        return false;
-                }
-            }
-
-            public bool UsesFM()
-            {
-                switch (CorrelatorType)
-                {
-                    case CorrelatorTypeEnum.FM:
-                    case CorrelatorTypeEnum.FM_Convolve:
-                    case CorrelatorTypeEnum.FM_Biased:
-                    case CorrelatorTypeEnum.FM_Convolve_Biased:
-                        return true;
-                    default:
-                        return false;
-                }
-            }
-
-            public bool IsBiased()
-            {
-                switch (CorrelatorType)
-                {
-                    case CorrelatorTypeEnum.FM_Biased:
-                    case CorrelatorTypeEnum.FM_Convolve_Biased:
-                    case CorrelatorTypeEnum.PM_Convolve_Biased:
-                        return true;
-                    default:
-                        return false;
-                }
-            }
-
-        }
+        
 
 
     }
