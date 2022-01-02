@@ -8,7 +8,9 @@ namespace TDF_Test
 {
     public struct TestSignalInfo
     {
-        public TestSignalInfo(string _filepath, string _comment, double _snr, DateTime _date, bool holidaytoday = false, bool holidaytomorrow = false, bool summertime_soon = false, double _frequency = 5000, int _errors = 0, Station_Status _status = Station_Status.OnAir, Signal_Type _signaltype = Signal_Type.TDF)
+        public TestSignalInfo(string _filepath, string _comment, double _snr, DateTime _date,
+            bool timechangeauto = true, bool timechange = false, bool holidaytomorrow = false, bool holidaytoday = false, TDF_Timecode_Class.LeapSecondState leapstate = TDF_Timecode_Class.LeapSecondState.No_Leap,
+            double _frequency = 5000, int _errors = 0, Station_Status _status = Station_Status.OnAir, Signal_Type _signaltype = Signal_Type.TDF)
         {
             FilePath = _filepath;
             Comment = _comment;
@@ -21,7 +23,7 @@ namespace TDF_Test
             // add 1 minute to timestamp from start of recording timestamp
             // and remove the seconds
             RecordedTimestampUTC = _date.AddMinutes(2).AddSeconds(_date.Second * -1);
-            Reference_Timecode = new TDF_Timecode_Class(RecordedTimestampUTC, summertime_soon, holidaytomorrow, holidaytoday);
+            Reference_Timecode = new TDF_Timecode_Class(RecordedTimestampUTC, timechangeauto, timechange, holidaytomorrow, holidaytoday, leapstate);
             SignalType = _signaltype;
             ExpectedErrors = _errors;
         }

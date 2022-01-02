@@ -11,18 +11,28 @@ namespace TDF_Test
      */
     public class TDF_Timecode_Class
     {
-        public TDF_Timecode_Class(DateTime time, bool summertime = false, 
+        public TDF_Timecode_Class(DateTime time, bool timechangeauto = true, bool timechange = false, 
             bool holidaytomorrow = false, bool holidaytoday = false, 
             LeapSecondState leapstate = LeapSecondState.No_Leap)
         {
             _bits = new bool[59];
             _bit_errors = new bool[59];
-            Summertime_Announced = summertime;
 
             Comparison_Error_Description = "No comparison performed yet.";
 
             if (!SetCurrentTransmittedTimeAndTimezone(time))
                 throw new MissingFieldException("Timezone must be of kind Local or UTC");
+
+            if (timechangeauto)
+            {
+                // check if there will be change to the DST status within the next hour
+                TimeZoneChange_Announced = time.AddHours(1).IsDaylightSavingTime() ^ time.IsDaylightSavingTime();
+            }
+            else
+            {
+                TimeZoneChange_Announced = timechange;
+            }
+
             Tomorrow_Is_Holiday = holidaytomorrow;
             Today_Is_Holiday = holidaytoday;
             _leapstate = leapstate;
@@ -158,7 +168,7 @@ namespace TDF_Test
             // to be ignored
             bitgenerator.Add(false);
 
-            bitgenerator.Add(Summertime_Announced);
+            bitgenerator.Add(TimeZoneChange_Announced);
             bitgenerator.Add(Timezone == TDF_Timezone.CEST ? true : false);
             bitgenerator.Add(Timezone == TDF_Timezone.CET ? true : false);
 
@@ -277,7 +287,7 @@ namespace TDF_Test
 
         public string Comparison_Error_Description;
 
-        public bool Summertime_Announced;
+        public bool TimeZoneChange_Announced;
         // the time we will be transmitting, not time at time of transmission
         public DateTime Current_Reported_Time;
         public TDF_Timezone Timezone;
@@ -313,7 +323,7 @@ namespace TDF_Test
             switch (bit)
             {
                 case BitPositions.A1:
-                    return "A1 Summer time announcement, withtin 1 hour";
+                    return "A1 Time zone change, next hour";
                 case BitPositions.A2:
                     return "A2 Positive leap warning";
                 case BitPositions.A3:
