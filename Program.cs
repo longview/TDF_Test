@@ -345,8 +345,29 @@ namespace TDF_Test
             double sampleperiod = 1 / samplerate;
 
             double[] data;
-            double[] data_right;
-            openWav(testsignal_current.FilePath, out data, out data_right);
+            //double[] data_right;
+            //openWav(testsignal_current.FilePath, out data, out data_right);
+
+            NWaves.Audio.WaveFile inputsignal;
+
+            using (FileStream wavefilestream = new FileStream(testsignal_current.FilePath, FileMode.Open))
+            {
+                // open the wave file (normalized)
+                inputsignal = new NWaves.Audio.WaveFile(wavefilestream);
+            }
+
+            if (inputsignal.WaveFmt.SamplingRate != samplerate)
+            {
+                throw new InvalidDataException(String.Format("Input wave file {0} has sample rate {1}, must be {2}", testsignal_current.FilePath, inputsignal.WaveFmt.SamplingRate, samplerate));
+            }
+
+            data = new double[inputsignal.Signals[0].Length];
+            List<double> data_list = new List<double>(inputsignal.Signals[0].Length);
+            foreach (float f in inputsignal.Signals[0].Samples)
+                data_list.Add(f);
+
+            data = data_list.ToArray();
+
             // TODO: this is wrong, fix it
             double phase_error_per_sample_vs_frequency = (0.6035457 + -0.1047503) / 10;
 
@@ -1731,61 +1752,6 @@ namespace TDF_Test
                 q_filtered[i] = q_int / IQ_decimation_factor;
             }
         }
-
-        // convert two bytes to one double in the range -1 to 1
-        static double bytesToDouble(byte firstByte, byte secondByte)
-        {
-            // convert two bytes to one short (little endian)
-            short s = (short)((secondByte << 8) | firstByte);
-            // convert to range from -1 to (just below) 1
-            return s / 32768.0;
-        }
-
-        // Returns left and right double arrays. 'right' will be null if sound is mono.
-        static void openWav(string filename, out double[] left, out double[] right)
-        {
-            byte[] wav = File.ReadAllBytes(filename);
-
-            // Determine if mono or stereo
-            int channels = wav[22];     // Forget byte 23 as 99.999% of WAVs are 1 or 2 channels
-
-            // Get past all the other sub chunks to get to the data subchunk:
-            int pos = 12;   // First Subchunk ID from 12 to 16
-
-            // Keep iterating until we find the data chunk (i.e. 64 61 74 61 ...... (i.e. 100 97 116 97 in decimal))
-            while (!(wav[pos] == 100 && wav[pos + 1] == 97 && wav[pos + 2] == 116 && wav[pos + 3] == 97))
-            {
-                pos += 4;
-                int chunkSize = wav[pos] + wav[pos + 1] * 256 + wav[pos + 2] * 65536 + wav[pos + 3] * 16777216;
-                pos += 4 + chunkSize;
-            }
-            pos += 8;
-
-            // Pos is now positioned to start of actual sound data.
-            int samples = (wav.Length - pos) / 2;     // 2 bytes per sample (16 bit sound mono)
-            if (channels == 2) samples /= 2;        // 4 bytes per sample (16 bit stereo)
-
-            // Allocate memory (right will be null if only mono sound)
-            left = new double[samples];
-            if (channels == 2) right = new double[samples];
-            else right = null;
-
-            // Write to double array/s:
-            int i = 0;
-            while (pos < wav.Length)
-            {
-                left[i] = bytesToDouble(wav[pos], wav[pos + 1]);
-                pos += 2;
-                if (channels == 2)
-                {
-                    right[i] = bytesToDouble(wav[pos], wav[pos + 1]);
-                    pos += 2;
-                }
-                i++;
-            }
-        }
-        
-
 
     }
 }
