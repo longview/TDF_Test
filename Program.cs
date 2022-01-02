@@ -1216,6 +1216,14 @@ namespace TDF_Test
 
             console_output.AppendLine();
 
+            double ratiovsthresholdsum = 0;
+            foreach (double d in currentdemodulator.DataSlicerResults.RatioVsThreshold)
+                ratiovsthresholdsum += d;
+            ratiovsthresholdsum /= 59;
+
+            // kind of useless but let's log it anyway
+            console_output.AppendFormat("Ratio vs. threshold average {0:F4}, {1:F4} dB\r\n", ratiovsthresholdsum, Math.Log10(ratiovsthresholdsum)*10);
+
 
             // do some statistics on the data
             double second_sampling_ratio_high_average = 0;

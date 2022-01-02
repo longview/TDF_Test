@@ -37,7 +37,7 @@ namespace TDF_Test
                     UseTemplateLengthCorrection = true,
                     UseDataInversion = false,
                     UseSymmetryWeight = false,
-                    SymmetryWeightFactor = 0.2,
+                    SymmetryWeightFactor = 0.1,
                     FIROffsetFactor = 0.2,
                     AutoThreshold = DemodulatorContext.AutoThresholdModes.None,
                     AutoThresholdMaxBias = 1.25,
