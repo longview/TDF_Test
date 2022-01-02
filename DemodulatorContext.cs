@@ -20,11 +20,23 @@ namespace TDF_Test
         public DataSlicerParameterStruct DataSlicerParameters { get; set; }
         public FilterParametersStruct FilterParameters { get; set; }
 
-        public bool[] DemodulatedData;
+        //public bool[] DemodulatedData;
+        public DemodulationResultStruct DemodulationResult;
 
         public double DecimatedSamplePeriod;
 
         public DataSlicerResultStruct DataSlicerResults;
+
+
+        public struct DemodulationResultStruct
+        {
+            public bool[] DemodulatedData;
+            public bool[] DemodulatedDataReference;
+            public bool[] DemodulatedDataErrorMask;
+            public string DemodulatedDataErrorDescription;
+            public int BitErrors;
+            public int DecodeErrors;
+        }
 
         public enum CorrelatorTypeEnum
         {

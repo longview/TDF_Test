@@ -100,6 +100,7 @@ namespace TDF_Test
             Console.WriteLine("Using {0} correlation", currentdemodulator.ToString());
 
             // generate correlators if desired
+            // this code path is dead for now, needs a slight rewrite to use the demodulatorcontext
             if (false)
             {
 #pragma warning disable CS0162 // Unreachable code detected
@@ -123,6 +124,7 @@ namespace TDF_Test
                 {
                     int errors = 0;
                     StringBuilder console_output = new StringBuilder();
+                    console_output.AppendFormat("Test start at time {0}\r\n", DateTime.UtcNow.ToString("o"));
                     console_output.AppendFormat("Using test index {0}, signal type {7}.\r\nFile {1} (IF = {6})\r\nSNR {2}, station was {3}.\r\nTime transmitted: {4}.\r\nComment: {5}\r\n\r\n",
                     testsignals.IndexOf(signal), signal.FilePath, signal.SNR,
                     signal.Status == TestSignalInfo.Station_Status.OnAir ? "on air" : "off air",
@@ -202,7 +204,8 @@ namespace TDF_Test
                 },
                 CorrelatorType = DemodulatorContext.CorrelatorTypeEnum.FM,
                 FilterParameters = new DemodulatorContext.FilterParametersStruct() { FMAverageCount = 8, IQAverageCount = 100, EnvelopeAverageCount = 64 },
-                MinuteDetectorParameters = new DemodulatorContext.MinuteDetectorParametersStruct() { Convolver_Length = 512 }
+                MinuteDetectorParameters = new DemodulatorContext.MinuteDetectorParametersStruct() { Convolver_Length = 512 },
+                DemodulationResult = new DemodulatorContext.DemodulationResultStruct()
             };
 
             switch (demodulator)
@@ -221,6 +224,7 @@ namespace TDF_Test
 
                     demod.CorrelatorParameters = new DemodulatorContext.CorrelatorParametersStruct()
                     {
+                        // these parameters need a lookin' at
                         KernelLength = 512,
                         CommonOffset = 256 + 259,
                         ZeroOffset = 0,
@@ -559,20 +563,22 @@ namespace TDF_Test
 
 
             console_output.Append("Decode: ");
-            Print_Demodulated_Bits(demodulator.DemodulatedData, ref console_output);
+            Print_Demodulated_Bits(demodulator.DemodulationResult.DemodulatedData, ref console_output);
             console_output.Append("Refrnc: ");
             Print_Demodulated_Bits(testsignal_current.Reference_Timecode.GetBitstream(), ref console_output);
 
-            int biterrors = testsignal_current.Reference_Timecode.CompareBitstream(demodulator.DemodulatedData);
+            demodulator.DemodulationResult.BitErrors = testsignal_current.Reference_Timecode.CompareBitstream(demodulator.DemodulationResult.DemodulatedData);
+            demodulator.DemodulationResult.DemodulatedDataErrorMask = testsignal_current.Reference_Timecode.GetBitstream();
+            demodulator.DemodulationResult.DemodulatedDataErrorDescription = testsignal_current.Reference_Timecode.Comparison_Error_Description;
 
             Print_Demodulated_Bits_Informative(console_output, demodulator.CorrelatorParameters.ZeroDemodulatorResult,
-                demodulator.CorrelatorParameters.OneCorrelatorReference, demodulator.DemodulatedData, testsignal_current.Reference_Timecode.GetBitstream(), demodulator.DataSlicerResults.SecondSampleRatios);
+                demodulator.CorrelatorParameters.OneDemodulatorResult, demodulator.DemodulationResult.DemodulatedData, testsignal_current.Reference_Timecode.GetBitstream(), demodulator.DataSlicerResults.SecondSampleRatios);
 
-            console_output.Append(testsignal_current.Reference_Timecode.Comparison_Error_Description);
+            console_output.Append(demodulator.DemodulationResult.DemodulatedDataErrorDescription);
 
-            int decode_error_count = Decode_Received_Data(testsignal_current, demodulator.DemodulatedData, ref console_output);
+            demodulator.DemodulationResult.DecodeErrors = Decode_Received_Data(testsignal_current, demodulator.DemodulationResult.DemodulatedData, ref console_output);
 
-            return decode_error_count + biterrors;
+            return demodulator.DemodulationResult.BitErrors + demodulator.DemodulationResult.DecodeErrors;
         }
 
         private static void Print_Demodulated_Bits_Informative(StringBuilder console_output, double[] zero_correlation, double[] one_correlation, bool[] payload_data, bool[] reference_data, double[] second_sampling_ratio)
@@ -980,7 +986,7 @@ namespace TDF_Test
             demodulator.DataSlicerResults.ZeroPeaks = new double[59];
             demodulator.DataSlicerResults.SecondSampleRatios = new double[59];
             demodulator.DataSlicerResults.SecondSampleTimes = new double[59];
-            demodulator.DemodulatedData = new bool[59];
+            demodulator.DemodulationResult.DemodulatedData = new bool[59];
 
             double datasampler_bias_scale_offset = 0;
             // offset to the ratio of one/zero
@@ -1188,7 +1194,7 @@ namespace TDF_Test
                 if (datasampler_invert)
                     bit = !bit;
 
-                demodulator.DemodulatedData[secondcount] = bit;
+                demodulator.DemodulationResult.DemodulatedData[secondcount] = bit;
 
                 int max_time = 0;
                 // we now look for the bits within a small time window to improve detection probability
