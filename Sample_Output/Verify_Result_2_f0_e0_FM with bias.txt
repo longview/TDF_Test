@@ -1,0 +1,121 @@
+Test start at time 2022-01-02T21:49:17.4089914Z
+Using test index 2, signal type TDF.
+File 2021-12-29T185106Z, 157 kHz, Wide-U.wav (IF = 5000)
+SNR 40, station was on air.
+Time transmitted: 2021-12-29T18:53:00.0000000Z.
+Comment: Good signal, evening
+
+Read file, length 2345200 samples, 117.26 seconds
+Using sample rate 20000, output decimation 100, IQ conversion, LO 5000
+I/Q moving average filter size 100
+FM demodulation start
+FM moving average filter size 8
+FM rectifier filter size 64
+Drift calculated, 0.0836669737502813 per sample (1471.6184012937 total)
+Calculated frequency error: 1.67738062039629
+FM SNR = 2.00869720469882, or 3.0291447520548 dB
+Doing correlations in FM with bias mode.
+Found start of minute at time 51.065 (10213), expected 54 (10800)
+Modulation based SNR = 68.6517712217712, or 18.3665174655338 dB
+Note: biased with reference bitstream, thresholds 1.250/0.750
+Bit sample times:
+ 0: 10395  1: 10595  2: 10795  3: 10995  4: 11195  5: 11395  6: 11595  7: 11795  8: 11995  9: 12195 10: 12395 11: 12595 12: 12795 13: 12995 14: 13195 15: 13395 16: 13595 17: 13795 18: 13995 19: 14195 20: 14395 21: 14595 22: 14795 23: 14995 24: 15195 25: 15395 26: 15595 27: 15795 28: 15995 29: 16195 30: 16395 31: 16595 32: 16795 33: 16995 34: 17195 35: 17395 36: 17595 37: 17795 38: 17995 39: 18195 40: 18395 41: 18595 42: 18795 43: 18995 44: 19195 45: 19395 46: 19595 47: 19795 48: 19995 49: 20195 50: 20395 51: 20595 52: 20795 53: 20995 54: 21195 55: 21395 56: 21595 57: 21795 58: 21995 
+Ratio vs. threshold average 0.6668, -1.7598 dB
+Data slicer ratio is 1.0511, average value is 1.0694. Offset: -0.1, Scale: 0.00
+     high average 1.4124 (31), low average 0.6897 (28)
+High NR 1.6794 [dB], Low NR -1.6045 [dB], Sum 4.2239 [dB]
+Decode: 00010010000000000010111001010100110110010111001001100001001
+Refrnc: 00010010000000000010111001010100110110010111001001100001001
+No.  Sym  Value   Expct    Rat      Margin
+00   M    False   False    0.7235   0.2765
+01   A2   False   False    0.7053   0.5447
+02   A3   False   False    0.8789   0.3711
+03  HA02   True    True    1.7848   1.0348
+04  HA04  False   False    0.8344   0.4156
+05  HA08  False   False    0.8059   0.4441
+06  HA16   True    True    1.5028   0.7528
+07   0    False   False    0.7190   0.5310
+08   0    False   False    0.8222   0.4278
+09   0    False   False    0.6681   0.5819
+10   0    False   False    0.6943   0.5557
+11   0    False   False    0.6744   0.5756
+12   0    False   False    0.7288   0.5212
+13   F1   False   False    0.7415   0.5085
+14   F2   False   False    0.6121   0.6379
+15   N/A  False   False    0.7335   0.5165
+16   A1   False   False    0.6888   0.5612
+17   Z1   False   False    0.8287   0.4213
+18   Z2    True    True    1.9544   1.2044
+19   X    False   False    0.7971   0.4529
+20   S     True    True    1.4696   0.7196
+21   M01   True    True    1.7867   1.0367
+22   M02   True    True    1.4466   0.6966
+23   M04  False   False    0.7529   0.4971
+24   M08  False   False    0.6797   0.5703
+25   M10   True    True    1.8136   1.0636
+26   M20  False   False    0.7169   0.5331
+27   M40   True    True    1.7612   1.0112
+28   P1   False   False    0.6085   0.6415
+29   H01   True    True    1.6056   0.8556
+30   H02  False   False    0.7023   0.5477
+31   H04  False   False    0.7208   0.5292
+32   H08   True    True    1.7801   1.0301
+33   H10   True    True    1.5083   0.7583
+34   H20  False   False    0.6843   0.5657
+35   P2    True    True    1.8786   1.1286
+36  DM01   True    True    1.8533   1.1033
+37  DM02  False   False    0.5551   0.6949
+38  DM04  False   False    0.6909   0.5591
+39  DM08   True    True    1.4328   0.6828
+40  DM10  False   False    0.6786   0.5714
+41  DM20   True    True    1.8489   1.0989
+42  DW01   True    True    1.8305   1.0805
+43  DW02   True    True    1.3173   0.5673
+44  DW04  False   False    0.6695   0.5805
+45  MO01  False   False    0.7798   0.4702
+46  MO02   True    True    1.4662   0.7162
+47  MO04  False   False    0.6779   0.5721
+48  MO08  False   False    0.7499   0.5001
+49  MO10   True    True    1.4069   0.6569
+50   Y01   True    True    1.8522   1.1022
+51   Y02  False   False    0.7257   0.5243
+52   Y04  False   False    0.6381   0.6119
+53   Y08  False   False    0.6800   0.5700
+54   Y10  False   False    0.7433   0.5067
+55   Y20   True    True    1.5418   0.7918
+56   Y40  False   False    0.7022   0.5478
+57   Y80  False   False    0.8137   0.4363
+58   P3    True    True    1.6277   0.8777
+
+
+Reference generator check:
+Total bit errors found: 0
+
+M: First bit ok
+A2: No Pos Leap
+A3: No Neg Leap
+Hamming weight 21-58 is 18, I count 18, this is good!
+Unused bits 7-12 ok!
+F1: No holiday tomorrow
+F2: No holiday today :(
+Bit 15 is low, ignored
+A1: Time zone will not change at the next hour mark
+Z2: Not using CEST
+Z2: Currently using CET
+Unused bit 19 ok
+S: Start of time ok
+P1: Minute parity ok
+P2: Hours parity ok
+P3: Date bits parity ok
+At the next minute marker: 19:53, day of month 29, day of week 3, month 12, year is 2021
+Decoded time is valid: 2021-12-29T18:53:00.0000000Z and locally 2021-12-29T19:53:00.0000000+01:00
+Decoded day of week seems correct (Wednesday)
+Decoded time matches recording timestamp.
+(Blind) Decode found 0 errors, SNR 40)
+Finished
+
+Description of demodulator: FM with bias
+Filter parameters: IQ 100, FM 8, Rectified 64
+Minute detector type Convolve, convolve length 512, weight factor 3, found at sample 10213
+Correlator input FM, real reference, kernel 0, offset 0, 0:-18 1:-14, reversed: True, synth corrs average 0
+Data slicer bias offset -0.100, thres. 1, autobias level 0.25, start 0.8, stop 1.2, increment 1.05, initial zero correct True, template length correct True, data inverted False, symmetry weighted False, symmetry weight scale 0.1, FIR offset False, FIR offset scale 0.2, autothreshold max bias 1.25
