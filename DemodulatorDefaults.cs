@@ -47,13 +47,14 @@ namespace TDF_Test
                 },
                 CorrelatorParameters = new DemodulatorContext.CorrelatorParametersStruct()
                 {
-                    ZeroOffset = -28,
-                    OneOffset = -24,
+                    ZeroOffset = -18,
+                    OneOffset = -14,
                     CorrelatorDataSource = DemodulatorContext.CorrelatorDataSourceTypes.FM,
                     CorrelatorReferenceSource = DemodulatorContext.CorrelatorReferenceSourceTypes.Real,
                     UseAverageSubtraction = false,
                     UseHighPassFiltering = true,
-                    HighPassFilterCoefficient = 0.8
+                    HighPassFilterCoefficient = 0.8,
+                    TimeReverseCorrelators = true
                 },
                 CorrelatorType = DemodulatorContext.CorrelatorTypeEnum.FM,
                 FilterParameters = new DemodulatorContext.FilterParametersStruct() { 
