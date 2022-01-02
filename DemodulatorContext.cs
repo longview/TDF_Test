@@ -56,6 +56,12 @@ namespace TDF_Test
             PM_Convolve_Biased
         }
 
+        public enum CorrelatorMethodEnum
+        {
+            LMS_MAC,
+            MAC
+        }
+
         public enum MinuteDetectorTypeEnum
         {
             Convolver_Correlation,
@@ -81,6 +87,7 @@ namespace TDF_Test
             public bool UseHighPassFiltering;
             public bool UseAverageSubtraction;
             public double HighPassFilterCoefficient;
+            public CorrelatorMethodEnum CorrelatorMethod;
         }
 
         public enum CorrelatorDataSourceTypes

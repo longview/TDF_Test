@@ -55,7 +55,8 @@ namespace TDF_Test
                     UseHighPassFiltering = true,
                     HighPassFilterCoefficient = 0.8,
                     // note: if this is tuend off, the time offsets must be changed by around -10
-                    TimeReverseCorrelators = true
+                    TimeReverseCorrelators = true,
+                    CorrelatorMethod = DemodulatorContext.CorrelatorMethodEnum.LMS_MAC
                 },
                 CorrelatorType = DemodulatorContext.CorrelatorTypeEnum.FM,
                 FilterParameters = new DemodulatorContext.FilterParametersStruct() { 
