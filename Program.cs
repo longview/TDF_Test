@@ -1015,21 +1015,50 @@ namespace TDF_Test
                 // iterate over the range we expect some data to be and record peaks
                 for (int i = datasampler_start; i < datasampler_stop; i++)
                 {
-                    if (zero_correlation[i] > max_zero)
+                    double current_zero = zero_correlation[i];
+                    double current_one = one_correlation[i];
+                    // test to improve detection reliability
+                    // basically a 3-element correlation on the expected correlation waveform
+                    // this improves SNR for good signals
+                    // but also seems to make things rapidly go bad when SNR is low, so no good!
+                    if (currentdemodulator.DataSlicerParameters.UseFIROffset || currentdemodulator.DataSlicerParameters.UseSymmetryWeight)
+                    {
+                        double zero_leading_valley = zero_correlation[i - 10];
+                        double zero_trailing_valley = zero_correlation[i + 10];
+                        double zero_symmetry = Math.Abs(zero_leading_valley - zero_trailing_valley) * currentdemodulator.DataSlicerParameters.SymmetryWeightFactor;
+                        double zero_offset = max_zero + (zero_leading_valley + zero_trailing_valley) / 2;
+
+                        double one_leading_valley = one_correlation[i + 10];
+                        double one_trailing_valley = one_correlation[i - 10];
+                        double one_symmetry = Math.Abs(one_leading_valley - one_trailing_valley);
+                        double one_offset = max_one + (one_leading_valley + one_trailing_valley) / 2;
+
+                        // symmetry check might improve performance?
+                        if (currentdemodulator.DataSlicerParameters.UseSymmetryWeight)
+                        {
+                            current_zero -= zero_symmetry * currentdemodulator.DataSlicerParameters.SymmetryWeightFactor;
+                            current_one -= one_symmetry * currentdemodulator.DataSlicerParameters.SymmetryWeightFactor;
+                        }
+
+                        if (currentdemodulator.DataSlicerParameters.UseFIROffset)
+                        {
+                            current_zero -= zero_offset * currentdemodulator.DataSlicerParameters.FIROffsetFactor;
+                            current_one -= one_offset * currentdemodulator.DataSlicerParameters.FIROffsetFactor;
+                        }
+
+                        currentdemodulator.DataSlicerResults.OneWeightedPeaks[secondcount] = max_one;
+                        currentdemodulator.DataSlicerResults.ZeroWeightedPeaks[secondcount] = max_zero;
+                    }
+
+                    if (current_zero > max_zero)
                     {
                         max_zero = zero_correlation[i];
                         max_zero_time = i;
                     }
-                    if (one_correlation[i] > max_one)
+                    if (current_one > max_one)
                     {
                         max_one = one_correlation[i];
                         max_one_time = i;
-                    }
-
-                    if (zero_correlation[i] < min_zero)
-                    {
-                        min_zero = zero_correlation[i];
-                        min_zero_time = i;
                     }
                 }
 
@@ -1038,38 +1067,7 @@ namespace TDF_Test
                 currentdemodulator.DataSlicerResults.OnePeaks[secondcount] = max_one;
 
 
-                // test to improve detection reliability
-                // basically a 3-element correlation on the expected correlation waveform
-                // this improves SNR for good signals
-                // but also seems to make things rapidly go bad when SNR is low, so no good!
-                if (currentdemodulator.DataSlicerParameters.UseFIROffset || currentdemodulator.DataSlicerParameters.UseSymmetryWeight)
-                {
-                    double zero_leading_valley = zero_correlation[max_zero_time - 10];
-                    double zero_trailing_valley = zero_correlation[max_zero_time + 10];
-                    double zero_symmetry = Math.Abs(zero_leading_valley - zero_trailing_valley) * currentdemodulator.DataSlicerParameters.SymmetryWeightFactor;
-                    double zero_offset = max_zero + (zero_leading_valley + zero_trailing_valley) / 2;
 
-                    double one_leading_valley = one_correlation[max_one_time + 10];
-                    double one_trailing_valley = one_correlation[max_one_time - 10];
-                    double one_symmetry = Math.Abs(one_leading_valley - one_trailing_valley);
-                    double one_offset = max_one + (one_leading_valley + one_trailing_valley) / 2;
-
-                    // symmetry check might improve performance?
-                    if (currentdemodulator.DataSlicerParameters.UseSymmetryWeight)
-                    {
-                        max_zero -= zero_symmetry * currentdemodulator.DataSlicerParameters.SymmetryWeightFactor;
-                        max_one -= one_symmetry * currentdemodulator.DataSlicerParameters.SymmetryWeightFactor;
-                    }
-
-                    if (currentdemodulator.DataSlicerParameters.UseFIROffset)
-                    {
-                        max_zero -= zero_offset * currentdemodulator.DataSlicerParameters.FIROffsetFactor;
-                        max_one -= one_offset * currentdemodulator.DataSlicerParameters.FIROffsetFactor;
-                    }
-
-                    currentdemodulator.DataSlicerResults.OneWeightedPeaks[secondcount] = max_one;
-                    currentdemodulator.DataSlicerResults.ZeroWeightedPeaks[secondcount] = max_zero;
-                }
 
                 // the first second we run is always a 0, assuming we detected the minute correctly
                 // the one-detector tends to be more reliable since it's longer, so we try to fudge it a bit
