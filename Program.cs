@@ -42,7 +42,7 @@ namespace TDF_Test
                 24, new DateTime(2021, 12, 30, 09, 00, 27, DateTimeKind.Utc)));
             //4 full of errors
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T102229Z, 157 kHz, Wide-U.wav", "Maintenance phase, off air",
-                0, new DateTime(2021, 12, 30, 10, 22, 29, DateTimeKind.Utc), _errors: 23, _status: TestSignalInfo.Station_Status.Maintenance));
+                0, new DateTime(2021, 12, 30, 10, 22, 29, DateTimeKind.Utc), _errors: 25, _status: TestSignalInfo.Station_Status.Maintenance));
             //5 no errors, bit 19/20 is tricky
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-30T105034Z, 157 kHz, Wide-U.wav", "Medium signal, morning",
                 24, new DateTime(2021, 12, 30, 10, 50, 34, DateTimeKind.Utc)));
@@ -78,22 +78,25 @@ namespace TDF_Test
                 20, new DateTime(2021, 12, 31, 22, 28, 27, DateTimeKind.Utc), _errors: 0, holidaytomorrow: true));
             // 16 - last of the year :)
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T225740Z, 157 kHz, Wide-U.wav", "Good signal, evening",
-                30, new DateTime(2021, 12, 31, 22, 57, 40, DateTimeKind.Utc), _errors: 0, holidaytomorrow: true));
+                30, new DateTime(2021, 12, 31, 22, 57, 40, DateTimeKind.Utc), _errors: 7, holidaytomorrow: true));
             // 17 - first of the year
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T225835Z, 157 kHz, Wide-U.wav", "Good signal, evening",
-                30, new DateTime(2021, 12, 31, 22, 58, 35, DateTimeKind.Utc), _errors: 0, holidaytoday: true));
+                30, new DateTime(2021, 12, 31, 22, 58, 35, DateTimeKind.Utc), _errors: 2, holidaytoday: true));
             // 18
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T225930Z, 157 kHz, Wide-U.wav", "Good signal, evening",
                 30, new DateTime(2021, 12, 31, 22, 59, 30, DateTimeKind.Utc), _errors: 0, holidaytoday: true));
             // 19
             testsignals.Add(new TestSignalInfo("..\\..\\2022-01-02T110116Z, 157 kHz, Wide-U.wav", "Poor signal, mid day",
-                15, new DateTime(2022, 01, 02, 11, 01, 20, DateTimeKind.Utc), _errors: 21));
+                15, new DateTime(2022, 01, 02, 11, 01, 20, DateTimeKind.Utc), _errors: 25));
             // 20
             testsignals.Add(new TestSignalInfo("..\\..\\2022-01-02T115821Z, 157 kHz, Wide-U.wav", "Poor signal, mid day",
                 18, new DateTime(2022, 01, 02, 11, 58, 22, DateTimeKind.Utc), _errors: 0));
             // 21
             testsignals.Add(new TestSignalInfo("..\\..\\2022-01-02T130333Z, 157 kHz, Wide-U.wav", "Poor signal, mid day",
                 16, new DateTime(2022, 01, 02, 13, 03, 33, DateTimeKind.Utc), _errors: 22));
+            // 22
+            testsignals.Add(new TestSignalInfo("..\\..\\2022-01-02T155905Z, 157 kHz, Wide-U.wav", "Good signal, afternoon day",
+                34, new DateTime(2022, 01, 02, 15, 59, 05, DateTimeKind.Utc), _errors: 0));
 
 
             TestSignalInfo testsignal_current = testsignals[testindex];
@@ -1121,7 +1124,7 @@ namespace TDF_Test
 
                 bool bit = ratio > datasampler_threshold;
 
-                // basically the SNR of this detection
+                // basically the SNR of this detection, represents the absolute distance to the threshold
                 currentdemodulator.DataSlicerResults.RatioVsThreshold[secondcount] = (ratio - datasampler_threshold) * (bit ? 1 : -1);
 
                 if (datasampler_invert)
