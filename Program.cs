@@ -19,7 +19,7 @@ namespace TDF_Test
 
             Modes mode;
             mode = Modes.Standard;
-            //mode = Modes.Verify;
+            mode = Modes.Verify;
             int testindex = 28;
 
             DemodulatorContext currentdemodulator = GenerateDemodulator(DemodulatorDefaults.FM_Biased);
