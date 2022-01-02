@@ -339,7 +339,7 @@ namespace TDF_Test
 
         private static int Demodulate_Testsignal(TestSignalInfo testsignal_current, ref DemodulatorContext demodulator,
             ref StringBuilder console_output,
-            bool generate_correlator = false, int zero_offset = 0, int one_offset = 0)
+            bool generate_correlator = false)
         {
             // frequency offset of USB receiver
             double frequency = testsignal_current.Frequency;

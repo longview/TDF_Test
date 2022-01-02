@@ -46,7 +46,11 @@ namespace TDF_Test
                     CorrelatorReferenceSource = DemodulatorContext.CorrelatorReferenceSourceTypes.Real
                 },
                 CorrelatorType = DemodulatorContext.CorrelatorTypeEnum.FM,
-                FilterParameters = new DemodulatorContext.FilterParametersStruct() { FMAverageCount = 8, IQAverageCount = 100, EnvelopeAverageCount = 64 },
+                FilterParameters = new DemodulatorContext.FilterParametersStruct() { 
+                    FMAverageCount = 8, 
+                    IQAverageCount = 100, 
+                    EnvelopeAverageCount = 64 
+                },
                 MinuteDetectorParameters = new DemodulatorContext.MinuteDetectorParametersStruct() { Convolver_Length = 512 },
                 DemodulationResult = new DemodulatorContext.DemodulationResultStruct()
             };
