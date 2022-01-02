@@ -73,7 +73,7 @@ namespace TDF_Test
                 case DemodulatorDefaults.FM_Biased_MeanVariance:
                     demod.CorrelatorType = DemodulatorContext.CorrelatorTypeEnum.FM_Biased_MeanVariance;
                     demod.DataSlicerParameters.AutoThreshold = DemodulatorContext.AutoThresholdModes.MeanVariance;
-                    demod.DataSlicerParameters.UseFIROffset = true;
+                    demod.DataSlicerParameters.UseFIROffset = false;
                     demod.DataSlicerParameters.UseSymmetryWeight = true;
                     break;
                 case DemodulatorDefaults.FM_Convolver_Biased:
