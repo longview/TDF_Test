@@ -17,9 +17,11 @@ namespace TDF_Test
         static void Main(string[] args)
         {
 
-            //Modes mode = Modes.Verify;
-            Modes mode = Modes.Standard;
-            int testindex = 19;
+            Modes mode = Modes.Verify;
+            //Modes mode = Modes.Standard;
+            int testindex = 0;
+
+            DemodulatorContext currentdemodulator = GenerateDemodulator(DemodulatorDefaults.FM_Biased);
 
             List<TestSignalInfo> testsignals = new List<TestSignalInfo>();
             // input file should be mono 16-bit, 20000 Hz (oddball rate)
@@ -99,8 +101,6 @@ namespace TDF_Test
                 testsignal_current.SignalType == TestSignalInfo.Signal_Type.TDF ? "TDF" : "DCF77 Phase");
             }
 
-
-            DemodulatorContext currentdemodulator = GenerateDemodulator(DemodulatorDefaults.FM_Biased);
 
             Console.WriteLine("Using {0} correlation", currentdemodulator.ToString());
 
@@ -896,6 +896,8 @@ namespace TDF_Test
 
             demodulator.DataSlicerResults.OnePeaks = new double[59];
             demodulator.DataSlicerResults.ZeroPeaks = new double[59];
+            demodulator.DataSlicerResults.OneWeightedPeaks = new double[59];
+            demodulator.DataSlicerResults.ZeroWeightedPeaks = new double[59];
             demodulator.DataSlicerResults.SecondSampleRatios = new double[59];
             demodulator.DataSlicerResults.SecondSampleTimes = new double[59];
             demodulator.DemodulationResult.DemodulatedData = new bool[59];
@@ -953,12 +955,12 @@ namespace TDF_Test
                  *  Reset an hour change?
                  *  This means we can integrate multiple transmissions of each bit to achieve a better SNR.
                  */
-                console_output.AppendFormat("Note: biased with reference bitstream, thresholds now {0:F3}/{1:F3}\r\n", sampler_threshold_autobias + sampler_threshold_autobias_reference,
+                console_output.AppendFormat("Note: biased with reference bitstream, thresholds {0:F3}/{1:F3}\r\n", sampler_threshold_autobias + sampler_threshold_autobias_reference,
                     (sampler_threshold_autobias_reference - sampler_threshold_autobias));
             }
             else
             {
-
+                console_output.AppendFormat("Threshold is {0:F3}\r\n", datasampler_threshold);
             }
 
 
@@ -1001,50 +1003,38 @@ namespace TDF_Test
                 demodulator.DataSlicerResults.OnePeaks[secondcount] = max_one;
 
 
-                // symmetry check might improve performance?
-                /*double zero_leading_valley = zero_correlation[max_zero_time - 10];
-                double zero_trailing_valley = zero_correlation[max_zero_time + 10];
-                double zero_symmetry = Math.Abs(zero_leading_valley - zero_trailing_valley)/30;
-                max_zero -= zero_symmetry;
-
-                double one_leading_valley = one_correlation[max_one_time + 10];
-                double one_trailing_valley = one_correlation[max_one_time - 10];
-                double one_symmetry = Math.Abs(one_leading_valley - one_trailing_valley)/30;
-                max_one -= one_symmetry;*/
-
-                double zero_leading_flat = zero_correlation[max_zero_time - 20];
-                //max_zero += max_zero - zero_leading_flat;
-
                 // test to improve detection reliability
                 // basically a 3-element correlation on the expected correlation waveform
                 // this improves SNR for good signals
                 // but also seems to make things rapidly go bad when SNR is low, so no good!
-                /*if (_correlatortype == CorrelatorType.FM_Convolve || _correlatortype == CorrelatorType.FM_Convolve_Biased || _correlatortype == CorrelatorType.PM_Convolve)
+                if (demodulator.DataSlicerParameters.UseFIROffset || demodulator.DataSlicerParameters.UseSymmetryWeight)
                 {
-                    double current_zero = max_zero;
-                    // the optimal match is symmetric about the peak
-                    // at +-8 we expect symmetric negative values
                     double zero_leading_valley = zero_correlation[max_zero_time - 10];
                     double zero_trailing_valley = zero_correlation[max_zero_time + 10];
-                    double zero_symmetry = Math.Abs(zero_leading_valley - zero_trailing_valley);
-                    double zero_offset = current_zero + (zero_leading_valley + zero_trailing_valley) / 2;
-                    double zero_weighted_correlation = current_zero + (Math.Abs(current_zero - zero_leading_valley) + Math.Abs(current_zero - zero_trailing_valley));
-                    //zero_weighted_correlation -= zero_symmetry;
-                    //zero_weighted_correlation += zero_offset;
+                    double zero_symmetry = Math.Abs(zero_leading_valley - zero_trailing_valley) * demodulator.DataSlicerParameters.SymmetryWeightFactor;
+                    double zero_offset = max_zero + (zero_leading_valley + zero_trailing_valley) / 2;
 
-                    max_zero = zero_weighted_correlation;
-
-                    double current_one = max_one;
                     double one_leading_valley = one_correlation[max_one_time + 10];
                     double one_trailing_valley = one_correlation[max_one_time - 10];
                     double one_symmetry = Math.Abs(one_leading_valley - one_trailing_valley);
-                    double one_offset = current_one + (one_leading_valley + one_trailing_valley) / 2;
-                    double one_weighted_correlation = current_one + (Math.Abs(current_one - one_leading_valley) + Math.Abs(current_one - one_trailing_valley));
-                    //one_weighted_correlation -= one_symmetry;
-                    //one_weighted_correlation += one_offset;
+                    double one_offset = max_one + (one_leading_valley + one_trailing_valley) / 2;
 
-                    max_one = one_weighted_correlation;
-                }*/
+                    // symmetry check might improve performance?
+                    if (demodulator.DataSlicerParameters.UseSymmetryWeight)
+                    {
+                        max_zero -= zero_symmetry * demodulator.DataSlicerParameters.SymmetryWeightFactor;
+                        max_one -= one_symmetry * demodulator.DataSlicerParameters.SymmetryWeightFactor;
+                    }
+
+                    if (demodulator.DataSlicerParameters.UseFIROffset)
+                    {
+                        max_zero -= zero_offset * demodulator.DataSlicerParameters.FIROffsetFactor;
+                        max_one -= one_offset * demodulator.DataSlicerParameters.FIROffsetFactor;
+                    }
+
+                    demodulator.DataSlicerResults.OneWeightedPeaks[secondcount] = max_one;
+                    demodulator.DataSlicerResults.ZeroWeightedPeaks[secondcount] = max_zero;
+                }
 
                 // the first second we run is always a 0, assuming we detected the minute correctly
                 // the one-detector tends to be more reliable since it's longer, so we try to fudge it a bit
@@ -1146,7 +1136,7 @@ namespace TDF_Test
             foreach (double d in demodulator.DataSlicerResults.SecondSampleRatios)
             {
                 second_sampling_ratio_average += d;
-                if (d > 1)
+                if (d > datasampler_threshold)
                 {
                     second_sampling_ratio_high_rms += Math.Pow(d, 2);
                     second_sampling_ratio_high_average += d;
@@ -1322,32 +1312,30 @@ namespace TDF_Test
             demodulator.MinuteDetectorParameters.MinuteDetectorResult = minutestart_sample;
         }
 
-        private static void Perform_Correlations(ref DemodulatorContext demodulator, ref StringBuilder console_output)
+        private static void Perform_Correlations(ref DemodulatorContext currentdemodulator, ref StringBuilder console_output)
         {
             /* The technique for correlation here is to template match using least square error matching
                          * i.e. we are sensitive to the exact amplitude, not just the shape
                          * Also supports convolution, but this appears to offer no benefit vs. LMS correlation here
                          */
 
-            double[] _zero_correlator = demodulator.CorrelatorParameters.ZeroCorrelatorReference;
-            double[] _one_correlator = demodulator.CorrelatorParameters.OneCorrelatorReference;
-            double[] data_correlation_source = demodulator.CorrelatorParameters.DemodulatorSource;
-            demodulator.CorrelatorParameters.ZeroDemodulatorResult = new double[data_correlation_source.Length];
-            demodulator.CorrelatorParameters.OneDemodulatorResult = new double[data_correlation_source.Length];
-            double[] one_correlation = demodulator.CorrelatorParameters.OneDemodulatorResult;
-            double[] zero_correlation = demodulator.CorrelatorParameters.ZeroDemodulatorResult;
+            double[] _zero_correlator = currentdemodulator.CorrelatorParameters.ZeroCorrelatorReference;
+            double[] _one_correlator = currentdemodulator.CorrelatorParameters.OneCorrelatorReference;
+            double[] data_correlation_source = currentdemodulator.CorrelatorParameters.DemodulatorSource;
+            currentdemodulator.CorrelatorParameters.ZeroDemodulatorResult = new double[data_correlation_source.Length];
+            currentdemodulator.CorrelatorParameters.OneDemodulatorResult = new double[data_correlation_source.Length];
+            double[] one_correlation = currentdemodulator.CorrelatorParameters.OneDemodulatorResult;
+            double[] zero_correlation = currentdemodulator.CorrelatorParameters.ZeroDemodulatorResult;
 
 
-            console_output.AppendFormat("Doing correlations in {0} mode.\r\n", demodulator.ToString());
+            console_output.AppendFormat("Doing correlations in {0} mode.\r\n", currentdemodulator.ToString());
 
             NWaves.Operations.Convolution.OlaBlockConvolver con_zero = null;
             NWaves.Operations.Convolution.OlaBlockConvolver con_one = null;
-            int kernelsize = demodulator.CorrelatorParameters.KernelLength;
-            int kerneldelay = kernelsize / 2;
-            kerneldelay += 259;
+            int kernelsize = currentdemodulator.CorrelatorParameters.KernelLength;
 
-            int kerneldelay_zero = demodulator.CorrelatorParameters.ZeroOffset;
-            int kerneldelay_one = demodulator.CorrelatorParameters.OneOffset;
+            int kerneldelay_zero = currentdemodulator.CorrelatorParameters.CommonOffset + currentdemodulator.CorrelatorParameters.ZeroOffset;
+            int kerneldelay_one = currentdemodulator.CorrelatorParameters.CommonOffset + currentdemodulator.CorrelatorParameters.OneOffset;
 
             // corrections to align correlation outputs with input data
             /*switch (_type)
@@ -1369,7 +1357,7 @@ namespace TDF_Test
                     break;
             }*/
 
-            if (demodulator.IsConvolver())
+            if (currentdemodulator.IsConvolver())
             {
                 // initialize convolvers if needed   
                 float[] convolver_kernel_zero = new float[_zero_correlator.Length];
@@ -1397,12 +1385,12 @@ namespace TDF_Test
             double zero_correlation_sum = 0;
             double zero_correlation_min = double.PositiveInfinity;
 
-            bool reverse_correlators = demodulator.CorrelatorParameters.TimereverseCorrelators;
+            bool reverse_correlators = currentdemodulator.CorrelatorParameters.TimeReverseCorrelators;
 
             // correlation for zero bits
             for (int i = 0; i < data_correlation_source.Length - _zero_correlator.Length; i++)
             {
-                if (demodulator.IsConvolver() && con_zero != null)
+                if (currentdemodulator.IsConvolver() && con_zero != null)
                 {
                     // dump the kernel size to avoid delay
                     int j = i - kerneldelay_zero;
@@ -1447,7 +1435,7 @@ namespace TDF_Test
             // correlation for one-bits
             for (int i = 0; i < data_correlation_source.Length - _one_correlator.Length; i++)
             {
-                if (demodulator.IsConvolver() && con_one != null)
+                if (currentdemodulator.IsConvolver() && con_one != null)
                 {
                     int j = i - kerneldelay_one;
                     one_correlation[j < 0 ? 0 : j] = con_one.Process((float)data_correlation_source[i]);
@@ -1483,7 +1471,7 @@ namespace TDF_Test
                 }
             }
 
-            if (demodulator.CorrelatorType == DemodulatorContext.CorrelatorTypeEnum.FM || demodulator.CorrelatorType == DemodulatorContext.CorrelatorTypeEnum.FM_Biased)
+            if (currentdemodulator.CorrelatorType == DemodulatorContext.CorrelatorTypeEnum.FM || currentdemodulator.CorrelatorType == DemodulatorContext.CorrelatorTypeEnum.FM_Biased)
             {
                 // offset correct the correlators
                 for (int i = 0; i < zero_correlation.Length; i++)
@@ -1494,7 +1482,7 @@ namespace TDF_Test
                     //zero_correlation_min = Math.Min(zero_correlation[i], zero_correlation_min);
                 }
             }
-            if (demodulator.CorrelatorType == DemodulatorContext.CorrelatorTypeEnum.PM)
+            if (currentdemodulator.CorrelatorType == DemodulatorContext.CorrelatorTypeEnum.PM)
             {
                 for (int i = 0; i < zero_correlation.Length; i++)
                 {
@@ -1503,8 +1491,8 @@ namespace TDF_Test
                 }
             }
 
-            demodulator.CorrelatorParameters.OneDemodulatorResult = one_correlation;
-            demodulator.CorrelatorParameters.ZeroDemodulatorResult = zero_correlation;
+            currentdemodulator.CorrelatorParameters.OneDemodulatorResult = one_correlation;
+            currentdemodulator.CorrelatorParameters.ZeroDemodulatorResult = zero_correlation;
 
             return;
         }

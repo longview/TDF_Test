@@ -67,7 +67,7 @@ namespace TDF_Test
             public double[] OneDemodulatorResult;
             public double[] ZeroCorrelatorReference;
             public double[] OneCorrelatorReference;
-            public bool TimereverseCorrelators;
+            public bool TimeReverseCorrelators;
         }
 
         public enum CorrelatorDataSourceTypes
@@ -116,6 +116,10 @@ namespace TDF_Test
             public bool UseInitialZeroCorrection { get; set; }
             public bool UseTemplateLengthCorrection { get; set; }
             public bool UseDataInversion { get; set; }
+            public bool UseSymmetryWeight { get; set; }
+            public double SymmetryWeightFactor { get; set; }
+            public bool UseFIROffset { get; set; }
+            public double FIROffsetFactor { get; set; }
         }
 
         public struct DataSlicerResultStruct
@@ -124,6 +128,8 @@ namespace TDF_Test
             public double[] SecondSampleRatios;
             public double[] OnePeaks;
             public double[] ZeroPeaks;
+            public double[] OneWeightedPeaks;
+            public double[] ZeroWeightedPeaks;
         }
 
 

@@ -34,7 +34,9 @@ namespace TDF_Test
                     SearchRange = 1.05,
                     UseInitialZeroCorrection = true,
                     UseTemplateLengthCorrection = true,
-                    UseDataInversion = false
+                    UseDataInversion = false,
+                    UseSymmetryWeight = false,
+                    SymmetryWeightFactor = 0
                 },
                 CorrelatorParameters = new DemodulatorContext.CorrelatorParametersStruct()
                 {
@@ -76,12 +78,16 @@ namespace TDF_Test
                     {
                         BiasOffset = 0,
                         AutoBias_Level = 0.25,
-                        Threshold = 1.5,
+                        Threshold = 1.25,
                         SearchFirstMin = 0.75,
                         SearchFirstMax = 1.2,
                         SearchRange = 1.05,
                         UseInitialZeroCorrection = true,
-                        UseTemplateLengthCorrection = false
+                        UseTemplateLengthCorrection = false,
+                        UseSymmetryWeight = true,
+                        SymmetryWeightFactor = 0.05,
+                        UseFIROffset = true,
+                        FIROffsetFactor = 0.01
                     };
 
                     break;
