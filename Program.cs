@@ -154,6 +154,9 @@ namespace TDF_Test
                             antifail_count++;
                     }
 
+                    console_output.AppendLine();
+                    console_output.Append(currentdemodulator.ToLongString());
+
                     Console.WriteLine("Index {0,2}, expected errors {1,2}, found {2,2}{4}. Comment: {3}",
                         testsignals.IndexOf(signal), signal.ExpectedErrors, errors, signal.Comment, errors < signal.ExpectedErrors ? "(!)" : "");
 
@@ -1155,10 +1158,18 @@ namespace TDF_Test
                     }
 
                     second_sampling_average /= 59;
+
+                    // try to limit to something slightly sane
+                    if (second_sampling_average < 0)
+                        second_sampling_average = 0;
+                    if (second_sampling_average > 3)
+                        second_sampling_average = 3;
+
                     second_sampling_variance /= 59;
                     second_sampling_variance = Math.Sqrt(second_sampling_variance);
 
-                    
+                    if (second_sampling_variance > currentdemodulator.DataSlicerParameters.AutoThresholdMaxBias)
+                        second_sampling_variance = currentdemodulator.DataSlicerParameters.AutoThresholdMaxBias;
 
                     datasampler_threshold = second_sampling_average;
                     sampler_threshold_autobias_reference = datasampler_threshold;
@@ -1339,13 +1350,15 @@ namespace TDF_Test
             // search for up to 59 seconds
             // TODO: should also limit it to only searching up to 60 second before the end of the file
             //      since we need a full minute to perform a decode properly
+
+            double weight_factor = demodulator.MinuteDetectorParameters.Weighting_Coefficient;
             int max_minute_search = (int)Math.Min(convolution_peak_offset + 500 + ((double)60 / decimated_sampleperiod), minute_correlation_source.Length);
             for (int i = convolution_peak_offset + 500; i < max_minute_search - 70; i++)
             {
                 // bias it towards the distinctive correlation peak.
                 double current = minute_convolved[i];
-                double leading_valley = (minute_convolved[i - 200] + minute_convolved[i - 190] + minute_convolved[i - 195]) / 3;
-                double trailing_valley = (minute_convolved[i + 200] + minute_convolved[i + 190] + minute_convolved[i + 195]) / 3;
+                double leading_valley = (minute_convolved[i - 200] + minute_convolved[i - 190] + minute_convolved[i - 195]) / weight_factor;
+                double trailing_valley = (minute_convolved[i + 200] + minute_convolved[i + 190] + minute_convolved[i + 195]) / weight_factor;
 
                 double offset = current + (leading_valley + trailing_valley) / 2;
 

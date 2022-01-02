@@ -37,8 +37,10 @@ namespace TDF_Test
                     UseTemplateLengthCorrection = true,
                     UseDataInversion = false,
                     UseSymmetryWeight = false,
-                    SymmetryWeightFactor = 0,
+                    SymmetryWeightFactor = 0.1,
+                    FIROffsetFactor = 0.1,
                     AutoThreshold = DemodulatorContext.AutoThresholdModes.None,
+                    AutoThresholdMaxBias = 1.25,
                     UseFIROffset = false
                 },
                 CorrelatorParameters = new DemodulatorContext.CorrelatorParametersStruct()
@@ -54,7 +56,10 @@ namespace TDF_Test
                     IQAverageCount = 100, 
                     EnvelopeAverageCount = 64 
                 },
-                MinuteDetectorParameters = new DemodulatorContext.MinuteDetectorParametersStruct() { Convolver_Length = 512 },
+                MinuteDetectorParameters = new DemodulatorContext.MinuteDetectorParametersStruct() { 
+                    Convolver_Length = 512,
+                    Weighting_Coefficient = 3
+                },
                 DemodulationResult = new DemodulatorContext.DemodulationResultStruct()
             };
 
@@ -68,6 +73,8 @@ namespace TDF_Test
                 case DemodulatorDefaults.FM_Biased_MeanVariance:
                     demod.CorrelatorType = DemodulatorContext.CorrelatorTypeEnum.FM_Biased_MeanVariance;
                     demod.DataSlicerParameters.AutoThreshold = DemodulatorContext.AutoThresholdModes.MeanVariance;
+                    demod.DataSlicerParameters.UseFIROffset = true;
+                    demod.DataSlicerParameters.UseSymmetryWeight = true;
                     break;
                 case DemodulatorDefaults.FM_Convolver_Biased:
                 case DemodulatorDefaults.FM_Convolver:

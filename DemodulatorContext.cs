@@ -125,6 +125,7 @@ namespace TDF_Test
             public bool UseFIROffset { get; set; }
             public double FIROffsetFactor { get; set; }
             public AutoThresholdModes AutoThreshold { get; set; }
+            public double AutoThresholdMaxBias { get; set; }
         }
 
         public struct DataSlicerResultStruct
@@ -137,7 +138,30 @@ namespace TDF_Test
             public double[] ZeroWeightedPeaks;
         }
 
+        public string ToLongString()
+        {
+            StringBuilder sb = new StringBuilder();
 
+            sb.Append("Description of demodulator: ");
+            sb.AppendLine(this.ToString());
+
+            sb.AppendFormat("Filter parameters: IQ {0}, FM {1}, Rectified {2}\r\n", FilterParameters.IQAverageCount, FilterParameters.FMAverageCount, FilterParameters.EnvelopeAverageCount);
+            sb.AppendFormat("Minute detector type {0}, convolve length {1}, weight factor {3}, found at sample {2}\r\n", "Convolve", MinuteDetectorParameters.Convolver_Length, MinuteDetectorParameters.MinuteDetectorResult,
+                MinuteDetectorParameters.Weighting_Coefficient);
+            sb.AppendFormat("Correlator input {0}, {1} reference, kernel {2}, offset {3}, 0:{4} 1:{5}, reversed: {6}, synth corrs average {7}\r\n", CorrelatorParameters.CorrelatorDataSource == CorrelatorDataSourceTypes.FM ? "FM":"PM",
+                CorrelatorParameters.CorrelatorReferenceSource == CorrelatorReferenceSourceTypes.Real ? "real":"synthetic",
+                CorrelatorParameters.KernelLength, CorrelatorParameters.CommonOffset, CorrelatorParameters.ZeroOffset, CorrelatorParameters.OneOffset,
+                CorrelatorParameters.TimeReverseCorrelators, CorrelatorParameters.SyntheticCorrelatorAverageCount);
+            sb.AppendFormat("Data slicer bias offset {0:F3}, thres. {1}, autobias level {2}, start {3}, stop {4}, increment {5}, initial zero correct {6}, template length correct {7}, data inverted {8}, symmetry weighted {9}, symmetry weight scale {10}, FIR offset {11}, FIR offset scale {12}, autothreshold max bias {13}\r\n",
+                DataSlicerParameters.BiasOffset, DataSlicerParameters.Threshold, DataSlicerParameters.AutoBias_Level, DataSlicerParameters.SearchFirstMin, DataSlicerParameters.SearchFirstMax, DataSlicerParameters.SearchRange, DataSlicerParameters.UseInitialZeroCorrection,
+                DataSlicerParameters.UseTemplateLengthCorrection, DataSlicerParameters.UseDataInversion, DataSlicerParameters.UseSymmetryWeight, DataSlicerParameters.SymmetryWeightFactor, DataSlicerParameters.UseFIROffset,
+                DataSlicerParameters.UseFIROffset, DataSlicerParameters.FIROffsetFactor, DataSlicerParameters.AutoThresholdMaxBias);
+
+
+
+
+            return sb.ToString();
+        }
 
 
         public override string ToString()
