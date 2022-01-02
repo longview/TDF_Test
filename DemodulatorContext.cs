@@ -13,7 +13,7 @@ namespace TDF_Test
             CorrelatorType = correlatortype;
         }
 
-        public MinuteDetectorTypeEnum MinuteDetectorType { get; set; } = MinuteDetectorTypeEnum.Convolver;
+        //public MinuteDetectorTypeEnum MinuteDetectorType { get; set; } = MinuteDetectorTypeEnum.Convolver_Correlation;
         public MinuteDetectorParametersStruct MinuteDetectorParameters;
         public CorrelatorParametersStruct CorrelatorParameters;
         public CorrelatorTypeEnum CorrelatorType { get; set; } = CorrelatorTypeEnum.FM;
@@ -58,7 +58,9 @@ namespace TDF_Test
 
         public enum MinuteDetectorTypeEnum
         {
-            Convolver
+            Convolver_Correlation,
+            Correlation,
+            Algorithm
         }
 
         public struct CorrelatorParametersStruct
@@ -91,6 +93,7 @@ namespace TDF_Test
 
         public struct MinuteDetectorParametersStruct
         {
+            public MinuteDetectorTypeEnum MinuteDetectorType;
             public int Convolver_Length;
             public double Weighting_Coefficient;
             public double[] MinuteDetectorSource;
@@ -162,7 +165,15 @@ namespace TDF_Test
                 DataSlicerParameters.BiasOffset, DataSlicerParameters.Threshold, DataSlicerParameters.AutoBias_Level, DataSlicerParameters.SearchFirstMin, DataSlicerParameters.SearchFirstMax, DataSlicerParameters.SearchRange, DataSlicerParameters.UseInitialZeroCorrection,
                 DataSlicerParameters.UseTemplateLengthCorrection, DataSlicerParameters.UseDataInversion, DataSlicerParameters.UseSymmetryWeight, DataSlicerParameters.SymmetryWeightFactor, 
                 DataSlicerParameters.UseFIROffset, DataSlicerParameters.FIROffsetFactor, DataSlicerParameters.AutoThresholdMaxBias);
-
+            /*
+             * TODOS: 
+             * MinuteCorrelator types
+             * FM SNR
+             * UseCalibrateAllBits
+             * UseHighPassFiltering
+             * UseAverageSubtraction
+             * HighPassFilterCoefficient
+             */
 
 
 

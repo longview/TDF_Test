@@ -22,7 +22,7 @@ namespace TDF_Test
             mode = Modes.Verify;
             int testindex = 28;
 
-            DemodulatorContext currentdemodulator = GenerateDemodulator(DemodulatorDefaults.FM_Biased);
+            DemodulatorContext currentdemodulator = GenerateDemodulator(DemodulatorDefaults.FM_Biased_MeanVariance);
 
             List<TestSignalInfo> testsignals = new List<TestSignalInfo>();
             // input file should be mono 16-bit, 20000 Hz (oddball rate)
@@ -262,7 +262,9 @@ namespace TDF_Test
 
             Correlate(ref demodulator, ref console_output);
 
-            Find_Minute_Start(ref demodulator, testsignal_current, ref console_output);
+            if (demodulator.MinuteDetectorParameters.MinuteDetectorType == DemodulatorContext.MinuteDetectorTypeEnum.Convolver_Correlation)
+                Find_Minute_Start_Convolver(ref demodulator, testsignal_current, ref console_output);
+            // TODO: Make some other types that are less resource heavy
 
             demodulator.DemodulationResult.FM_Rectified_SNR =  Calculate_Signal_SNR(fm_filtered, fm_filtered_square, demodulator.MinuteDetectorParameters.MinuteDetectorResult, ref console_output);
 

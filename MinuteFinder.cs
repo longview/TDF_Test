@@ -9,7 +9,7 @@ namespace TDF_Test
 {
     partial class Program
     {
-        private static void Find_Minute_Start(ref DemodulatorContext demodulator, TestSignalInfo _signal, ref StringBuilder console_output)
+        private static void Find_Minute_Start_Convolver(ref DemodulatorContext demodulator, TestSignalInfo _signal, ref StringBuilder console_output)
         {
             /* Find maximum value and assume this is the start of a minute 
              * Perform a LMS correlation looking for a bunch of zeros
