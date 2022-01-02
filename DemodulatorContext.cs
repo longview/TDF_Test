@@ -68,6 +68,7 @@ namespace TDF_Test
             public double[] ZeroCorrelatorReference;
             public double[] OneCorrelatorReference;
             public bool TimeReverseCorrelators;
+            public int SyntheticCorrelatorAverageCount;
         }
 
         public enum CorrelatorDataSourceTypes

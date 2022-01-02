@@ -53,14 +53,12 @@ Note that since the binary '1' waveform has better autocorrelation properties an
 
 After this, some decoding is done to display the results, including detectable bit errors.
 
-The program crashes if it finds the "wrong" start of minute (in case there are multiples), since it likely won't have enough bits after reaching the end of the file.
-
 The intent is to implement this functionality in a real-time processor (i.e. STM32F3), obviously some changes are needed before that can happen.
 However, it does prove that a receiver is viable, and that my local reception is adequate for detection.
 
-The same principles could also be used to implement a DCF77 phase mode receiver (using the spread spectrum modulation it transmits).
-
 The program now also includes a timecode bitstream generator which allows more precise bit-error detection, and could be used to build a full-chain system simulator.
+
+Currently unimplemented is leap second handling.
 
 # Use
 The program outputs to a console, as you'd expect. I use a VS 2019 extension called _ArrayPlotter_ to view the internal data structures, the array *decimated_sampleperiod* can be used as a X-scale.

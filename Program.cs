@@ -459,7 +459,8 @@ namespace TDF_Test
             // make synthetic correlators if desired
             if (demodulator.CorrelatorParameters.CorrelatorReferenceSource == DemodulatorContext.CorrelatorReferenceSourceTypes.Synthetic)
             {
-                Generate_Synthetic_Correlators(ref one_correlator_template_FM, ref zero_correlator_template_FM, ref one_correlator_template_PM, ref zero_correlator_template_PM, 0);
+                Generate_Synthetic_Correlators(ref one_correlator_template_FM, ref zero_correlator_template_FM, ref one_correlator_template_PM, ref zero_correlator_template_PM, 
+                    demodulator.CorrelatorParameters.SyntheticCorrelatorAverageCount, demodulator.CorrelatorParameters.SyntheticCorrelatorAverageCount);
             }
 
             if (demodulator.CorrelatorParameters.CorrelatorDataSource == DemodulatorContext.CorrelatorDataSourceTypes.FM)
