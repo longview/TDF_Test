@@ -14,7 +14,8 @@ namespace TDF_Test
             FM_Biased,
             FM_Biased_MeanVariance,
             FM_Convolver,
-            FM_Convolver_Biased
+            FM_Convolver_Biased,
+            FM_Convolver_Biased_MeanVariance
         }
 
         /* This is where the default parameters for each standard demodulator type is defined
@@ -81,11 +82,15 @@ namespace TDF_Test
                     demod.DataSlicerParameters.UseSymmetryWeight = true;
                     break;
                 case DemodulatorDefaults.FM_Convolver_Biased:
+                case DemodulatorDefaults.FM_Convolver_Biased_MeanVariance:
                 case DemodulatorDefaults.FM_Convolver:
                     if (demodulator == DemodulatorDefaults.FM_Convolver_Biased)
                         demod.CorrelatorType = DemodulatorContext.CorrelatorTypeEnum.FM_Convolve_Biased;
                     else
                         demod.CorrelatorType = DemodulatorContext.CorrelatorTypeEnum.FM_Convolve;
+
+                    if (demodulator == DemodulatorDefaults.FM_Convolver_Biased_MeanVariance)
+                        demod.DataSlicerParameters.AutoThreshold = DemodulatorContext.AutoThresholdModes.MeanVariance;
 
                     demod.CorrelatorParameters = new DemodulatorContext.CorrelatorParametersStruct()
                     {
@@ -94,23 +99,30 @@ namespace TDF_Test
                         CommonOffset = 256 + 259,
                         ZeroOffset = 0,
                         OneOffset = 9,
-                        CorrelatorReferenceSource = DemodulatorContext.CorrelatorReferenceSourceTypes.Synthetic
+                        CorrelatorReferenceSource = DemodulatorContext.CorrelatorReferenceSourceTypes.Synthetic,
+                        UseAverageSubtraction = false,
+                        UseHighPassFiltering = true,
+                        HighPassFilterCoefficient = 0.8
                     };
                     demod.DataSlicerParameters = new DemodulatorContext.DataSlicerParameterStruct()
-                    {
-                        BiasOffset = 0,
-                        AutoBias_Level = 0.25,
-                        Threshold = 1.25,
-                        SearchFirstMin = 0.75,
-                        SearchFirstMax = 1.2,
-                        SearchRange = 1.05,
-                        UseInitialZeroCorrection = true,
-                        UseTemplateLengthCorrection = false,
-                        UseSymmetryWeight = true,
-                        SymmetryWeightFactor = 0.05,
-                        UseFIROffset = true,
-                        FIROffsetFactor = 0.01
-                    };
+                {
+                    AutoBias_Level = 0.25,
+                    BiasOffset = -0.1,
+                    Threshold = 1,
+                    SearchFirstMin = 0.8,
+                    SearchFirstMax = 1.2,
+                    SearchRange = 1.05,
+                    UseInitialZeroCorrection = true,
+                    UseTemplateLengthCorrection = false,
+                    UseDataInversion = false,
+                    UseSymmetryWeight = true,
+                    SymmetryWeightFactor = 0.1,
+                    FIROffsetFactor = 0.2,
+                    AutoThreshold = DemodulatorContext.AutoThresholdModes.None,
+                    AutoThresholdMaxBias = 1.25,
+                    UseFIROffset = false,
+                    UseCalibrateAllBits = false,
+                };
 
                     break;
             }
