@@ -10,7 +10,7 @@ namespace TDF_Test
     {
         public TestSignalInfo(string _filepath, string _comment, double _snr, DateTime _date,
             bool timechangeauto = true, bool timechange = false, bool holidaytomorrow = false, bool holidaytoday = false, TDF_Timecode_Class.LeapSecondState leapstate = TDF_Timecode_Class.LeapSecondState.No_Leap,
-            double _frequency = 5000, int _errors = 0, Station_Status _status = Station_Status.OnAir, Signal_Type _signaltype = Signal_Type.TDF)
+            double _frequency = 5000, int _errors = 0, Station_Status _status = Station_Status.OnAir, Signal_Type _signaltype = Signal_Type.TDF, string _filepath_base = "..\\..\\Recordings\\")
         {
             FilePath = _filepath;
             Comment = _comment;
@@ -26,8 +26,10 @@ namespace TDF_Test
             Reference_Timecode = new TDF_Timecode_Class(RecordedTimestampUTC, timechangeauto, timechange, holidaytomorrow, holidaytoday, leapstate);
             SignalType = _signaltype;
             ExpectedErrors = _errors;
+            FilePath_Base = _filepath_base;
         }
         public string FilePath;
+        public string FilePath_Base;
         public string Comment;
         public double Frequency;
         public double SNR;

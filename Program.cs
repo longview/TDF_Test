@@ -298,7 +298,7 @@ namespace TDF_Test
 
             NWaves.Audio.WaveFile inputsignal;
 
-            using (FileStream wavefilestream = new FileStream(testsignal_current.FilePath, FileMode.Open))
+            using (FileStream wavefilestream = new FileStream(testsignal_current.FilePath_Base + testsignal_current.FilePath, FileMode.Open))
             {
                 // open the wave file (normalized)
                 inputsignal = new NWaves.Audio.WaveFile(wavefilestream);
@@ -313,7 +313,7 @@ namespace TDF_Test
                 var resampler = new NWaves.Operations.Resampler();
                 insignal = resampler.Resample(inputsignal.Signals[0], (int)samplerate);
                 console_output.AppendFormat("Note: source file was resampled to {0} from {1}.\r\n", (int)samplerate, inputsignal.WaveFmt.SamplingRate);
-                using (FileStream wavefilestream = new FileStream(testsignal_current.FilePath, FileMode.OpenOrCreate))
+                using (FileStream wavefilestream = new FileStream(testsignal_current.FilePath_Base + testsignal_current.FilePath, FileMode.OpenOrCreate))
                 {
                     wavefilestream.SetLength(0);
                     // open the wave file (normalized)
