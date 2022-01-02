@@ -98,6 +98,9 @@ namespace TDF_Test
             // 28
             testsignals.Add(new TestSignalInfo("2022-01-02T200634Z, 157 kHz, Wide-U.wav", "Good signal, evening",
                 42, new DateTime(2022, 01, 02, 20, 06, 34, DateTimeKind.Utc)));
+            // 29
+            testsignals.Add(new TestSignalInfo("2022-01-02T213646Z, 157 kHz, Wide-U.wav", "Good signal, evening",
+                46, new DateTime(2022, 01, 02, 21, 36, 46, DateTimeKind.Utc)));
         }
     }
 }
