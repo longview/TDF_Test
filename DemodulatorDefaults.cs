@@ -12,6 +12,7 @@ namespace TDF_Test
         {
             FM,
             FM_Biased,
+            FM_Biased_MeanVariance,
             FM_Convolver,
             FM_Convolver_Biased
         }
@@ -36,7 +37,9 @@ namespace TDF_Test
                     UseTemplateLengthCorrection = true,
                     UseDataInversion = false,
                     UseSymmetryWeight = false,
-                    SymmetryWeightFactor = 0
+                    SymmetryWeightFactor = 0,
+                    AutoThreshold = DemodulatorContext.AutoThresholdModes.None,
+                    UseFIROffset = false
                 },
                 CorrelatorParameters = new DemodulatorContext.CorrelatorParametersStruct()
                 {
@@ -61,6 +64,10 @@ namespace TDF_Test
                     break;
                 case DemodulatorDefaults.FM_Biased:
                     demod.CorrelatorType = DemodulatorContext.CorrelatorTypeEnum.FM_Biased;
+                    break;
+                case DemodulatorDefaults.FM_Biased_MeanVariance:
+                    demod.CorrelatorType = DemodulatorContext.CorrelatorTypeEnum.FM_Biased_MeanVariance;
+                    demod.DataSlicerParameters.AutoThreshold = DemodulatorContext.AutoThresholdModes.MeanVariance;
                     break;
                 case DemodulatorDefaults.FM_Convolver_Biased:
                 case DemodulatorDefaults.FM_Convolver:

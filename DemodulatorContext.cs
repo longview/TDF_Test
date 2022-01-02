@@ -17,16 +17,21 @@ namespace TDF_Test
         public MinuteDetectorParametersStruct MinuteDetectorParameters;
         public CorrelatorParametersStruct CorrelatorParameters;
         public CorrelatorTypeEnum CorrelatorType { get; set; } = CorrelatorTypeEnum.FM;
-        public DataSlicerParameterStruct DataSlicerParameters { get; set; }
+        public DataSlicerParameterStruct DataSlicerParameters;
         public FilterParametersStruct FilterParameters { get; set; }
 
-        //public bool[] DemodulatedData;
         public DemodulationResultStruct DemodulationResult;
 
         public double DecimatedSamplePeriod;
 
         public DataSlicerResultStruct DataSlicerResults;
 
+        public enum AutoThresholdModes
+        {
+            None,
+            Mean,
+            MeanVariance
+        }
 
         public struct DemodulationResultStruct
         {
@@ -42,6 +47,7 @@ namespace TDF_Test
         {
             FM,
             FM_Biased,
+            FM_Biased_MeanVariance,
             PM,
             FM_Convolve,
             FM_Convolve_Biased,
@@ -95,9 +101,6 @@ namespace TDF_Test
             Synthetic,
         }
 
-
-
-
         public struct FilterParametersStruct
         {
             public int IQAverageCount { get; set; }
@@ -121,6 +124,7 @@ namespace TDF_Test
             public double SymmetryWeightFactor { get; set; }
             public bool UseFIROffset { get; set; }
             public double FIROffsetFactor { get; set; }
+            public AutoThresholdModes AutoThreshold { get; set; }
         }
 
         public struct DataSlicerResultStruct
@@ -144,6 +148,8 @@ namespace TDF_Test
                     return "FM";
                 case CorrelatorTypeEnum.FM_Biased:
                     return "FM with bias";
+                case CorrelatorTypeEnum.FM_Biased_MeanVariance:
+                    return "FM with bias and mean-variance autothresholds";
                 case CorrelatorTypeEnum.PM:
                     return "PM";
                 case CorrelatorTypeEnum.FM_Convolve:
@@ -193,7 +199,21 @@ namespace TDF_Test
                 case CorrelatorTypeEnum.FM:
                 case CorrelatorTypeEnum.FM_Convolve:
                 case CorrelatorTypeEnum.FM_Biased:
+                case CorrelatorTypeEnum.FM_Biased_MeanVariance:
                 case CorrelatorTypeEnum.FM_Convolve_Biased:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        public bool IsFMBaseType()
+        {
+            switch (CorrelatorType)
+            {
+                case CorrelatorTypeEnum.FM:
+                case CorrelatorTypeEnum.FM_Biased:
+                case CorrelatorTypeEnum.FM_Biased_MeanVariance:
                     return true;
                 default:
                     return false;
@@ -206,6 +226,7 @@ namespace TDF_Test
             {
                 case CorrelatorTypeEnum.FM_Biased:
                 case CorrelatorTypeEnum.FM_Convolve_Biased:
+                case CorrelatorTypeEnum.FM_Biased_MeanVariance:
                 case CorrelatorTypeEnum.PM_Convolve_Biased:
                     return true;
                 default:
