@@ -520,183 +520,183 @@ namespace TDF_Test
             double[] second_sampling_margin = currentdemodulator.DataSlicerResults.RatioVsThreshold;
             // print out informative data to aid debugging:
             int count = 0;
-            console_output.AppendFormat("No.  Sym  Value   Expct   Rat   Margin\r\n");
-            console_output.AppendFormat("00   M    {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("No.  Sym  Value   Expct    Rat      Margin\r\n");
+            console_output.AppendFormat("00   M    {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("01   A2   {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("01   A2   {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("02   A3   {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("02   A3   {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("03  HA02  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("03  HA02  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("04  HA04  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("04  HA04  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("05  HA08  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("05  HA08  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("06  HA16  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("06  HA16  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("07   0    {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("07   0    {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("08   0    {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("08   0    {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("09   0    {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("09   0    {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("10   0    {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("10   0    {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("11   0    {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("11   0    {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("12   0    {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("12   0    {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("13   F1   {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("13   F1   {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("14   F2   {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("14   F2   {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("15   N/A  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("15   N/A  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("16   A1   {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("16   A1   {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("17   Z1   {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("17   Z1   {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("18   Z2   {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("18   Z2   {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("19   X    {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("19   X    {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("20   S    {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("20   S    {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("21   M01  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("21   M01  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("22   M02  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("22   M02  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("23   M04  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("23   M04  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("24   M08  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("24   M08  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("25   M10  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("25   M10  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("26   M20  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("26   M20  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("27   M40  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("27   M40  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("28   P1   {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("28   P1   {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("29   H01  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("29   H01  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("30   H02  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("30   H02  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("31   H04  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("31   H04  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("32   H08  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("32   H08  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("33   H10  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("33   H10  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("34   H20  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("34   H20  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("35   P2   {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("35   P2   {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("36  DM01  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("36  DM01  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("37  DM02  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("37  DM02  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("38  DM04  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("38  DM04  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("39  DM08  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("39  DM08  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("40  DM10  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("40  DM10  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("41  DM20  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("41  DM20  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("42  DW01  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("42  DW01  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("43  DW02  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("43  DW02  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("44  DW04  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("44  DW04  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("45  MO01  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("45  MO01  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("46  MO02  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("46  MO02  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("47  MO04  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("47  MO04  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("48  MO08  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("48  MO08  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("49  MO10  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("49  MO10  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("50   Y01  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("50   Y01  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("51   Y02  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("51   Y02  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("52   Y04  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("52   Y04  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("53   Y08  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("53   Y08  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("54   Y10  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("54   Y10  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("55   Y20  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("55   Y20  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("56   Y40  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("56   Y40  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("57   Y80  {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("57   Y80  {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             count++;
-            console_output.AppendFormat("58   P3   {0,5}   {2,5}{3}   {1:F4}   {4:F4}\r\n",
-                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : "", second_sampling_margin[count]);
+            console_output.AppendFormat("58   P3   {0,5}   {2,5}{3}   {1:0.0000;-0.000}   {4:F4}\r\n",
+                payload_data[count].ToString(), second_sampling_ratio[count], reference_data[count], (payload_data[count] ^ reference_data[count]) ? "*" : " ", second_sampling_margin[count]);
             console_output.AppendLine();
         }
 
@@ -1115,13 +1115,14 @@ namespace TDF_Test
 
                 // store the ratio for debug analysis
                 currentdemodulator.DataSlicerResults.SecondSampleRatios[secondcount] = ratio;
-                // basically the SNR
-                currentdemodulator.DataSlicerResults.RatioVsThreshold[secondcount] = ratio - datasampler_threshold;
 
                 // at this point we could in future try to do e.g. a 2nd order polynomial curve fit
                 // to improve our time resolution
 
                 bool bit = ratio > datasampler_threshold;
+
+                // basically the SNR of this detection
+                currentdemodulator.DataSlicerResults.RatioVsThreshold[secondcount] = (ratio - datasampler_threshold) * (bit ? 1 : -1);
 
                 if (datasampler_invert)
                     bit = !bit;
