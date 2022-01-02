@@ -136,6 +136,7 @@ namespace TDF_Test
             public double[] ZeroPeaks;
             public double[] OneWeightedPeaks;
             public double[] ZeroWeightedPeaks;
+            public double[] RatioVsThreshold;
         }
 
         public string ToLongString()
