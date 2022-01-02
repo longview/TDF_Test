@@ -17,12 +17,13 @@ namespace TDF_Test
         static void Main(string[] args)
         {
 
-            Modes mode = Modes.Verify;
-            //Modes mode = Modes.Standard;
-            int testindex = 16;
+            //Modes mode = Modes.Verify;
+            Modes mode = Modes.Standard;
+            int testindex = 19;
 
             List<TestSignalInfo> testsignals = new List<TestSignalInfo>();
-            // input file must be mono 16-bit, 20000 Hz (oddball rate)
+            // input file should be mono 16-bit, 20000 Hz (oddball rate)
+            // we can resample, but it's not very fast
 
             //0 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\websdr_recording_start_2021-12-28T12_57_51Z_157.0kHz.wav", "webSDR recording, high quality",
@@ -81,12 +82,16 @@ namespace TDF_Test
             // 18
             testsignals.Add(new TestSignalInfo("..\\..\\2021-12-31T225930Z, 157 kHz, Wide-U.wav", "Good signal, evening",
                 30, new DateTime(2021, 12, 31, 22, 59, 30, DateTimeKind.Utc), _errors: 0, holidaytoday: true));
+            // 19
+            testsignals.Add(new TestSignalInfo("..\\..\\2022-01-02T110116Z, 157 kHz, Wide-U.wav", "Poor signal, mid day",
+                15, new DateTime(2022, 01, 02, 11, 01, 20, DateTimeKind.Utc), _errors: 19));
 
 
             TestSignalInfo testsignal_current = testsignals[testindex];
 
             if (mode == Modes.Standard)
             {
+                Console.WriteLine("Test start at time {0}\r\n", DateTime.UtcNow.ToString("o"));
                 Console.WriteLine("Using test index {0}, signal type {7}.\r\nFile {1} (IF = {6})\r\nSNR {2}, station was {3}.\r\nTime transmitted: {4}.\r\nComment: {5}",
                 testindex, testsignal_current.FilePath, testsignal_current.SNR,
                 testsignal_current.Status == TestSignalInfo.Station_Status.OnAir ? "on air" : "off air",
@@ -356,14 +361,23 @@ namespace TDF_Test
                 inputsignal = new NWaves.Audio.WaveFile(wavefilestream);
             }
 
+            NWaves.Signals.DiscreteSignal insignal = inputsignal.Signals[0];
+
             if (inputsignal.WaveFmt.SamplingRate != samplerate)
             {
-                throw new InvalidDataException(String.Format("Input wave file {0} has sample rate {1}, must be {2}", testsignal_current.FilePath, inputsignal.WaveFmt.SamplingRate, samplerate));
+                //throw new InvalidDataException(String.Format("Input wave file {0} has sample rate {1}, must be {2}", testsignal_current.FilePath, inputsignal.WaveFmt.SamplingRate, samplerate));
+                // do a conversion
+                var resampler = new NWaves.Operations.Resampler();
+                insignal = resampler.Resample(inputsignal.Signals[0], (int)samplerate);
+                console_output.AppendFormat("Note: source file was resampled to {0} from {1}.\r\n", (int)samplerate, inputsignal.WaveFmt.SamplingRate);
             }
 
-            data = new double[inputsignal.Signals[0].Length];
-            List<double> data_list = new List<double>(inputsignal.Signals[0].Length);
-            foreach (float f in inputsignal.Signals[0].Samples)
+            if (inputsignal.WaveFmt.ChannelCount > 1)
+                console_output.AppendFormat("Note: source file has {0} channels, only the left will be used.\r\n", inputsignal.WaveFmt.ChannelCount);
+
+            data = new double[insignal.Length];
+            List<double> data_list = new List<double>(insignal.Length);
+            foreach (float f in insignal.Samples)
                 data_list.Add(f);
 
             data = data_list.ToArray();
