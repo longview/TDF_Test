@@ -11,6 +11,10 @@ namespace TDF_Test
         private static void PopulateTestSignals(List<TestSignalInfo> testsignals)
         {
 
+            // error rates are for FM_Biased
+            // FM without bias should perform within a few errors of this
+            // mean-variance demodulator should perform better for all signals
+
             //0 no errors
             testsignals.Add(new TestSignalInfo("websdr_recording_start_2021-12-28T12_57_51Z_157.0kHz.wav", "webSDR recording, high quality",
                 70, new DateTime(2021, 12, 28, 12, 57, 51, DateTimeKind.Utc)));
