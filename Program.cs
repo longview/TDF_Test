@@ -1221,14 +1221,14 @@ namespace TDF_Test
             double FM_Noise_sum = 0;
             // we can now attempt another SNR calculation, by using the known property of the signal: there is no modulation during the last second of a minute
             // iterate over the filtered data, centered on the minute correlation template
-            for (int i = minutestart_sample - minute_correlator_template.Length / 2; i < minutestart_sample + minute_correlator_template.Length / 2; i++)
+            for (int i = minutestart_sample; i < minutestart_sample + 350 / 2; i++)
             {
                 FM_Noise_sum += fm_filtered[i];
             }
 
             FM_Noise_sum /= minute_correlator_template.Length;
 
-            for (int i = minutestart_sample - minute_correlator_template.Length / 2; i < minutestart_sample + minute_correlator_template.Length / 2; i++)
+            for (int i = minutestart_sample; i < minutestart_sample + 350; i++)
             {
                 FM_Noise_rms += Math.Pow(fm_filtered[i] - FM_Noise_sum, 2);
             }
