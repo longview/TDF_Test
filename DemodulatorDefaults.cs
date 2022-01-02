@@ -30,7 +30,7 @@ namespace TDF_Test
                     AutoBias_Level = 0.25,
                     BiasOffset = -0.1,
                     Threshold = 1,
-                    SearchFirstMin = 0.75,
+                    SearchFirstMin = 0.8,
                     SearchFirstMax = 1.2,
                     SearchRange = 1.05,
                     UseInitialZeroCorrection = true,
@@ -49,7 +49,10 @@ namespace TDF_Test
                     ZeroOffset = -28,
                     OneOffset = -24,
                     CorrelatorDataSource = DemodulatorContext.CorrelatorDataSourceTypes.FM,
-                    CorrelatorReferenceSource = DemodulatorContext.CorrelatorReferenceSourceTypes.Real
+                    CorrelatorReferenceSource = DemodulatorContext.CorrelatorReferenceSourceTypes.Real,
+                    UseAverageSubtraction = false,
+                    UseHighPassFiltering = true,
+                    HighPassFilterCoefficient = 0.8
                 },
                 CorrelatorType = DemodulatorContext.CorrelatorTypeEnum.FM,
                 FilterParameters = new DemodulatorContext.FilterParametersStruct() { 

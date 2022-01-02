@@ -75,6 +75,9 @@ namespace TDF_Test
             public double[] OneCorrelatorReference;
             public bool TimeReverseCorrelators;
             public int SyntheticCorrelatorAverageCount;
+            public bool UseHighPassFiltering;
+            public bool UseAverageSubtraction;
+            public double HighPassFilterCoefficient;
         }
 
         public enum CorrelatorDataSourceTypes
