@@ -26,6 +26,7 @@ namespace TDF_Test
             List<TestSignalInfo> testsignals = new List<TestSignalInfo>();
             // input file should be mono 16-bit, 20000 Hz (oddball rate)
             // we can resample, but it's not very fast
+            // WARNING: any non-20 kHz file will be overwritten in place with a resampled version
 
             //0 no errors
             testsignals.Add(new TestSignalInfo("..\\..\\websdr_recording_start_2021-12-28T12_57_51Z_157.0kHz.wav", "webSDR recording, high quality",
@@ -370,6 +371,14 @@ namespace TDF_Test
                 var resampler = new NWaves.Operations.Resampler();
                 insignal = resampler.Resample(inputsignal.Signals[0], (int)samplerate);
                 console_output.AppendFormat("Note: source file was resampled to {0} from {1}.\r\n", (int)samplerate, inputsignal.WaveFmt.SamplingRate);
+                using (FileStream wavefilestream = new FileStream(testsignal_current.FilePath, FileMode.OpenOrCreate))
+                {
+                    wavefilestream.SetLength(0);
+                    // open the wave file (normalized)
+                    var wavefile = new NWaves.Audio.WaveFile(insignal);
+                    wavefile.SaveTo(wavefilestream);
+                }
+                console_output.AppendFormat("And the file was overwritten with the resampled version!\r\n");
             }
 
             if (inputsignal.WaveFmt.ChannelCount > 1)
