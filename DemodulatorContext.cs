@@ -41,6 +41,7 @@ namespace TDF_Test
             public string DemodulatedDataErrorDescription;
             public int BitErrors;
             public int DecodeErrors;
+            public double FM_Rectified_SNR;
         }
 
         public enum CorrelatorTypeEnum

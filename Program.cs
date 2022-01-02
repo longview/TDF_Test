@@ -379,7 +379,7 @@ namespace TDF_Test
             console_output.AppendFormat("FM moving average filter size {0}\r\nFM rectifier filter size {1}\r\n", 
                 demodulator.FilterParameters.FMAverageCount, demodulator.FilterParameters.EnvelopeAverageCount);
             double fm_unfiltered_square, fm_filtered_square;
-            Demodulate(i_filtered, q_filtered, fm_unfiltered, pm_unfiltered, fm_filtered, demodulator.FilterParameters.FMAverageCount, out fm_unfiltered_square, out fm_filtered_square);
+            Demodulate_To_FM(i_filtered, q_filtered, fm_unfiltered, pm_unfiltered, fm_filtered, demodulator.FilterParameters.FMAverageCount, out fm_unfiltered_square, out fm_filtered_square);
             Perform_PM_Correction(phase_error_per_sample_vs_frequency, ref pm_unfiltered, pm_filtered_drift, ref console_output);
 
             // obsolete now
@@ -417,13 +417,13 @@ namespace TDF_Test
 
             demodulator.MinuteDetectorParameters.MinuteDetectorSource = fm_filtered_rectified;
 
-            Perform_Correlations(ref demodulator, ref console_output);
+            Correlate(ref demodulator, ref console_output);
 
             Find_Minute_Start(ref demodulator, testsignal_current, ref console_output);
 
-            Calculate_Signal_SNR(fm_filtered, fm_filtered_square, demodulator.MinuteDetectorParameters.MinuteDetectorResult, ref console_output);
+            demodulator.DemodulationResult.FM_Rectified_SNR =  Calculate_Signal_SNR(fm_filtered, fm_filtered_square, demodulator.MinuteDetectorParameters.MinuteDetectorResult, ref console_output);
 
-            Perform_Detection(ref demodulator, testsignal_current, ref console_output);
+            Datasampler(ref demodulator, testsignal_current, ref console_output);
 
 
             console_output.Append("Decode: ");
@@ -845,7 +845,7 @@ namespace TDF_Test
             console_output.AppendLine();
         }
 
-        private static void Perform_Detection(ref DemodulatorContext currentdemodulator, TestSignalInfo testsignal, ref StringBuilder console_output
+        private static void Datasampler(ref DemodulatorContext currentdemodulator, TestSignalInfo testsignal, ref StringBuilder console_output
             )
         {
 
@@ -932,9 +932,9 @@ namespace TDF_Test
             while (datasampler_stop < zero_correlation.Length - 1 && secondcount < 59)
             {
                 double max_zero = double.NegativeInfinity;
-                double min_zero = double.PositiveInfinity;
+                //double min_zero = double.PositiveInfinity;
                 int max_zero_time = 0;
-                int min_zero_time = 0;
+                //int min_zero_time = 0;
 
                 double max_one = double.NegativeInfinity;
                 int max_one_time = 0;
@@ -1359,7 +1359,7 @@ namespace TDF_Test
             demodulator.MinuteDetectorParameters.MinuteDetectorResult = minutestart_sample;
         }
 
-        private static void Perform_Correlations(ref DemodulatorContext currentdemodulator, ref StringBuilder console_output)
+        private static void Correlate(ref DemodulatorContext currentdemodulator, ref StringBuilder console_output)
         {
             /* The technique for correlation here is to template match using least square error matching
                          * i.e. we are sensitive to the exact amplitude, not just the shape
@@ -1708,7 +1708,7 @@ namespace TDF_Test
             return SNR_FM;
         }
 
-        private static void Demodulate(double[] i_filtered, double[] q_filtered, double[] fm_unfiltered, double[] pm_unfiltered, double[] fm_filtered, int movingaverage, out double fm_unfiltered_square, out double fm_filtered_square)
+        private static void Demodulate_To_FM(double[] i_filtered, double[] q_filtered, double[] fm_unfiltered, double[] pm_unfiltered, double[] fm_filtered, int movingaverage, out double fm_unfiltered_square, out double fm_filtered_square)
         {
             double qval_last = 0, ival_last = 0;
             double pm_integrator = 0;
