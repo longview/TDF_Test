@@ -53,25 +53,25 @@ namespace TDF_Test
                 43, new DateTime(2021, 12, 30, 20, 09, 20, DateTimeKind.Utc)));
             // 12
             testsignals.Add(new TestSignalInfo("2021-12-30T235552Z, 157 kHz, Wide-U.wav", "Excellent signal, night",
-                48, new DateTime(2021, 12, 30, 23, 55, 52, DateTimeKind.Utc), holidaytomorrow: true));
+                48, new DateTime(2021, 12, 30, 23, 55, 52, DateTimeKind.Utc)));
             // 13 - tricky start, minute is around 7000
             testsignals.Add(new TestSignalInfo("2021-12-31T181322Z, 157 kHz, Wide-U.wav", "Poor signal, evening",
-                22, new DateTime(2021, 12, 31, 18, 13, 22, DateTimeKind.Utc), _errors: 36, holidaytomorrow: true));
+                22, new DateTime(2021, 12, 31, 18, 13, 22, DateTimeKind.Utc), _errors: 36));
             // 14 - minute start around 6500
             testsignals.Add(new TestSignalInfo("2021-12-31T181524Z, 157 kHz, Wide-U.wav", "Poor signal, evening",
-                22, new DateTime(2021, 12, 31, 18, 15, 24, DateTimeKind.Utc), _errors: 0, holidaytomorrow: true));
+                22, new DateTime(2021, 12, 31, 18, 15, 24, DateTimeKind.Utc), _errors: 0));
             // 15
             testsignals.Add(new TestSignalInfo("2021-12-31T222827Z, 157 kHz, Wide-U.wav", "Good signal, evening",
-                20, new DateTime(2021, 12, 31, 22, 28, 27, DateTimeKind.Utc), holidaytomorrow: true));
+                20, new DateTime(2021, 12, 31, 22, 28, 27, DateTimeKind.Utc)));
             // 16 - last of the year :)
             testsignals.Add(new TestSignalInfo("2021-12-31T225740Z, 157 kHz, Wide-U.wav", "Good signal, evening",
-                30, new DateTime(2021, 12, 31, 22, 57, 40, DateTimeKind.Utc), _errors: 2, holidaytomorrow: true));
+                30, new DateTime(2021, 12, 31, 22, 57, 40, DateTimeKind.Utc), _errors: 2));
             // 17 - first of the year
             testsignals.Add(new TestSignalInfo("2021-12-31T225835Z, 157 kHz, Wide-U.wav", "Good signal, evening",
-                30, new DateTime(2021, 12, 31, 22, 58, 35, DateTimeKind.Utc), _errors: 0, holidaytoday: true));
+                30, new DateTime(2021, 12, 31, 22, 58, 35, DateTimeKind.Utc), _errors: 0));
             // 18
             testsignals.Add(new TestSignalInfo("2021-12-31T225930Z, 157 kHz, Wide-U.wav", "Good signal, evening",
-                30, new DateTime(2021, 12, 31, 22, 59, 30, DateTimeKind.Utc), holidaytoday: true));
+                30, new DateTime(2021, 12, 31, 22, 59, 30, DateTimeKind.Utc)));
             // 19
             testsignals.Add(new TestSignalInfo("2022-01-02T110116Z, 157 kHz, Wide-U.wav", "Poor signal, mid day",
                 15, new DateTime(2022, 01, 02, 11, 01, 20, DateTimeKind.Utc), _errors: 22));

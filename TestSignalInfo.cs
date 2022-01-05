@@ -23,7 +23,7 @@ namespace TDF_Test
             // add 1 minute to timestamp from start of recording timestamp
             // and remove the seconds
             RecordedTimestampUTC = _date.AddMinutes(2).AddSeconds(_date.Second * -1);
-            Reference_Timecode = new TDF_Timecode_Class(RecordedTimestampUTC, timechangeauto, timechange, holidaytomorrow, holidaytoday, leapstate);
+            Reference_Timecode = new TDF_Timecode_Class(RecordedTimestampUTC, holidayauto: true, timechangeauto: timechangeauto, timechange: timechange, holidaytomorrow: holidaytomorrow, holidaytoday: holidaytoday, leapstate: leapstate);
             SignalType = _signaltype;
             ExpectedErrors = _errors;
             FilePath_Base = _filepath_base;

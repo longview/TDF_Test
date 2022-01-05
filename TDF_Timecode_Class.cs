@@ -11,7 +11,7 @@ namespace TDF_Test
      */
     public class TDF_Timecode_Class
     {
-        public TDF_Timecode_Class(DateTime time, bool timechangeauto = true, bool timechange = false, 
+        public TDF_Timecode_Class(DateTime time, bool holidayauto = true, bool timechangeauto = true, bool timechange = false, 
             bool holidaytomorrow = false, bool holidaytoday = false, 
             LeapSecondState leapstate = LeapSecondState.No_Leap)
         {
@@ -33,13 +33,56 @@ namespace TDF_Test
                 TimeZoneChange_Announced = timechange;
             }
 
-            Tomorrow_Is_Holiday = holidaytomorrow;
-            Today_Is_Holiday = holidaytoday;
+            if (holidayauto)
+            {
+                Tomorrow_Is_Holiday = IsFrenchHoliday(Current_Reported_Time.AddDays(1));
+                Today_Is_Holiday = IsFrenchHoliday(Current_Reported_Time);
+            }
+            else
+            {
+                Tomorrow_Is_Holiday = holidaytomorrow;
+                Today_Is_Holiday = holidaytoday;
+            }
             _leapstate = leapstate;
 
             // call this to update our internal store
             GetBitstream();
-    }
+        }
+
+        public bool IsFrenchHoliday(DateTime time)
+        {
+            // New Year's Day
+            if (time.Month == 1 && time.Day == 1)
+                return true;
+            // Labour Day ☭
+            if (time.Month == 5 && time.Day == 1)
+                return true;
+            // Victory Day
+            if (time.Month == 5 && time.Day == 8)
+                return true;
+            // Bastille Day
+            if (time.Month == 7 && time.Day == 14)
+                return true;
+            // Assumption of Mary
+            if (time.Month == 8 && time.Day == 15)
+                return true;
+            // All Saint's Day
+            if (time.Month == 11 && time.Day == 1)
+                return true;
+            // Armistice Day
+            if (time.Month == 11 && time.Day == 11)
+                return true;
+            // Christmas Day
+            if (time.Month == 12 && time.Day == 25)
+                return true;
+            // Saint Stephen's Day (Christmas Day)
+            if (time.Month == 12 && time.Day == 26)
+                return true;
+
+            // TODO: Easter
+
+            return false;
+        }
 
         public int GetBitstreamErrorCount()
         {
