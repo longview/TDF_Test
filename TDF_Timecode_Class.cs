@@ -49,6 +49,7 @@ namespace TDF_Test
             GetBitstream();
         }
 
+        // based on https://en.wikipedia.org/wiki/Public_holidays_in_France
         public bool IsFrenchHoliday(DateTime time)
         {
             // New Year's Day

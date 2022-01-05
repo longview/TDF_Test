@@ -74,7 +74,7 @@ namespace TDF_Test
                 30, new DateTime(2021, 12, 31, 22, 59, 30, DateTimeKind.Utc)));
             // 19
             testsignals.Add(new TestSignalInfo("2022-01-02T110116Z, 157 kHz, Wide-U.wav", "Poor signal, mid day",
-                15, new DateTime(2022, 01, 02, 11, 01, 20, DateTimeKind.Utc), _errors: 22));
+                15, new DateTime(2022, 01, 02, 11, 01, 20, DateTimeKind.Utc), _errors: 23));
             // 20
             testsignals.Add(new TestSignalInfo("2022-01-02T115821Z, 157 kHz, Wide-U.wav", "Poor signal, mid day",
                 18, new DateTime(2022, 01, 02, 11, 58, 22, DateTimeKind.Utc), _errors: 0));
@@ -108,6 +108,15 @@ namespace TDF_Test
             // 30
             testsignals.Add(new TestSignalInfo("2022-01-05T180209Z, 157 kHz, Wide-U.wav", "Good signal, evening",
                 36, new DateTime(2022, 01, 05, 18, 02, 09, DateTimeKind.Utc)));
+            // 31
+            testsignals.Add(new TestSignalInfo("2022-01-05T191642Z, 157 kHz, Wide-U.wav", "Good signal, evening",
+                30, new DateTime(2022, 01, 05, 19, 16, 42, DateTimeKind.Utc)));
+            // 32
+            testsignals.Add(new TestSignalInfo("websdr_recording_start_2022-01-05T19_23_08Z_157.0kHz.wav", "webSDR with lightning",
+                60, new DateTime(2022, 01, 05, 19, 23, 08, DateTimeKind.Utc)));
+            // 33
+            testsignals.Add(new TestSignalInfo("websdr_recording_start_2022-01-05T19_25_44Z_157.0kHz.wav", "webSDR",
+                60, new DateTime(2022, 01, 05, 19, 25, 44, DateTimeKind.Utc)));
         }
     }
 }
