@@ -72,7 +72,7 @@ namespace TDF_Test
                 }
             }
 
-            double correlation_scale = -1;
+            double correlation_scale = currentdemodulator.CorrelatorParameters.ResultScaling;
 
             zero_correlation = new double[data_correlation_source.Length];
             double zero_correlation_sum = 0;
@@ -213,6 +213,16 @@ namespace TDF_Test
                 for (int i = kerneldelay_one; i < 0; i++)
                 {
                     one_correlation[i - kerneldelay_one] = one_correlation[-kerneldelay_one];
+                }
+            }
+
+            if (currentdemodulator.CorrelatorParameters.UseInvertResult)
+            {
+                // offset correct the correlators
+                for (int i = 0; i < zero_correlation.Length; i++)
+                {
+                    zero_correlation[i] *= -1;
+                    one_correlation[i] *= -1;
                 }
             }
 

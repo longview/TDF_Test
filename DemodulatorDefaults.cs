@@ -15,7 +15,10 @@ namespace TDF_Test
             FM_Biased_MeanVariance,
             FM_Convolver,
             FM_Convolver_Biased,
-            FM_Convolver_Biased_MeanVariance
+            FM_Convolver_Biased_MeanVariance,
+            PM,
+            PM_Biased,
+            PM_Biased_MeanVariance
         }
 
         public static DemodulatorContext.CorrelatorParametersStruct GetCorrelationParameter_SSAD()
@@ -33,6 +36,7 @@ namespace TDF_Test
                 InputHighPassFilterCoefficient = 0.98,
                 // note: if this is tuend off, the time offsets must be changed by around -10
                 TimeReverseCorrelators = true,
+                ResultScaling = -1,
                 CorrelatorMethod = DemodulatorContext.CorrelatorMethodEnum.SSAD
             };
         }
@@ -49,8 +53,11 @@ namespace TDF_Test
                 UseAverageSubtraction = false,
                 UseOutputHighPassFiltering = true,
                 OutputHighPassFilterCoefficient = 0.8,
+                UseInputHighPassFiltering = true,
+                InputHighPassFilterCoefficient = 0.98,
                 // note: if this is tuend off, the time offsets must be changed by around -10
                 TimeReverseCorrelators = true,
+                ResultScaling = -1,
                 CorrelatorMethod = DemodulatorContext.CorrelatorMethodEnum.MAC
             };
         }
@@ -67,6 +74,8 @@ namespace TDF_Test
                 UseAverageSubtraction = false,
                 UseOutputHighPassFiltering = true,
                 OutputHighPassFilterCoefficient = 0.8,
+                UseInputHighPassFiltering = true,
+                InputHighPassFilterCoefficient = 0.98,
                 // note: if this is tuend off, the time offsets must be changed by around -10
                 TimeReverseCorrelators = true,
                 CorrelatorMethod = DemodulatorContext.CorrelatorMethodEnum.SSAD_MAC
@@ -127,6 +136,20 @@ namespace TDF_Test
                     demod.DataSlicerParameters.AutoThreshold = DemodulatorContext.AutoThresholdModes.MeanVariance;
                     demod.DataSlicerParameters.UseFIROffset = false;
                     demod.DataSlicerParameters.UseSymmetryWeight = true;
+                    break;
+                case DemodulatorDefaults.PM_Biased_MeanVariance:
+                case DemodulatorDefaults.PM_Biased:
+                    demod.CorrelatorType = DemodulatorContext.CorrelatorTypeEnum.PM_Biased;
+                    demod.CorrelatorParameters = GetCorrelationParameter_MAC();
+                    demod.CorrelatorParameters.CorrelatorDataSource = DemodulatorContext.CorrelatorDataSourceTypes.PM;
+                    demod.CorrelatorParameters.TimeReverseCorrelators = true;
+                    demod.CorrelatorParameters.UseInvertResult = true;
+                    demod.CorrelatorParameters.CommonOffset = -13;
+                    demod.CorrelatorParameters.ZeroOffset = -18;
+                    demod.CorrelatorParameters.OneOffset = -10;
+
+                    if (demodulator == DemodulatorDefaults.PM_Biased_MeanVariance)
+                        demod.DataSlicerParameters.AutoThreshold = DemodulatorContext.AutoThresholdModes.MeanVariance;
                     break;
                 case DemodulatorDefaults.FM_Convolver_Biased:
                 case DemodulatorDefaults.FM_Convolver_Biased_MeanVariance:

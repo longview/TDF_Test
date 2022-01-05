@@ -50,6 +50,8 @@ namespace TDF_Test
             FM_Biased,
             FM_Biased_MeanVariance,
             PM,
+            PM_Biased,
+            PM_Biased_MeanVariance,
             FM_Convolve,
             FM_Convolve_Biased,
             PM_Convolve,
@@ -92,6 +94,8 @@ namespace TDF_Test
             public CorrelatorMethodEnum CorrelatorMethod;
             public bool UseInputHighPassFiltering;
             public double InputHighPassFilterCoefficient;
+            public double ResultScaling;
+            public bool UseInvertResult;
         }
 
         public enum CorrelatorDataSourceTypes
@@ -204,6 +208,10 @@ namespace TDF_Test
                     return "FM with bias and mean-variance autothresholds";
                 case CorrelatorTypeEnum.PM:
                     return "PM";
+                case CorrelatorTypeEnum.PM_Biased:
+                    return "PM with bias";
+                case CorrelatorTypeEnum.PM_Biased_MeanVariance:
+                    return "PM with bias and mean-variance autothresholds";
                 case CorrelatorTypeEnum.FM_Convolve:
                     return "FM convolver";
                 case CorrelatorTypeEnum.FM_Convolve_Biased:
@@ -236,6 +244,8 @@ namespace TDF_Test
             switch (CorrelatorType)
             {
                 case CorrelatorTypeEnum.PM:
+                case CorrelatorTypeEnum.PM_Biased:
+                case CorrelatorTypeEnum.PM_Biased_MeanVariance:
                 case CorrelatorTypeEnum.PM_Convolve:
                 case CorrelatorTypeEnum.PM_Convolve_Biased:
                     return true;
@@ -280,6 +290,8 @@ namespace TDF_Test
                 case CorrelatorTypeEnum.FM_Convolve_Biased:
                 case CorrelatorTypeEnum.FM_Biased_MeanVariance:
                 case CorrelatorTypeEnum.PM_Convolve_Biased:
+                case CorrelatorTypeEnum.PM_Biased:
+                case CorrelatorTypeEnum.PM_Biased_MeanVariance:
                     return true;
                 default:
                     return false;

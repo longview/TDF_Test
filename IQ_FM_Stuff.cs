@@ -148,7 +148,7 @@ namespace TDF_Test
             double pm_drift_rate2 = pm_drift2 / (pm_filtered_drift.Length - pm_filtered_drift.Length / 4);
             for (int i = 0; i < pm_filtered_drift.Length; i++)
             {
-                pm_filtered_drift[i] = pm_filtered_drift[i] / (pm_filtered_drift_offset / pm_filtered_drift.Length);
+                pm_filtered_drift[i] = -pm_filtered_drift[i] / (pm_filtered_drift_offset / pm_filtered_drift.Length);
                 //pm_filtered_drift[i] = pm_filtered_drift[i] - (pm_drift_rate2 * i);
             }
 

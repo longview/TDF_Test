@@ -22,7 +22,7 @@ namespace TDF_Test
             mode = Modes.Verify;
             int testindex = 0;
 
-            DemodulatorContext currentdemodulator = GenerateDemodulator(DemodulatorDefaults.FM_Biased);
+            DemodulatorContext currentdemodulator = GenerateDemodulator(DemodulatorDefaults.FM_Biased_MeanVariance);
 
             List<TestSignalInfo> testsignals = new List<TestSignalInfo>();
             // input file should be mono 16-bit, 20000 Hz (oddball rate)
