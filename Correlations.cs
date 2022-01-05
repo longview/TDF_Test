@@ -16,6 +16,7 @@ namespace TDF_Test
             /* The technique for correlation here is to template match using least square error matching
                          * i.e. we are sensitive to the exact amplitude, not just the shape
                          * Also supports convolution, but this appears to offer no benefit vs. LMS correlation here
+                         * TODO: split this out to avoid duplicating code for one/zero correlation
                          */
 
             double[] _zero_correlator = currentdemodulator.CorrelatorParameters.ZeroCorrelatorReference;
@@ -35,26 +36,6 @@ namespace TDF_Test
 
             int kerneldelay_zero = currentdemodulator.CorrelatorParameters.CommonOffset + currentdemodulator.CorrelatorParameters.ZeroOffset;
             int kerneldelay_one = currentdemodulator.CorrelatorParameters.CommonOffset + currentdemodulator.CorrelatorParameters.OneOffset;
-
-            // corrections to align correlation outputs with input data
-            /*switch (_type)
-            {
-                case CorrelatorType.FM_Convolve:
-                case CorrelatorType.FM_Convolve_Biased:
-                    kerneldelay_zero = kerneldelay;
-                    kerneldelay_one = kerneldelay + 9;
-                    break;
-                case CorrelatorType.PM_Convolve:
-                case CorrelatorType.PM_Convolve_Biased:
-                    kerneldelay_zero = kerneldelay - 6;
-                    kerneldelay_one = kerneldelay - 6;
-                    break;
-                case CorrelatorType.FM:
-                case CorrelatorType.FM_Biased:
-                    kerneldelay_zero = -28;
-                    kerneldelay_one = -24;
-                    break;
-            }*/
 
             if (currentdemodulator.IsConvolver())
             {
@@ -101,10 +82,36 @@ namespace TDF_Test
                 for (int j = 0; j < _zero_correlator.Length; j++)
                 {
                     int k = i - kerneldelay_zero;
-                    if (reverse_correlators)
-                        zero_correlation[k < 0 ? 0 : k] += correlation_scale * Math.Pow(_zero_correlator[(_zero_correlator.Length - 1) - j] - data_correlation_source[i + j], 2);
-                    else
-                        zero_correlation[k < 0 ? 0 : k] += correlation_scale * Math.Pow(_zero_correlator[j] - data_correlation_source[i + j], 2);
+                    if (currentdemodulator.CorrelatorParameters.CorrelatorMethod == DemodulatorContext.CorrelatorMethodEnum.SSAD)
+                    {
+                        if (reverse_correlators)
+                            zero_correlation[k < 0 ? 0 : k] += correlation_scale * Math.Pow(_zero_correlator[(_zero_correlator.Length - 1) - j] - data_correlation_source[i + j], 2);
+                        else
+                            zero_correlation[k < 0 ? 0 : k] += correlation_scale * Math.Pow(_zero_correlator[j] - data_correlation_source[i + j], 2);
+                    }
+                    else if (currentdemodulator.CorrelatorParameters.CorrelatorMethod == DemodulatorContext.CorrelatorMethodEnum.MAC)
+                    {
+                        if (reverse_correlators)
+                            zero_correlation[k < 0 ? 0 : k] += (_zero_correlator[(_zero_correlator.Length - 1) - j] * data_correlation_source[i + j]);
+                        else
+                            zero_correlation[k < 0 ? 0 : k] += (_zero_correlator[j] * data_correlation_source[i + j]);
+                    }
+                    else if (currentdemodulator.CorrelatorParameters.CorrelatorMethod == DemodulatorContext.CorrelatorMethodEnum.SSAD_MAC)
+                    {
+                        double current_corr_value = 0;
+
+                        if (reverse_correlators)
+                            current_corr_value = _zero_correlator[(_one_correlator.Length - 1) - j];
+                        else
+                            current_corr_value = _zero_correlator[j];
+
+                        if (current_corr_value < 0.01 && current_corr_value > 0.01)
+                            zero_correlation[k < 0 ? 0 : k] += correlation_scale * Math.Pow((current_corr_value - data_correlation_source[i + j]),2);
+                        else
+                            zero_correlation[k < 0 ? 0 : k] += (current_corr_value * data_correlation_source[i + j]);
+
+
+                    }
                 }
 
                 if (i > kerneldelay_zero)
@@ -144,10 +151,36 @@ namespace TDF_Test
                 for (int j = 0; j < _one_correlator.Length; j++)
                 {
                     int k = i - kerneldelay_one;
-                    if (reverse_correlators)
-                        one_correlation[k < 0 ? 0 : k] += correlation_scale * Math.Pow(_one_correlator[(_one_correlator.Length - 1) - j] - data_correlation_source[i + j], 2);
-                    else
-                        one_correlation[k < 0 ? 0 : k] += correlation_scale * Math.Pow(_one_correlator[j] - data_correlation_source[i + j], 2);
+                    if (currentdemodulator.CorrelatorParameters.CorrelatorMethod == DemodulatorContext.CorrelatorMethodEnum.SSAD)
+                    {
+                        if (reverse_correlators)
+                            one_correlation[k < 0 ? 0 : k] += correlation_scale * Math.Pow(_one_correlator[(_one_correlator.Length - 1) - j] - data_correlation_source[i + j], 2);
+                        else
+                            one_correlation[k < 0 ? 0 : k] += correlation_scale * Math.Pow(_one_correlator[j] - data_correlation_source[i + j], 2);
+                    }
+                    else if (currentdemodulator.CorrelatorParameters.CorrelatorMethod == DemodulatorContext.CorrelatorMethodEnum.MAC)
+                    {
+                        if (reverse_correlators)
+                            one_correlation[k < 0 ? 0 : k] += (_one_correlator[(_one_correlator.Length - 1) - j] * data_correlation_source[i + j]);
+                        else
+                            one_correlation[k < 0 ? 0 : k] += (_one_correlator[j] * data_correlation_source[i + j]);
+                    }
+                    else if (currentdemodulator.CorrelatorParameters.CorrelatorMethod == DemodulatorContext.CorrelatorMethodEnum.SSAD_MAC)
+                    {
+                        double current_corr_value = 0;
+
+                        if (reverse_correlators)
+                            current_corr_value = _one_correlator[(_one_correlator.Length - 1) - j];
+                        else
+                            current_corr_value = _one_correlator[j];
+
+                        if (current_corr_value < 0.01 && current_corr_value > 0.01)
+                            one_correlation[k < 0 ? 0 : k] += correlation_scale * Math.Pow((current_corr_value - data_correlation_source[i + j]), 2);
+                        else
+                            one_correlation[k < 0 ? 0 : k] += (current_corr_value * data_correlation_source[i + j]);
+
+
+                    }
                 }
 
                 if (i > kerneldelay_one)

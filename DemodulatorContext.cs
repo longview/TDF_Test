@@ -58,8 +58,10 @@ namespace TDF_Test
 
         public enum CorrelatorMethodEnum
         {
-            LMS_MAC,
-            MAC
+            SSAD, // sum of squared absolute difference
+            MAC, // multiply accumulate (correlation/match filter)
+            Convolution,
+            SSAD_MAC // SAD for zero-portions, MAC for "signal" portion
         }
 
         public enum MinuteDetectorTypeEnum
