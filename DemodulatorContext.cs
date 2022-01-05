@@ -86,10 +86,12 @@ namespace TDF_Test
             public double[] OneCorrelatorReference;
             public bool TimeReverseCorrelators;
             public int SyntheticCorrelatorAverageCount;
-            public bool UseHighPassFiltering;
+            public bool UseOutputHighPassFiltering;
             public bool UseAverageSubtraction;
-            public double HighPassFilterCoefficient;
+            public double OutputHighPassFilterCoefficient;
             public CorrelatorMethodEnum CorrelatorMethod;
+            public bool UseInputHighPassFiltering;
+            public double InputHighPassFilterCoefficient;
         }
 
         public enum CorrelatorDataSourceTypes

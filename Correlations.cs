@@ -59,6 +59,19 @@ namespace TDF_Test
 
             }
 
+            //NWaves.Filters.DcRemovalFilter input_hpf = new DcRemovalFilter(currentdemodulator.CorrelatorParameters.InputHighPassFilterCoefficient);
+
+            if (currentdemodulator.CorrelatorParameters.UseInputHighPassFiltering)
+            {
+                NWaves.Filters.DcRemovalFilter input_hpf = new DcRemovalFilter(currentdemodulator.CorrelatorParameters.InputHighPassFilterCoefficient);
+
+
+                for (int i = 0; i < zero_correlation.Length; i++)
+                {
+                    data_correlation_source[i] = input_hpf.Process((float)data_correlation_source[i]);
+                }
+            }
+
             double correlation_scale = -1;
 
             zero_correlation = new double[data_correlation_source.Length];
@@ -212,10 +225,10 @@ namespace TDF_Test
                     one_correlation[i] -= one_correlation_sum;
                 }
             }
-            if (currentdemodulator.CorrelatorParameters.UseHighPassFiltering)
+            if (currentdemodulator.CorrelatorParameters.UseOutputHighPassFiltering)
             {
-                NWaves.Filters.DcRemovalFilter one_hpf = new DcRemovalFilter(currentdemodulator.CorrelatorParameters.HighPassFilterCoefficient);
-                NWaves.Filters.DcRemovalFilter zero_hpf = new DcRemovalFilter(currentdemodulator.CorrelatorParameters.HighPassFilterCoefficient);
+                NWaves.Filters.DcRemovalFilter one_hpf = new DcRemovalFilter(currentdemodulator.CorrelatorParameters.OutputHighPassFilterCoefficient);
+                NWaves.Filters.DcRemovalFilter zero_hpf = new DcRemovalFilter(currentdemodulator.CorrelatorParameters.OutputHighPassFilterCoefficient);
 
                 // run in the HPFs
                 for (int i = 0; i < 50; i++)

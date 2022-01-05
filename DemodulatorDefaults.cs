@@ -27,8 +27,10 @@ namespace TDF_Test
                 CorrelatorDataSource = DemodulatorContext.CorrelatorDataSourceTypes.FM,
                 CorrelatorReferenceSource = DemodulatorContext.CorrelatorReferenceSourceTypes.Real,
                 UseAverageSubtraction = false,
-                UseHighPassFiltering = true,
-                HighPassFilterCoefficient = 0.8,
+                UseOutputHighPassFiltering = true,
+                OutputHighPassFilterCoefficient = 0.8,
+                UseInputHighPassFiltering = true,
+                InputHighPassFilterCoefficient = 0.98,
                 // note: if this is tuend off, the time offsets must be changed by around -10
                 TimeReverseCorrelators = true,
                 CorrelatorMethod = DemodulatorContext.CorrelatorMethodEnum.SSAD
@@ -45,8 +47,8 @@ namespace TDF_Test
                 CorrelatorDataSource = DemodulatorContext.CorrelatorDataSourceTypes.FM,
                 CorrelatorReferenceSource = DemodulatorContext.CorrelatorReferenceSourceTypes.Synthetic,
                 UseAverageSubtraction = false,
-                UseHighPassFiltering = true,
-                HighPassFilterCoefficient = 0.8,
+                UseOutputHighPassFiltering = true,
+                OutputHighPassFilterCoefficient = 0.8,
                 // note: if this is tuend off, the time offsets must be changed by around -10
                 TimeReverseCorrelators = true,
                 CorrelatorMethod = DemodulatorContext.CorrelatorMethodEnum.MAC
@@ -63,8 +65,8 @@ namespace TDF_Test
                 CorrelatorDataSource = DemodulatorContext.CorrelatorDataSourceTypes.FM,
                 CorrelatorReferenceSource = DemodulatorContext.CorrelatorReferenceSourceTypes.Synthetic,
                 UseAverageSubtraction = false,
-                UseHighPassFiltering = true,
-                HighPassFilterCoefficient = 0.8,
+                UseOutputHighPassFiltering = true,
+                OutputHighPassFilterCoefficient = 0.8,
                 // note: if this is tuend off, the time offsets must be changed by around -10
                 TimeReverseCorrelators = true,
                 CorrelatorMethod = DemodulatorContext.CorrelatorMethodEnum.SSAD_MAC
@@ -146,8 +148,8 @@ namespace TDF_Test
                         OneOffset = 9,
                         CorrelatorReferenceSource = DemodulatorContext.CorrelatorReferenceSourceTypes.Synthetic,
                         UseAverageSubtraction = false,
-                        UseHighPassFiltering = true,
-                        HighPassFilterCoefficient = 0.8,
+                        UseOutputHighPassFiltering = true,
+                        OutputHighPassFilterCoefficient = 0.8,
                         CorrelatorMethod = DemodulatorContext.CorrelatorMethodEnum.Convolution,
                     };
                     demod.DataSlicerParameters = new DemodulatorContext.DataSlicerParameterStruct()
