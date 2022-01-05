@@ -79,9 +79,50 @@ namespace TDF_Test
             if (time.Month == 12 && time.Day == 26)
                 return true;
 
-            // TODO: Easter
+            DateTime GoodFriday = EasterSunday(time.Year).AddDays(-2);
+            if (GoodFriday.DayOfWeek != DayOfWeek.Friday)
+                throw new Exception("Good Friday not a Friday");
+            DateTime EasterMonday = EasterSunday(time.Year).AddDays(1);
+            if (EasterMonday.DayOfWeek != DayOfWeek.Monday)
+                throw new Exception("Easter Monday not a Monday");
+            DateTime AscensionDay = EasterSunday(time.Year).AddDays(39);
+            DateTime WhitMonday = EasterSunday(time.Year).AddDays(50);
+
+            if (time.Month == GoodFriday.Month && time.Day == GoodFriday.Day)
+                return true;
+
+            if (time.Month == EasterMonday.Month && time.Day == EasterMonday.Day)
+                return true;
+
+            if (time.Month == AscensionDay.Month && time.Day == AscensionDay.Day)
+                return true;
+
+            if (time.Month == WhitMonday.Month && time.Day == WhitMonday.Day)
+                return true;
 
             return false;
+        }
+
+        public static DateTime EasterSunday(int year)
+        {
+            int day = 0;
+            int month = 0;
+
+            int g = year % 19;
+            int c = year / 100;
+            int h = (c - (int)(c / 4) - (int)((8 * c + 13) / 25) + 19 * g + 15) % 30;
+            int i = h - (int)(h / 28) * (1 - (int)(h / 28) * (int)(29 / (h + 1)) * (int)((21 - g) / 11));
+
+            day = i - ((year + (int)(year / 4) + i + 2 - c + (int)(c / 4)) % 7) + 28;
+            month = 3;
+
+            if (day > 31)
+            {
+                month++;
+                day -= 31;
+            }
+
+            return new DateTime(year, month, day);
         }
 
         public int GetBitstreamErrorCount()
