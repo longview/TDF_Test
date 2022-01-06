@@ -95,19 +95,19 @@ namespace TDF_Test
                     AutoBias_Level = 0.25,
                     BiasOffset = -0.1,
                     Threshold = 1,
-                    SearchFirstMin = 0.8,
-                    SearchFirstMax = 1.2,
-                    SearchRange = 1.05,
+                    SearchFirstMin = 0.8,// these ranges can be tightened if the minute detector is real good
+                    SearchFirstMax = 1.08, 
+                    SearchRange = 1.05, // this is +-10 samples; this matches the correlation waveform quite well and seems optimal
                     UseInitialZeroCorrection = true,
                     UseTemplateLengthCorrection = true,
                     UseDataInversion = false,
-                    UseSymmetryWeight = false,
+                    UseSymmetryWeight = false, // look for a symmetrical gaussian detector pulse and weight by it, marginal improvement in some cases
                     SymmetryWeightFactor = 0.1,
                     FIROffsetFactor = 0.2,
                     AutoThreshold = DemodulatorContext.AutoThresholdModes.None,
                     AutoThresholdMaxBias = 1.25,
-                    UseFIROffset = false,
-                    UseCalibrateAllBits = false,
+                    UseFIROffset = false, // weight result by values +-length of the correlator
+                    UseCalibrateAllBits = false, // enabling this will remove around 10 potential bit errors by forcing all known 0 bits to 0 and recalibration the detector ratio
                 },
                 CorrelatorParameters = GetCorrelationParameter_SSAD(),
                 CorrelatorType = DemodulatorContext.CorrelatorTypeEnum.FM,
