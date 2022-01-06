@@ -120,6 +120,18 @@ namespace TDF_Test
             // 34
             testsignals.Add(new TestSignalInfo("2022-01-06T191042Z, 157 kHz, Wide-U.wav", "Good signal, evening",
                 36, new DateTime(2022, 01, 06, 19, 10, 42, DateTimeKind.Utc)));
+            // 35
+            testsignals.Add(new TestSignalInfo("2022-01-06T200702Z, 264.200 kHz, Wide-U.wav", "White noise",
+                0, new DateTime(2022, 01, 06, 19, 10, 42, DateTimeKind.Utc), _status: TestSignalInfo.Station_Status.Maintenance));
+            // 36
+            testsignals.Add(new TestSignalInfo("2022-01-06T200830Z, 193 kHz, Wide-U.wav", "BBC 4",
+                27, new DateTime(2022, 01, 06, 19, 10, 42, DateTimeKind.Utc), _status: TestSignalInfo.Station_Status.Maintenance));
+            // 37
+            testsignals.Add(new TestSignalInfo("2022-01-06T201007Z, 72.500 kHz, Wide-U.wav", "DCF77",
+                40, new DateTime(2022, 01, 06, 19, 10, 42, DateTimeKind.Utc), _status: TestSignalInfo.Station_Status.Maintenance));
+            // 38
+            testsignals.Add(new TestSignalInfo("2022-01-06T201127Z, 14.700 kHz, Wide-U.wav", "VLF Data",
+                0, new DateTime(2022, 01, 06, 19, 10, 42, DateTimeKind.Utc), _status: TestSignalInfo.Station_Status.Maintenance));
         }
     }
 }
