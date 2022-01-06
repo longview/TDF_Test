@@ -117,6 +117,9 @@ namespace TDF_Test
             // 33
             testsignals.Add(new TestSignalInfo("websdr_recording_start_2022-01-05T19_25_44Z_157.0kHz.wav", "webSDR",
                 60, new DateTime(2022, 01, 05, 19, 25, 44, DateTimeKind.Utc)));
+            // 34
+            testsignals.Add(new TestSignalInfo("2022-01-06T191042Z, 157 kHz, Wide-U.wav", "Good signal, evening",
+                36, new DateTime(2022, 01, 06, 19, 10, 42, DateTimeKind.Utc)));
         }
     }
 }
