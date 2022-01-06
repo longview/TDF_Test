@@ -82,6 +82,7 @@
     <Compile Include="DemodulatorDefaults.cs" />
     <Compile Include="IQ_FM_Stuff.cs" />
     <Compile Include="MinuteFinder.cs" />
+    <Compile Include="PolynomialRegression.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TDF_Decoder.cs" />

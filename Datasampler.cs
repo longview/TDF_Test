@@ -260,7 +260,26 @@ namespace TDF_Test
                 // print out the decoded bit, time, and bit number
                 // this is very useful for debugging since we can quickly look up the relevant bit in the arrayview
                 console_output.AppendFormat("{0,2}:{1,6} ", secondcount, max_time);
-                currentdemodulator.DataSlicerResults.SecondSampleTimes[secondcount] = max_time;
+
+                // try to improve detection time resolution by doing a second order curve fit
+                double[] coeffs;
+                double[] xdata = new double[12] { 0,1,2,3,4,5,6,7,8,9,10,11}; // fixed data
+                double[] ydata = new double[12];
+
+                if (bit)
+                {
+                    Array.Copy(one_correlation, max_one_time - 6, ydata, 0, 12);
+                }
+                else
+                {
+                    Array.Copy(zero_correlation, max_zero_time - 6, ydata, 0, 12);
+                }
+
+                PolynomialRegression.fitIt(ref xdata, ref ydata, 2, out coeffs);
+
+                double max_time_interpolated = max_time - 6 + (-coeffs[1] / (2 * coeffs[2]));
+
+                currentdemodulator.DataSlicerResults.SecondSampleTimes[secondcount] = max_time_interpolated;
 
                 secondcount++;
 
@@ -332,51 +351,21 @@ namespace TDF_Test
             // kind of useless but let's log it anyway
             console_output.AppendFormat("Ratio vs. threshold average {0:F4}, {1:F4} dB\r\n", ratiovsthresholdsum, Math.Log10(ratiovsthresholdsum) * 10);
 
-
-            // do some statistics on the data
-            double second_sampling_ratio_high_average = 0;
-            int second_sampling_high_count = 0;
-            double second_sampling_ratio_low_average = 0;
-            int second_sampling_low_count = 0;
-            double second_sampling_ratio_average = 0;
-            double second_sampling_ratio_high_rms = 0;
-            double second_sampling_ratio_low_rms = 0;
-
-            foreach (double d in currentdemodulator.DataSlicerResults.SecondSampleRatios)
+            double second_sampling_times_average = 0;
+            double second_sampling_times_rms = 0;
+            for (int i = 1; i < currentdemodulator.DataSlicerResults.SecondSampleTimes.Length - 2; i++)
             {
-                second_sampling_ratio_average += d;
-                if (d > datasampler_threshold)
-                {
-                    second_sampling_ratio_high_rms += Math.Pow(d, 2);
-                    second_sampling_ratio_high_average += d;
-                    second_sampling_high_count++;
-                }
-                else
-                {
-                    second_sampling_ratio_low_rms += Math.Pow(d, 2);
-                    second_sampling_ratio_low_average += d;
-                    second_sampling_low_count++;
-                }
+                double second_time_delta = currentdemodulator.DataSlicerResults.SecondSampleTimes[i] - currentdemodulator.DataSlicerResults.SecondSampleTimes[i - 1] - 200;
+                second_sampling_times_average += second_time_delta;
+                second_sampling_times_rms += Math.Pow(second_time_delta, 2);
             }
 
-            second_sampling_ratio_high_rms = Math.Sqrt(second_sampling_ratio_high_rms / second_sampling_high_count);
-            second_sampling_ratio_low_rms = Math.Sqrt(second_sampling_ratio_low_rms / second_sampling_low_count);
+            second_sampling_times_rms = Math.Sqrt(second_sampling_times_rms)/57;
+            second_sampling_times_average /= 57;
 
-            second_sampling_ratio_average /= currentdemodulator.DataSlicerResults.SecondSampleRatios.Length;
-            second_sampling_ratio_high_average /= second_sampling_high_count;
-            second_sampling_ratio_low_average /= second_sampling_low_count;
+            console_output.AppendFormat("Interpolated second average delta error: {0:F4} [ms], RMS {1:F4} [ms]\r\n", (second_sampling_times_average)*1000, (second_sampling_times_rms)*1000);
 
-            second_sampling_offset = ((second_sampling_ratio_high_average - second_sampling_ratio_low_average) / 2) + second_sampling_ratio_low_average;
-
-            // midpoint should be 1 ideally
-
-            console_output.AppendFormat("Data slicer ratio is {1:F4}, average value is {0:F4}. Offset: {2,3}, Scale: {3:F2}\r\n",
-                second_sampling_ratio_average,
-                second_sampling_offset, datasampler_ratio_offset, datasampler_bias_scale_offset);
-            console_output.AppendFormat("     high average {0:F4} ({1,2}), low average {2:F4} ({3,2})\r\n", second_sampling_ratio_high_average, second_sampling_high_count
-                , second_sampling_ratio_low_average, second_sampling_low_count);
-            console_output.AppendFormat("High NR {0:F4} [dB], Low NR {1:F4} [dB], Sum {2:F4} [dB]\r\n", 10 * Math.Log10(second_sampling_ratio_high_rms), 10 * Math.Log10(second_sampling_ratio_low_rms),
-                10 * Math.Log10(Math.Pow(second_sampling_ratio_high_rms, 2) + Math.Pow(second_sampling_ratio_low_rms, 2)));
+            console_output.AppendLine();
         }
 
 
