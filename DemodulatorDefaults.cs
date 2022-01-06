@@ -119,7 +119,8 @@ namespace TDF_Test
                 MinuteDetectorParameters = new DemodulatorContext.MinuteDetectorParametersStruct() { 
                     Convolver_Length = 512,
                     Weighting_Coefficient = 3,
-                    MinuteDetectorType = DemodulatorContext.MinuteDetectorTypeEnum.Convolver_Correlation,
+                    ResultOffset = 50,
+                    Type = DemodulatorContext.MinuteDetectorTypeEnum.Correlator,
                 },
                 DemodulationResult = new DemodulatorContext.DemodulationResultStruct()
             };

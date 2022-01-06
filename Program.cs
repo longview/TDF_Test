@@ -20,7 +20,7 @@ namespace TDF_Test
             Modes mode;
             mode = Modes.Standard;
             mode = Modes.Verify;
-            int testindex = 30;
+            int testindex = 5;
 
             DemodulatorContext currentdemodulator = GenerateDemodulator(DemodulatorDefaults.FM_Biased);
 
@@ -258,15 +258,17 @@ namespace TDF_Test
                 demodulator.CorrelatorParameters.DemodulatorSource = pm_filtered_drift;
             }
 
-            demodulator.MinuteDetectorParameters.MinuteDetectorSource = fm_filtered_rectified;
+            demodulator.MinuteDetectorParameters.Source = fm_filtered_rectified;
 
             Correlate(ref demodulator, ref console_output);
 
-            if (demodulator.MinuteDetectorParameters.MinuteDetectorType == DemodulatorContext.MinuteDetectorTypeEnum.Convolver_Correlation)
+            if (demodulator.MinuteDetectorParameters.Type == DemodulatorContext.MinuteDetectorTypeEnum.Convolver_Correlation)
                 Find_Minute_Start_Convolver(ref demodulator, testsignal_current, ref console_output);
+            else if (demodulator.MinuteDetectorParameters.Type == DemodulatorContext.MinuteDetectorTypeEnum.Correlator)
+                Find_Minute_Start_Correlator(ref demodulator, testsignal_current, ref console_output);
             // TODO: Make some other types that are less resource heavy
 
-            demodulator.DemodulationResult.FM_Rectified_SNR =  Calculate_Signal_SNR(fm_filtered, fm_filtered_square, demodulator.MinuteDetectorParameters.MinuteDetectorResult, ref console_output);
+            demodulator.DemodulationResult.FM_Rectified_SNR =  Calculate_Signal_SNR(fm_filtered, fm_filtered_square, demodulator.MinuteDetectorParameters.Result, ref console_output);
 
             Datasampler(ref demodulator, testsignal_current, ref console_output);
 

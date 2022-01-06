@@ -39,7 +39,7 @@ namespace TDF_Test
             double datasampler_second_neg_range = -currentdemodulator.DataSlicerParameters.SearchRange + 2;
             double datasampler_second_pos_range = currentdemodulator.DataSlicerParameters.SearchRange;
 
-            int minutestart_sample = currentdemodulator.MinuteDetectorParameters.MinuteDetectorResult;
+            int minutestart_sample = currentdemodulator.MinuteDetectorParameters.Result;
 
             // the initial range to search for the first 0
             // this should be relatively wide unless the minute-start detector is very accurate

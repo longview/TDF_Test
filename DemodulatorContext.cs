@@ -69,7 +69,7 @@ namespace TDF_Test
         public enum MinuteDetectorTypeEnum
         {
             Convolver_Correlation,
-            Correlation,
+            Correlator,
             Algorithm
         }
 
@@ -108,13 +108,14 @@ namespace TDF_Test
 
         public struct MinuteDetectorParametersStruct
         {
-            public MinuteDetectorTypeEnum MinuteDetectorType;
+            public MinuteDetectorTypeEnum Type;
             public int Convolver_Length;
             public double Weighting_Coefficient;
-            public double[] MinuteDetectorSource;
-            public double[] MinuteDetectorWeightedOutput;
-            public double[] MinuteDetectorCorrelationOutput;
-            public int MinuteDetectorResult;
+            public double[] Source;
+            public double[] WeightedOutput;
+            public double[] CorrelationOutput;
+            public int Result;
+            public int ResultOffset;
         }
 
         public enum CorrelatorReferenceSourceTypes
@@ -170,7 +171,7 @@ namespace TDF_Test
             sb.AppendLine(this.ToString());
 
             sb.AppendFormat("Filter parameters: IQ {0}, FM {1}, Rectified {2}\r\n", FilterParameters.IQAverageCount, FilterParameters.FMAverageCount, FilterParameters.EnvelopeAverageCount);
-            sb.AppendFormat("Minute detector type {0}, convolve length {1}, weight factor {3}, found at sample {2}\r\n", "Convolve", MinuteDetectorParameters.Convolver_Length, MinuteDetectorParameters.MinuteDetectorResult,
+            sb.AppendFormat("Minute detector type {0}, convolve length {1}, weight factor {3}, found at sample {2}\r\n", "Convolve", MinuteDetectorParameters.Convolver_Length, MinuteDetectorParameters.Result,
                 MinuteDetectorParameters.Weighting_Coefficient);
             sb.AppendFormat("Correlator input {0}, {1} reference, kernel {2}, offset {3}, 0:{4} 1:{5}, reversed: {6}, synth corrs average {7}\r\n", CorrelatorParameters.CorrelatorDataSource == CorrelatorDataSourceTypes.FM ? "FM":"PM",
                 CorrelatorParameters.CorrelatorReferenceSource == CorrelatorReferenceSourceTypes.Real ? "real":"synthetic",

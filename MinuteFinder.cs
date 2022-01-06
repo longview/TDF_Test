@@ -21,7 +21,7 @@ namespace TDF_Test
 
             double decimated_sampleperiod = demodulator.DecimatedSamplePeriod;
 
-            double[] minute_correlation_source = demodulator.MinuteDetectorParameters.MinuteDetectorSource;
+            double[] minute_correlation_source = demodulator.MinuteDetectorParameters.Source;
             double[] minute_start_correlation = new double[minute_correlation_source.Length];
             double[] minute_convolved = new double[minute_start_correlation.Length];
             double[] minute_convolved_raw = new double[minute_start_correlation.Length];
@@ -109,15 +109,86 @@ namespace TDF_Test
                 }
             }
 
-            demodulator.MinuteDetectorParameters.MinuteDetectorCorrelationOutput = minute_convolved;
-            demodulator.MinuteDetectorParameters.MinuteDetectorWeightedOutput = minute_convolved_weighted;
+            demodulator.MinuteDetectorParameters.CorrelationOutput = minute_convolved;
+            demodulator.MinuteDetectorParameters.WeightedOutput = minute_convolved_weighted;
 
             // note that the recordings often actually start a second or two after the timestamp
             // due to how SDR-Console works
             console_output.AppendFormat("Found start of minute at time {0} ({1}), expected {2} ({3})\r\n", decimated_sampleperiod * minutestart_sample, minutestart_sample,
                 _signal.ExpectedMinuteStartSeconds, _signal.ExpectedMinuteStartSeconds / decimated_sampleperiod);
-            demodulator.MinuteDetectorParameters.MinuteDetectorResult = minutestart_sample;
+            demodulator.MinuteDetectorParameters.Result = minutestart_sample;
         }
+
+        private static void Find_Minute_Start_Correlator(ref DemodulatorContext demodulator, TestSignalInfo _signal, ref StringBuilder console_output)
+        {
+            /* Find maximum value and assume this is the start of a minute 
+             * Perform a LMS correlation looking for a bunch of zeros
+             * This new version uses a convolution filter and some clever weighting of the output waveform to determine the minute start fairly well!
+             */
+            //bool minutestarted = false;
+            double max_minute_correlation = double.NegativeInfinity;
+            int minutestart_sample = 0;
+
+            double decimated_sampleperiod = demodulator.DecimatedSamplePeriod;
+
+            double[] minute_correlation_source = demodulator.MinuteDetectorParameters.Source;
+            double[] minute_start_correlation = new double[minute_correlation_source.Length];
+            double[] minute_correlated = new double[minute_start_correlation.Length];
+            double[] minute_correlated_raw = new double[minute_start_correlation.Length];
+            demodulator.MinuteDetectorParameters.WeightedOutput = new double[minute_start_correlation.Length];
+
+            // correlation by offset corrected RMS
+            double minute_correlation_sum = 0;
+            for (int i = minute_correlator_template.Length; i < minute_correlation_source.Length; i++)
+            {
+
+                for (int j = 0; j < minute_correlator_template.Length; j++)
+                {
+                    minute_correlated_raw[i- minute_correlator_template.Length] += -1*Math.Pow(minute_correlation_source[i - j], 2);
+                    minute_correlation_sum += minute_correlated_raw[i - minute_correlator_template.Length];
+                }
+
+            }
+
+            for (int i = 0; i < minute_correlated_raw.Length; i++)
+            {
+                minute_correlated[i] = minute_correlated_raw[i] - (minute_correlation_sum / minute_correlated_raw.Length);
+                minute_correlated[i] = Math.Sqrt(minute_correlated[i]);
+            }
+
+            // the number of samples to offset the peak by to make our peak correlation at the start of the minute marker
+            // and not the center
+            int convolution_peak_offset = (minute_correlator_template.Length);
+
+            // search for up to 59 seconds
+            double weight_factor = demodulator.MinuteDetectorParameters.Weighting_Coefficient;
+            int max_minute_search = (int)Math.Min(convolution_peak_offset + 500 + ((double)60 / decimated_sampleperiod), minute_correlation_source.Length);
+            for (int i = convolution_peak_offset; i < max_minute_search - 70; i++)
+            {
+                // bias it towards the distinctive correlation peak.
+                double current = minute_correlated[i];
+
+                current += minute_correlated[i - 50] * -0.2;
+
+                demodulator.MinuteDetectorParameters.WeightedOutput[i] = current;
+
+                //minute_weighted_correlation[i] = weighted_correlation;
+                if (current > max_minute_correlation)
+                {
+                    max_minute_correlation = current;// minute_start_correlation[i];
+                    minutestart_sample = i+demodulator.MinuteDetectorParameters.ResultOffset;
+                }
+            }
+
+            demodulator.MinuteDetectorParameters.CorrelationOutput = minute_correlated;
+
+            // note that the recordings often actually start a second or two after the timestamp
+            // due to how SDR-Console works
+            console_output.AppendFormat("Found start of minute at time {0} ({1}), expected {2} ({3})\r\n", decimated_sampleperiod * minutestart_sample, minutestart_sample,
+                _signal.ExpectedMinuteStartSeconds, _signal.ExpectedMinuteStartSeconds / decimated_sampleperiod);
+            demodulator.MinuteDetectorParameters.Result = minutestart_sample;
+        }
+
 
     }
 }
