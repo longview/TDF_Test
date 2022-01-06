@@ -131,12 +131,14 @@ namespace TDF_Test
                     break;
                 case DemodulatorDefaults.FM_Biased:
                     demod.CorrelatorType = DemodulatorContext.CorrelatorTypeEnum.FM_Biased;
+                    demod.DataSlicerParameters.BiasOffset = -0.15;
                     break;
                 case DemodulatorDefaults.FM_Biased_MeanVariance:
                     demod.CorrelatorType = DemodulatorContext.CorrelatorTypeEnum.FM_Biased_MeanVariance;
                     demod.DataSlicerParameters.AutoThreshold = DemodulatorContext.AutoThresholdModes.MeanVariance;
                     demod.DataSlicerParameters.UseFIROffset = false;
                     demod.DataSlicerParameters.UseSymmetryWeight = true;
+                    demod.DataSlicerParameters.BiasOffset = -0.15;
                     break;
                 case DemodulatorDefaults.PM_Biased_MeanVariance:
                 case DemodulatorDefaults.PM_Biased:
