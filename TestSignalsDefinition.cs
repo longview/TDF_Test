@@ -56,7 +56,7 @@ namespace TDF_Test
                 48, new DateTime(2021, 12, 30, 23, 55, 52, DateTimeKind.Utc)));
             // 13 - tricky start, minute is around 7000
             testsignals.Add(new TestSignalInfo("2021-12-31T181322Z, 157 kHz, Wide-U.wav", "Poor signal, evening",
-                22, new DateTime(2021, 12, 31, 18, 13, 22, DateTimeKind.Utc), _errors: 36));
+                22, new DateTime(2021, 12, 31, 18, 13, 22, DateTimeKind.Utc), _errors: 19));
             // 14 - minute start around 6500
             testsignals.Add(new TestSignalInfo("2021-12-31T181524Z, 157 kHz, Wide-U.wav", "Poor signal, evening",
                 22, new DateTime(2021, 12, 31, 18, 15, 24, DateTimeKind.Utc), _errors: 0));
@@ -74,13 +74,13 @@ namespace TDF_Test
                 30, new DateTime(2021, 12, 31, 22, 59, 30, DateTimeKind.Utc)));
             // 19
             testsignals.Add(new TestSignalInfo("2022-01-02T110116Z, 157 kHz, Wide-U.wav", "Poor signal, mid day",
-                15, new DateTime(2022, 01, 02, 11, 01, 20, DateTimeKind.Utc), _errors: 23));
+                15, new DateTime(2022, 01, 02, 11, 01, 20, DateTimeKind.Utc), _errors: 7));
             // 20
             testsignals.Add(new TestSignalInfo("2022-01-02T115821Z, 157 kHz, Wide-U.wav", "Poor signal, mid day",
                 18, new DateTime(2022, 01, 02, 11, 58, 22, DateTimeKind.Utc), _errors: 0));
             // 21
             testsignals.Add(new TestSignalInfo("2022-01-02T130333Z, 157 kHz, Wide-U.wav", "Poor signal, mid day",
-                16, new DateTime(2022, 01, 02, 13, 03, 33, DateTimeKind.Utc), _errors: 20));
+                16, new DateTime(2022, 01, 02, 13, 03, 33, DateTimeKind.Utc), _errors: 18));
             // 22
             testsignals.Add(new TestSignalInfo("2022-01-02T155905Z, 157 kHz, Wide-U.wav", "Good signal, afternoon",
                 34, new DateTime(2022, 01, 02, 15, 59, 05, DateTimeKind.Utc)));
