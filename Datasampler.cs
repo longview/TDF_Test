@@ -254,9 +254,6 @@ namespace TDF_Test
                     max_time = max_zero_time;
                 }
 
-                datasampler_start = max_time + (int)(datasampler_second_neg_range / decimated_sampleperiod);
-                datasampler_stop = max_time + (int)(datasampler_second_pos_range / decimated_sampleperiod);
-
                 // print out the decoded bit, time, and bit number
                 // this is very useful for debugging since we can quickly look up the relevant bit in the arrayview
                 console_output.AppendFormat("{0,2}:{1,6} ", secondcount, max_time);
@@ -280,6 +277,18 @@ namespace TDF_Test
                 double max_time_interpolated = max_time - 6 + (-coeffs[1] / (2 * coeffs[2]));
 
                 currentdemodulator.DataSlicerResults.SecondSampleTimes[secondcount] = max_time_interpolated;
+
+
+                if (currentdemodulator.DataSlicerParameters.UseIntegralTimeDelta)
+                {
+                    datasampler_start = (int)currentdemodulator.DataSlicerResults.SecondSampleTimes[0] + ((int)(datasampler_second_neg_range / decimated_sampleperiod)) + (secondcount * 200);
+                    datasampler_stop = (int)currentdemodulator.DataSlicerResults.SecondSampleTimes[0] + ((int)(datasampler_second_pos_range / decimated_sampleperiod)) + (secondcount * 200);
+                }
+                else
+                {
+                    datasampler_start = max_time + (int)(datasampler_second_neg_range / decimated_sampleperiod);
+                    datasampler_stop = max_time + (int)(datasampler_second_pos_range / decimated_sampleperiod);
+                }
 
                 secondcount++;
 

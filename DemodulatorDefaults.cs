@@ -98,6 +98,7 @@ namespace TDF_Test
                     SearchFirstMin = 0.8,// these ranges can be tightened if the minute detector is real good
                     SearchFirstMax = 1.08, 
                     SearchRange = 1.05, // this is +-10 samples; this matches the correlation waveform quite well and seems optimal
+                    UseIntegralTimeDelta = false, // search window is referred to the first second for the entire minute, this reduces the average time delta, but assumes first peak is good
                     UseInitialZeroCorrection = true,
                     UseTemplateLengthCorrection = true,
                     UseDataInversion = false,

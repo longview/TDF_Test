@@ -150,6 +150,7 @@ namespace TDF_Test
             public AutoThresholdModes AutoThreshold { get; set; }
             public double AutoThresholdMaxBias { get; set; }
             public bool UseCalibrateAllBits { get; set; }
+            public bool UseIntegralTimeDelta { get; set; }
         }
 
         public struct DataSlicerResultStruct
