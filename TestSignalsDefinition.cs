@@ -135,6 +135,17 @@ namespace TDF_Test
             // 38
             testsignals.Add(new TestSignalInfo("2022-01-07T080923Z, 157 kHz, Wide-U.wav", "Morning",
                 28, new DateTime(2022, 01, 07, 08, 09, 23, DateTimeKind.Utc)));
+            // 38 - Heppen.be recording
+            testsignals.Add(new TestSignalInfo("websdr_recording_2022-01-07T08_20_10Z_157.0kHz.wav", "Heppen.be",
+                40, new DateTime(2022, 01, 07, 08, 18, 23, DateTimeKind.Utc)));
+            // 39 - Krizevci, Croatia - http://9a1cra.ddns.net:8902/
+            testsignals.Add(new TestSignalInfo("websdr_recording_2022-01-07T08_25_11Z_157.0kHz.wav", "Croatia",
+                30, new DateTime(2022, 01, 07, 08, 23, 23, DateTimeKind.Utc)));
+            // 40 - Grimsby UK http://grimsbysdr.ddns.net:8073 - N/S
+            // this recording is at a 1 kHz IF
+            // there is also a frequency offset with this receiver of around 350 Hz
+            testsignals.Add(new TestSignalInfo("websdr_recording_2022-01-07T08_37_08Z_161.0kHz.wav", "Grimsby",
+                30, new DateTime(2022, 01, 07, 08, 35, 30, DateTimeKind.Utc), _frequency: 1350));
         }
     }
 }
