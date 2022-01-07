@@ -152,6 +152,9 @@ namespace TDF_Test
             // 44
             testsignals.Add(new TestSignalInfo("websdr_recording_start_2022-01-07T09_20_29Z_193.0kHz.wav", "BBC 4",
     70, new DateTime(2022, 01, 07, 09, 20, 29, DateTimeKind.Utc), _status: TestSignalInfo.Station_Status.Maintenance, _signaltype: TestSignalInfo.SignalTypeEnum.BBC4_AMDS));
+            // 45
+            testsignals.Add(new TestSignalInfo("2022-01-07T094204Z, 157 kHz, Wide-U.wav", "Morning",
+                38, new DateTime(2022, 01, 07, 09, 42, 04, DateTimeKind.Utc)));
         }
     }
 }
