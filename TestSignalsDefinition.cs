@@ -122,16 +122,16 @@ namespace TDF_Test
                 36, new DateTime(2022, 01, 06, 19, 10, 42, DateTimeKind.Utc)));
             // 35
             testsignals.Add(new TestSignalInfo("2022-01-06T200702Z, 264.200 kHz, Wide-U.wav", "White noise",
-                0, new DateTime(2022, 01, 06, 19, 10, 42, DateTimeKind.Utc), _status: TestSignalInfo.Station_Status.Maintenance, _signaltype: TestSignalInfo.SignalTypeEnum.Noise));
+                0, new DateTime(2022, 01, 06, 20, 07, 02, DateTimeKind.Utc), _status: TestSignalInfo.Station_Status.Maintenance, _signaltype: TestSignalInfo.SignalTypeEnum.Noise));
             // 36
             testsignals.Add(new TestSignalInfo("2022-01-06T200830Z, 193 kHz, Wide-U.wav", "BBC 4",
-                27, new DateTime(2022, 01, 06, 19, 10, 42, DateTimeKind.Utc), _status: TestSignalInfo.Station_Status.Maintenance, _signaltype: TestSignalInfo.SignalTypeEnum.BBC4_AMDS));
+                27, new DateTime(2022, 01, 06, 20, 08, 30, DateTimeKind.Utc), _status: TestSignalInfo.Station_Status.Maintenance, _signaltype: TestSignalInfo.SignalTypeEnum.BBC4_AMDS));
             // 37
             testsignals.Add(new TestSignalInfo("2022-01-06T201007Z, 72.500 kHz, Wide-U.wav", "DCF77",
-                40, new DateTime(2022, 01, 06, 19, 10, 42, DateTimeKind.Utc), _status: TestSignalInfo.Station_Status.Maintenance, _signaltype: TestSignalInfo.SignalTypeEnum.DCFp));
+                40, new DateTime(2022, 01, 06, 20, 10, 07, DateTimeKind.Utc), _status: TestSignalInfo.Station_Status.Maintenance, _signaltype: TestSignalInfo.SignalTypeEnum.DCFp));
             // 38
             testsignals.Add(new TestSignalInfo("2022-01-06T201127Z, 14.700 kHz, Wide-U.wav", "VLF Data",
-                0, new DateTime(2022, 01, 06, 19, 10, 42, DateTimeKind.Utc), _status: TestSignalInfo.Station_Status.Maintenance, _signaltype: TestSignalInfo.SignalTypeEnum.Noise));
+                0, new DateTime(2022, 01, 06, 20, 11, 27, DateTimeKind.Utc), _status: TestSignalInfo.Station_Status.Maintenance, _signaltype: TestSignalInfo.SignalTypeEnum.Noise));
             // 38
             testsignals.Add(new TestSignalInfo("2022-01-07T080923Z, 157 kHz, Wide-U.wav", "Morning",
                 28, new DateTime(2022, 01, 07, 08, 09, 23, DateTimeKind.Utc)));
@@ -146,6 +146,12 @@ namespace TDF_Test
             // there is also a frequency offset with this receiver of around 350 Hz
             testsignals.Add(new TestSignalInfo("websdr_recording_2022-01-07T08_37_08Z_161.0kHz.wav", "Grimsby",
                 30, new DateTime(2022, 01, 07, 08, 35, 30, DateTimeKind.Utc), _frequency: 1350));
+            // 41
+            testsignals.Add(new TestSignalInfo("websdr_recording_start_2022-01-07T09_16_42Z_193.0kHz.wav", "BBC 4",
+    70, new DateTime(2022, 01, 07, 09, 16, 42, DateTimeKind.Utc), _status: TestSignalInfo.Station_Status.Maintenance, _signaltype: TestSignalInfo.SignalTypeEnum.BBC4_AMDS));
+            // 42
+            testsignals.Add(new TestSignalInfo("websdr_recording_start_2022-01-07T09_20_29Z_193.0kHz.wav", "BBC 4",
+    70, new DateTime(2022, 01, 07, 09, 20, 29, DateTimeKind.Utc), _status: TestSignalInfo.Station_Status.Maintenance, _signaltype: TestSignalInfo.SignalTypeEnum.BBC4_AMDS));
         }
     }
 }
