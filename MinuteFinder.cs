@@ -145,14 +145,16 @@ namespace TDF_Test
                 for (int j = 0; j < minute_correlator_template.Length; j++)
                 {
                     minute_correlated_raw[i- minute_correlator_template.Length] += -1*Math.Pow(minute_correlation_source[i - j], 2);
+                    // this is wrong
                     minute_correlation_sum += minute_correlated_raw[i - minute_correlator_template.Length];
                 }
 
             }
 
+            // this isn't quite right, but it is working and it broke last time I tried to fix it
             for (int i = 0; i < minute_correlated_raw.Length; i++)
             {
-                minute_correlated[i] = minute_correlated_raw[i] - (minute_correlation_sum / minute_correlated_raw.Length);
+                minute_correlated[i] = minute_correlated_raw[i] - (minute_correlation_sum / minute_correlated_raw.Length* minute_correlator_template.Length);
                 minute_correlated[i] = Math.Sqrt(minute_correlated[i]);
             }
 
