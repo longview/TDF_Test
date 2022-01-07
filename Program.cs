@@ -20,7 +20,7 @@ namespace TDF_Test
             Modes mode;
             mode = Modes.Standard;
             mode = Modes.Verify;
-            int testindex = 42;
+            int testindex = 44;
 
             DemodulatorContext currentdemodulator = GenerateDemodulator(DemodulatorDefaults.FM_Biased);
 
@@ -123,7 +123,7 @@ namespace TDF_Test
             Verify
         }
 
-        private static int Demodulate_Testsignal(TestSignalInfo testsignal_current, ref DemodulatorContext demodulator,
+        private static int Demodulate_Testsignal(TestSignalInfo testsignal_current, ref DemodulatorContext currentdemodulator,
             ref StringBuilder console_output,
             bool generate_correlator = false)
         {
@@ -191,7 +191,7 @@ namespace TDF_Test
 
             int IQ_decimation_factor = 100;
             double decimated_sampleperiod = IQ_decimation_factor * sampleperiod;
-            demodulator.DecimatedSamplePeriod = decimated_sampleperiod;
+            currentdemodulator.DecimatedSamplePeriod = decimated_sampleperiod;
 
             // output buffer for I/Q data
             double[] i_unfiltered = new double[data.Length];
@@ -220,9 +220,9 @@ namespace TDF_Test
             console_output.AppendFormat("FM demodulation start\r\n");
 
             console_output.AppendFormat("FM moving average filter size {0}\r\nFM rectifier filter size {1}\r\n", 
-                demodulator.FilterParameters.FMAverageCount, demodulator.FilterParameters.EnvelopeAverageCount);
+                currentdemodulator.FilterParameters.FMAverageCount, currentdemodulator.FilterParameters.EnvelopeAverageCount);
             double fm_unfiltered_square, fm_filtered_square;
-            Demodulate_To_FM(i_filtered, q_filtered, fm_unfiltered, pm_unfiltered, fm_filtered, demodulator.FilterParameters.FMAverageCount, out fm_unfiltered_square, out fm_filtered_square);
+            Demodulate_To_FM(i_filtered, q_filtered, fm_unfiltered, pm_unfiltered, fm_filtered, currentdemodulator.FilterParameters.FMAverageCount, out fm_unfiltered_square, out fm_filtered_square);
             Perform_PM_Correction(phase_error_per_sample_vs_frequency, ref pm_unfiltered, pm_filtered_drift, ref console_output);
 
             // obsolete now
@@ -236,60 +236,60 @@ namespace TDF_Test
 
             FM_SNR_Calculation(fm_unfiltered, fm_filtered, ref fm_unfiltered_square, ref fm_filtered_square, ref console_output);
 
-            double[] fm_filtered_rectified = Generate_Rectified_FM(data, IQ_decimation_factor, fm_filtered, demodulator.FilterParameters.EnvelopeAverageCount);
+            double[] fm_filtered_rectified = Generate_Rectified_FM(data, IQ_decimation_factor, fm_filtered, currentdemodulator.FilterParameters.EnvelopeAverageCount);
 
             // make synthetic correlators if desired
-            if (demodulator.CorrelatorParameters.CorrelatorReferenceSource == DemodulatorContext.CorrelatorReferenceSourceTypes.Synthetic)
+            if (currentdemodulator.CorrelatorParameters.CorrelatorReferenceSource == DemodulatorContext.CorrelatorReferenceSourceTypes.Synthetic)
             {
                 Generate_Synthetic_Correlators(ref one_correlator_template_FM, ref zero_correlator_template_FM, ref one_correlator_template_PM, ref zero_correlator_template_PM, 
-                    demodulator.CorrelatorParameters.SyntheticCorrelatorAverageCount, demodulator.CorrelatorParameters.SyntheticCorrelatorAverageCount);
+                    currentdemodulator.CorrelatorParameters.SyntheticCorrelatorAverageCount, currentdemodulator.CorrelatorParameters.SyntheticCorrelatorAverageCount);
             }
 
-            if (demodulator.CorrelatorParameters.CorrelatorDataSource == DemodulatorContext.CorrelatorDataSourceTypes.FM)
+            if (currentdemodulator.CorrelatorParameters.CorrelatorDataSource == DemodulatorContext.CorrelatorDataSourceTypes.FM)
             {
-                demodulator.CorrelatorParameters.ZeroCorrelatorReference = zero_correlator_template_FM;
-                demodulator.CorrelatorParameters.OneCorrelatorReference = one_correlator_template_FM;
-                demodulator.CorrelatorParameters.DemodulatorSource = fm_filtered;
+                currentdemodulator.CorrelatorParameters.ZeroCorrelatorReference = zero_correlator_template_FM;
+                currentdemodulator.CorrelatorParameters.OneCorrelatorReference = one_correlator_template_FM;
+                currentdemodulator.CorrelatorParameters.DemodulatorSource = fm_filtered;
             }
             else
             {
-                demodulator.CorrelatorParameters.ZeroCorrelatorReference = zero_correlator_template_PM;
-                demodulator.CorrelatorParameters.OneCorrelatorReference = one_correlator_template_PM;
-                demodulator.CorrelatorParameters.DemodulatorSource = pm_filtered_drift;
+                currentdemodulator.CorrelatorParameters.ZeroCorrelatorReference = zero_correlator_template_PM;
+                currentdemodulator.CorrelatorParameters.OneCorrelatorReference = one_correlator_template_PM;
+                currentdemodulator.CorrelatorParameters.DemodulatorSource = pm_filtered_drift;
             }
 
-            demodulator.MinuteDetectorParameters.Source = fm_filtered_rectified;
+            currentdemodulator.MinuteDetectorParameters.Source = fm_filtered_rectified;
 
-            Correlate(ref demodulator, ref console_output);
+            Correlate(ref currentdemodulator, ref console_output);
 
-            if (demodulator.MinuteDetectorParameters.Type == DemodulatorContext.MinuteDetectorTypeEnum.Convolver_Correlation)
-                Find_Minute_Start_Convolver(ref demodulator, testsignal_current, ref console_output);
-            else if (demodulator.MinuteDetectorParameters.Type == DemodulatorContext.MinuteDetectorTypeEnum.Correlator)
-                Find_Minute_Start_Correlator(ref demodulator, testsignal_current, ref console_output);
+            if (currentdemodulator.MinuteDetectorParameters.Type == DemodulatorContext.MinuteDetectorTypeEnum.Convolver_Correlation)
+                Find_Minute_Start_Convolver(ref currentdemodulator, testsignal_current, ref console_output);
+            else if (currentdemodulator.MinuteDetectorParameters.Type == DemodulatorContext.MinuteDetectorTypeEnum.Correlator)
+                Find_Minute_Start_Correlator(ref currentdemodulator, testsignal_current, ref console_output);
             // TODO: Make some other types that are less resource heavy
 
-            demodulator.DemodulationResult.FM_Rectified_SNR =  Calculate_Signal_SNR(fm_filtered, fm_filtered_square, demodulator.MinuteDetectorParameters.Result, ref console_output);
+            currentdemodulator.DemodulationResult.FM_Rectified_SNR =  Calculate_Signal_SNR(fm_filtered, fm_filtered_square, currentdemodulator.MinuteDetectorParameters.Result, ref console_output);
 
-            Datasampler(ref demodulator, testsignal_current, ref console_output);
+            Datasampler(ref currentdemodulator, testsignal_current, ref console_output);
 
 
             console_output.Append("Decode: ");
-            Print_Demodulated_Bits(demodulator.DemodulationResult.DemodulatedData, ref console_output);
+            Print_Demodulated_Bits(currentdemodulator.DemodulationResult.DemodulatedData, ref console_output);
             console_output.Append("Refrnc: ");
             Print_Demodulated_Bits(testsignal_current.Reference_Timecode.GetBitstream(), ref console_output);
 
-            demodulator.DemodulationResult.BitErrors = testsignal_current.Reference_Timecode.CompareBitstream(demodulator.DemodulationResult.DemodulatedData);
-            demodulator.DemodulationResult.DemodulatedDataErrorMask = testsignal_current.Reference_Timecode.GetBitstreamErrorMask();
-            demodulator.DemodulationResult.DemodulatedDataReference = testsignal_current.Reference_Timecode.GetBitstream();
-            demodulator.DemodulationResult.DemodulatedDataErrorDescription = testsignal_current.Reference_Timecode.Comparison_Error_Description;
+            currentdemodulator.DemodulationResult.BitErrors = testsignal_current.Reference_Timecode.CompareBitstream(currentdemodulator.DemodulationResult.DemodulatedData);
+            currentdemodulator.DemodulationResult.DemodulatedDataErrorMask = testsignal_current.Reference_Timecode.GetBitstreamErrorMask();
+            currentdemodulator.DemodulationResult.DemodulatedDataReference = testsignal_current.Reference_Timecode.GetBitstream();
+            currentdemodulator.DemodulationResult.DemodulatedDataErrorDescription = testsignal_current.Reference_Timecode.Comparison_Error_Description;
 
-            Print_Demodulated_Bits_Informative(console_output, ref demodulator);
+            Print_Demodulated_Bits_Informative(console_output, ref currentdemodulator);
 
-            console_output.Append(demodulator.DemodulationResult.DemodulatedDataErrorDescription);
+            console_output.Append(currentdemodulator.DemodulationResult.DemodulatedDataErrorDescription);
 
-            demodulator.DemodulationResult.DecodeErrors = Decode_Received_Data(testsignal_current, demodulator.DemodulationResult.DemodulatedData, ref console_output);
+            currentdemodulator.DemodulationResult.DecodeErrors = Decode_Received_Data(testsignal_current, currentdemodulator.DemodulationResult.DemodulatedData, ref console_output);
 
-            return demodulator.DemodulationResult.BitErrors + demodulator.DemodulationResult.DecodeErrors;
+            return currentdemodulator.DemodulationResult.BitErrors + currentdemodulator.DemodulationResult.DecodeErrors;
         }
 
         private static void Print_Demodulated_Bits_Informative(StringBuilder console_output, ref DemodulatorContext currentdemodulator)
