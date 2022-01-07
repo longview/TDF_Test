@@ -10,7 +10,7 @@ namespace TDF_Test
     {
         public TestSignalInfo(string _filepath, string _comment, double _snr, DateTime _date,
             bool timechangeauto = true, bool timechange = false, bool holidaytomorrow = false, bool holidaytoday = false, TDF_Timecode_Class.LeapSecondState leapstate = TDF_Timecode_Class.LeapSecondState.No_Leap,
-            double _frequency = 5000, int _errors = 0, Station_Status _status = Station_Status.OnAir, Signal_Type _signaltype = Signal_Type.TDF, string _filepath_base = "..\\..\\Recordings\\")
+            double _frequency = 5000, int _errors = 0, Station_Status _status = Station_Status.OnAir, SignalTypeEnum _signaltype = SignalTypeEnum.TDF, string _filepath_base = "..\\..\\Recordings\\")
         {
             FilePath = _filepath;
             Comment = _comment;
@@ -35,7 +35,7 @@ namespace TDF_Test
         public double SNR;
         public Station_Status Status;
         public DateTime RecordedTimestampUTC;
-        public Signal_Type SignalType;
+        public SignalTypeEnum SignalType;
         public int ExpectedErrors;
         public double ExpectedMinuteStartSeconds;
 
@@ -46,9 +46,27 @@ namespace TDF_Test
             Maintenance
         }
 
-        public enum Signal_Type
+        public enum SignalTypeEnum
         {
-            TDF, DCFp
+            TDF, DCFp, BBC4_AMDS, Noise
         }
+
+        public static string SignalTypeToString(SignalTypeEnum type)
+        {
+            switch (type)
+            {
+                case SignalTypeEnum.BBC4_AMDS:
+                    return "BBC 4 UK-AMDS";
+                case SignalTypeEnum.DCFp:
+                    return "DCF77 PRN";
+                case SignalTypeEnum.Noise:
+                    return "Noise";
+                case SignalTypeEnum.TDF:
+                    return "TDF";
+                default:
+                    return "Unknown";
+            }
+        }
+
     }
 }

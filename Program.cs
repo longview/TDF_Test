@@ -19,7 +19,7 @@ namespace TDF_Test
 
             Modes mode;
             mode = Modes.Standard;
-            //mode = Modes.Verify;
+            mode = Modes.Verify;
             int testindex = 42;
 
             DemodulatorContext currentdemodulator = GenerateDemodulator(DemodulatorDefaults.FM_Biased);
@@ -39,7 +39,7 @@ namespace TDF_Test
                 testindex, testsignal_current.FilePath, testsignal_current.SNR,
                 testsignal_current.Status == TestSignalInfo.Station_Status.OnAir ? "on air" : "off air",
                 testsignal_current.RecordedTimestampUTC.ToString("o"), testsignal_current.Comment, testsignal_current.Frequency,
-                testsignal_current.SignalType == TestSignalInfo.Signal_Type.TDF ? "TDF" : "DCF77 Phase");
+                testsignal_current.SignalType == TestSignalInfo.SignalTypeEnum.TDF ? "TDF" : "DCF77 Phase");
             }
 
 
@@ -75,7 +75,7 @@ namespace TDF_Test
                     testsignals.IndexOf(signal), signal.FilePath, signal.SNR,
                     signal.Status == TestSignalInfo.Station_Status.OnAir ? "on air" : "off air",
                     signal.RecordedTimestampUTC.ToString("o"), signal.Comment, signal.Frequency,
-                    signal.SignalType == TestSignalInfo.Signal_Type.TDF ? "TDF" : "DCF77 Phase");
+                    TestSignalInfo.SignalTypeToString(signal.SignalType));
 
                     errors = Demodulate_Testsignal(signal, ref currentdemodulator, ref console_output);
 
