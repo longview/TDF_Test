@@ -56,7 +56,7 @@ namespace TDF_Test
                 48, new DateTime(2021, 12, 30, 23, 55, 52, DateTimeKind.Utc)));
             // 13 - tricky start, minute is around 7000
             testsignals.Add(new TestSignalInfo("2021-12-31T181322Z, 157 kHz, Wide-U.wav", "Poor signal, evening",
-                22, new DateTime(2021, 12, 31, 18, 13, 22, DateTimeKind.Utc), _errors: 19));
+                22, new DateTime(2021, 12, 31, 18, 13, 22, DateTimeKind.Utc), _errors: 0));
             // 14 - minute start around 6500
             testsignals.Add(new TestSignalInfo("2021-12-31T181524Z, 157 kHz, Wide-U.wav", "Poor signal, evening",
                 22, new DateTime(2021, 12, 31, 18, 15, 24, DateTimeKind.Utc), _errors: 0));
@@ -65,7 +65,7 @@ namespace TDF_Test
                 20, new DateTime(2021, 12, 31, 22, 28, 27, DateTimeKind.Utc)));
             // 16 - last of the year :)
             testsignals.Add(new TestSignalInfo("2021-12-31T225740Z, 157 kHz, Wide-U.wav", "Good signal, evening",
-                30, new DateTime(2021, 12, 31, 22, 57, 40, DateTimeKind.Utc), _errors: 2));
+                30, new DateTime(2021, 12, 31, 22, 57, 40, DateTimeKind.Utc), _errors: 0));
             // 17 - first of the year
             testsignals.Add(new TestSignalInfo("2021-12-31T225835Z, 157 kHz, Wide-U.wav", "Good signal, evening",
                 30, new DateTime(2021, 12, 31, 22, 58, 35, DateTimeKind.Utc), _errors: 0));
@@ -80,7 +80,7 @@ namespace TDF_Test
                 18, new DateTime(2022, 01, 02, 11, 58, 22, DateTimeKind.Utc), _errors: 0));
             // 21
             testsignals.Add(new TestSignalInfo("2022-01-02T130333Z, 157 kHz, Wide-U.wav", "Poor signal, mid day",
-                16, new DateTime(2022, 01, 02, 13, 03, 33, DateTimeKind.Utc), _errors: 18));
+                16, new DateTime(2022, 01, 02, 13, 03, 33, DateTimeKind.Utc), _errors: 16));
             // 22
             testsignals.Add(new TestSignalInfo("2022-01-02T155905Z, 157 kHz, Wide-U.wav", "Good signal, afternoon",
                 34, new DateTime(2022, 01, 02, 15, 59, 05, DateTimeKind.Utc)));
@@ -132,6 +132,9 @@ namespace TDF_Test
             // 38
             testsignals.Add(new TestSignalInfo("2022-01-06T201127Z, 14.700 kHz, Wide-U.wav", "VLF Data",
                 0, new DateTime(2022, 01, 06, 19, 10, 42, DateTimeKind.Utc), _status: TestSignalInfo.Station_Status.Maintenance));
+            // 38
+            testsignals.Add(new TestSignalInfo("2022-01-07T080923Z, 157 kHz, Wide-U.wav", "Morning",
+                28, new DateTime(2022, 01, 07, 08, 09, 23, DateTimeKind.Utc)));
         }
     }
 }

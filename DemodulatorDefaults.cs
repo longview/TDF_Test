@@ -107,7 +107,7 @@ namespace TDF_Test
                     AutoThreshold = DemodulatorContext.AutoThresholdModes.None,
                     AutoThresholdMaxBias = 1.25,
                     UseFIROffset = false, // weight result by values +-length of the correlator
-                    FIROffsetFactor = 0.5,
+                    FIROffsetFactor = 0.25,
                     UseCalibrateAllBits = false, // enabling this will remove around 10 potential bit errors by forcing all known 0 bits to 0 and recalibration the detector ratio
                 },
                 CorrelatorParameters = GetCorrelationParameter_SSAD(),
